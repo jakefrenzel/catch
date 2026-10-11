@@ -24,13 +24,36 @@ from the simulator.
 The app and its widget extension share data through the App Group
 `group.com.jakefrenzel.catch`, which needs a signing team:
 
-1. Set `DEVELOPMENT_TEAM` in `project.yml` (or pick your team in Xcode under
-   Signing & Capabilities for both the Catch and CatchWidgets targets).
-2. Run `xcodegen generate` again and build to your phone. Xcode registers the
-   App Group with automatic signing.
+1. `DEVELOPMENT_TEAM` in `project.yml` is set to the team (`S7G8QLJ85J`).
+2. Run `xcodegen generate` and build to your phone. Xcode registers the App
+   Group with automatic signing.
 
-Without a team the app still runs in the simulator; the widgets just can't see
-the app's data.
+### TestFlight
+
+`.github/workflows/testflight.yml` archives a Release build and uploads it to
+App Store Connect. It only runs on demand:
+
+```sh
+gh workflow run testflight.yml --ref main
+```
+
+The build number is the workflow's run number, so every upload is new; bump
+`MARKETING_VERSION` in `project.yml` for a new version. One-time setup:
+
+1. In the Apple Developer portal, register the App IDs `com.jakefrenzel.catch`
+   and `com.jakefrenzel.catch.widgets`, both with the App Group
+   `group.com.jakefrenzel.catch`. (Xcode can also do this the first time it
+   signs with the API key.)
+2. In App Store Connect, create the app with the bundle ID
+   `com.jakefrenzel.catch`.
+3. In App Store Connect under Users and Access → Integrations, create an API
+   key with the **Admin** role, so Xcode can create certificates and profiles
+   itself. Download the `.p8` file (it can only be downloaded once).
+4. Add the repo secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the
+   whole `.p8` file, including the BEGIN and END lines).
+
+A build appears in TestFlight 10–30 minutes after the upload. Internal testers
+can install it right away; external testers need Apple's beta review first.
 
 ## What's where
 

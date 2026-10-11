@@ -9,9 +9,8 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    # Set your Apple Developer team here (or in Xcode) to run on a device;
-    # the App Group below needs it.
-    DEVELOPMENT_TEAM: ""
+    # The App Group below needs a team to run on a device or upload.
+    DEVELOPMENT_TEAM: S7G8QLJ85J
 targets:
   Catch:
     type: application
@@ -27,6 +26,8 @@ targets:
             CFBundleURLSchemes: [catch]
         # The Action button's listening session keeps recording in the background.
         UIBackgroundModes: [audio]
+        # Only Apple's built-in encryption (HTTPS etc.), so no export paperwork.
+        ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: Catch/Catch.entitlements
       properties:
