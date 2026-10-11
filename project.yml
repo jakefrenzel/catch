@@ -40,3 +40,6 @@ schemes:
         CatchTests: [test]
     test:
       targets: [CatchTests]
+    run:
+      commandLineArguments:
+        "-seedSampleData": true

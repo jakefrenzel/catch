@@ -4,6 +4,9 @@ import SwiftData
 
 /// All the rules for moving things between lists, enforcing the Now limit,
 /// projects and the evening wrap-up. Views call this rather than editing models directly.
+///
+/// Every user action can be undone from its toast: each mutating method records
+/// how to reverse itself, and `undo()` reverses the most recent one.
 @MainActor
 final class CatchStore {
     struct CaptureResult {
@@ -24,6 +27,7 @@ final class CatchStore {
     let settingsStore: SettingsStore
     let calendar: Calendar
     private let now: () -> Date
+    private var undoAction: (() -> Void)?
     private let log = Logger(subsystem: "com.jakefrenzel.catch", category: "store")
 
     init(context: ModelContext,
@@ -66,6 +70,18 @@ final class CatchStore {
         settings.afterWork.next(after: now(), calendar: calendar)
     }
 
+    // MARK: - Undo
+
+    var canUndo: Bool { undoAction != nil }
+
+    /// Reverses the most recent action. Only one level, like the toast it backs.
+    func undo() {
+        guard let action = undoAction else { return }
+        undoAction = nil
+        action()
+        save()
+    }
+
     // MARK: - Capture and moving
 
     /// Saves a new item. Empty text is ignored. Asking for a full Now puts it in Inbox.
@@ -82,6 +98,7 @@ final class CatchStore {
         case .inbox, .someday: break
         }
         context.insert(item)
+        undoAction = { [context] in context.delete(item) }
         save()
         return CaptureResult(item: item, requested: list)
     }
@@ -94,6 +111,7 @@ final class CatchStore {
         guard list != from else { return .moved }
         if list == .now && isNowFull { return .nowIsFull }
 
+        recordUndo(restoring: [item])
         item.list = list
         item.movedToTomorrow = false
         switch list {
@@ -117,6 +135,7 @@ final class CatchStore {
 
     /// Sends `outgoing` from Now back to Inbox and puts `incoming` in its place.
     func swap(incoming: Item, outgoing: Item) {
+        recordUndo(restoring: [incoming, outgoing])
         outgoing.list = .inbox
         outgoing.reason = nil
         incoming.list = .now
@@ -129,6 +148,7 @@ final class CatchStore {
     /// Sets a reminder, which also moves the item to Later.
     /// `nudge` nil means "use the Settings default".
     func setReminder(_ item: Item, _ reminder: ReminderTime, nudge: Bool? = nil) {
+        recordUndo(restoring: [item])
         item.list = .later
         item.reminder = reminder
         item.nudge = nudge
@@ -142,6 +162,7 @@ final class CatchStore {
 
     /// Edits text and note. Empty text keeps the old title; an empty note is removed.
     func update(_ item: Item, text: String, note: String?) {
+        recordUndo(restoring: [item])
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { item.text = trimmed }
         let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -150,11 +171,14 @@ final class CatchStore {
     }
 
     func setDone(_ item: Item, _ done: Bool) {
+        recordUndo(restoring: [item])
         item.completedAt = done ? now() : nil
         save()
     }
 
     func setDone(_ step: Step, _ done: Bool) {
+        let previous = step.completedAt
+        undoAction = { step.completedAt = previous }
         step.completedAt = done ? now() : nil
         save()
     }
@@ -167,13 +191,16 @@ final class CatchStore {
     }
 
     func delete(_ item: Item) {
+        let snapshot = ItemSnapshot(item)
         context.delete(item)
+        undoAction = { [context] in context.insert(snapshot.recreate()) }
         save()
     }
 
     // MARK: - Evening wrap-up
 
     func moveToTomorrow(_ item: Item) {
+        recordUndo(restoring: [item])
         item.movedToTomorrow = true
         save()
     }
@@ -182,13 +209,15 @@ final class CatchStore {
     @discardableResult
     func moveAllToTomorrow() -> Int {
         let open = openNowItems
+        recordUndo(restoring: open)
         open.forEach { $0.movedToTomorrow = true }
         save()
         return open.count
     }
 
-    /// Next morning: brings back everything moved to tomorrow.
+    /// Next morning: brings back everything moved to tomorrow. Not undoable.
     func carryOverFromLastNight() {
+        undoAction = nil
         for item in allItems() where item.movedToTomorrow {
             item.movedToTomorrow = false
             item.reason = Reason.carriedOver
@@ -219,7 +248,13 @@ final class CatchStore {
         for step in steps { context.insert(step) }
         project.steps = steps
 
+        let consumed = draft.inboxItems.map(ItemSnapshot.init)
         for item in draft.inboxItems { context.delete(item) }
+
+        undoAction = { [context] in
+            context.delete(project)
+            for snapshot in consumed { context.insert(snapshot.recreate()) }
+        }
         save()
         return project
     }
@@ -240,11 +275,29 @@ final class CatchStore {
         ordered.insert(step, at: insertAt)
         for (index, s) in ordered.enumerated() { s.sortOrder = index }
         project.steps = ordered
+
+        undoAction = { [context] in
+            project.steps?.removeAll { $0.id == step.id }
+            context.delete(step)
+        }
         save()
         return step
     }
 
+    /// Shows or hides a project's steps on Today. Not an undoable action.
+    func setExpanded(_ project: Project, _ expanded: Bool) {
+        project.isExpanded = expanded
+        save()
+    }
+
     // MARK: - Private
+
+    private func recordUndo(restoring items: [Item]) {
+        let snapshots = items.map { ($0, ItemSnapshot($0)) }
+        undoAction = {
+            for (item, snapshot) in snapshots { snapshot.apply(to: item) }
+        }
+    }
 
     private func fetch<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) -> [T] {
         do {
