@@ -13,6 +13,7 @@ final class AppServices {
     let settingsStore: SettingsStore
     let store: CatchStore
     let model: AppModel
+    let voiceActivity: VoiceActivityController
     private let notificationDelegate = NotificationDelegate()
 
     private init() {
@@ -41,6 +42,7 @@ final class AppServices {
         }
         #endif
         model = AppModel(store: store, settingsStore: settingsStore, notifications: scheduler, voice: voice)
+        voiceActivity = VoiceActivityController(model: model)
         notificationDelegate.model = model
         UNUserNotificationCenter.current().delegate = notificationDelegate
         model.startOnboardingIfNeeded()

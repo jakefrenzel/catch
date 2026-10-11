@@ -45,6 +45,16 @@ enum WidgetActions {
         services.model.startListening(tapToTalk: true)
     }
 
+    static func finishVoiceActivity() async {
+        await services.voiceActivity.finish()
+    }
+
+    static func undoVoiceCatch() async {
+        services.store.undo()
+        await services.voiceActivity.endNow()
+        reload()
+    }
+
     static func reload() {
         WidgetCenter.shared.reloadAllTimelines()
     }

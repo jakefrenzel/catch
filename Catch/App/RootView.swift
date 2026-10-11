@@ -146,7 +146,9 @@ struct RootView: View {
         .overlay {
             let arguments = ProcessInfo.processInfo.arguments
             if arguments.contains("-widgetGallery") {
-                WidgetGallery(store: model.store, page: arguments.contains("-medium") ? .medium : .small)
+                WidgetGallery(store: model.store,
+                              page: arguments.contains("-medium") ? .medium
+                                  : arguments.contains("-activity") ? .activity : .small)
             }
         }
         #endif

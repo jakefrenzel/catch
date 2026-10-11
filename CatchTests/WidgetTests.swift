@@ -117,3 +117,21 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertTrue(model.isTapToTalk)
     }
 }
+
+final class VoiceActivityStateTests: XCTestCase {
+    func testListeningCarriesHighlightedChunks() {
+        let parse = VoiceParser.parse("Remind me to call Dana tomorrow at 10", projects: [],
+                                      afterWork: TimeOfDay(hour: 17, minute: 30), now: .now, calendar: .current)
+        let state = VoiceActivityAttributes.ContentState.listening(parse)
+        XCTAssertEqual(state.phase, .listening)
+        XCTAssertEqual(state.chunks.map(\.kind), ["filler", "normal", "time"])
+        XCTAssertEqual(state.chunks.map(\.text), ["Remind me to", "call Dana", "tomorrow at 10"])
+    }
+
+    func testSavedState() {
+        let state = VoiceActivityAttributes.ContentState.saved(title: "Call Dana", destination: "Later · Sat 10 AM")
+        XCTAssertEqual(state.phase, .saved)
+        XCTAssertEqual(state.savedTitle, "Call Dana")
+        XCTAssertTrue(state.chunks.isEmpty)
+    }
+}

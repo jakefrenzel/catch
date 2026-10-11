@@ -5,7 +5,7 @@ import WidgetKit
 /// Draws the real widget views at widget sizes, for CI screenshots (the
 /// simulator can't place widgets on a home screen from a script).
 struct WidgetGallery: View {
-    enum Page { case small, medium }
+    enum Page { case small, medium, activity }
 
     let store: CatchStore
     let page: Page
@@ -14,9 +14,16 @@ struct WidgetGallery: View {
         let moments = moments()
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text(page == .small ? "Widgets" : "Medium Widgets")
+                Text(page == .small ? "Widgets" : page == .medium ? "Medium Widgets" : "Live Activity")
                     .font(.largeTitle.bold())
                 switch page {
+                case .activity:
+                    let parse = VoiceParser.parse("Call Dana tomorrow at 10 about the lease", projects: [],
+                                                  afterWork: store.settings.afterWork, now: .now, calendar: .current)
+                    caption("11g · Listening")
+                    activityCard(.listening(parse))
+                    caption("11g · Saved")
+                    activityCard(.saved(title: parse.title, destination: "Later · Sat 10 AM"))
                 case .small:
                     LazyVGrid(columns: [GridItem(.fixed(158), spacing: 14), GridItem(.fixed(158))],
                               alignment: .leading, spacing: 14) {
@@ -51,6 +58,13 @@ struct WidgetGallery: View {
             .padding(16)
         }
         .background(Theme.bg.ignoresSafeArea())
+    }
+
+    private func activityCard(_ state: VoiceActivityAttributes.ContentState) -> some View {
+        VoiceActivityView(state: state)
+            .padding(16)
+            .frame(width: 338, alignment: .leading)
+            .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
     private func caption(_ text: String) -> some View {

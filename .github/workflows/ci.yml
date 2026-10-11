@@ -95,6 +95,7 @@ jobs:
           shot widgets-light light -widgetGallery
           shot widgets-dark dark -widgetGallery
           shot widgets-medium-light light -widgetGallery -medium
+          shot live-activity light -widgetGallery -activity
           shot voice-language light -openVoiceLanguage
 
       - name: Upload screenshots

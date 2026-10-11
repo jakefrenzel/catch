@@ -11,13 +11,18 @@ struct CatchWidgetView: View {
     var body: some View {
         switch family {
         case .systemMedium:
-            HStack(alignment: .top, spacing: 14) {
-                TopSpot(snapshot: snapshot, compact: false)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if !snapshot.list.isEmpty {
-                    SideList(title: snapshot.listTitle, items: snapshot.list)
+            // Buttons span the full width under both columns so labels fit.
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 14) {
+                    TopSpot(snapshot: snapshot, compact: false, part: .text)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                    if !snapshot.list.isEmpty {
+                        SideList(title: snapshot.listTitle, items: snapshot.list)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                Spacer(minLength: 4)
+                TopSpot(snapshot: snapshot, compact: false, part: .buttons)
             }
         case .accessoryRectangular:
             LockScreenUpFirst(snapshot: snapshot)
@@ -29,10 +34,21 @@ struct CatchWidgetView: View {
 
 /// The main block: label, title, detail, and the two buttons.
 private struct TopSpot: View {
+    enum Part { case all, text, buttons }
+
     let snapshot: WidgetSnapshot
     let compact: Bool
+    var part: Part = .all
 
     var body: some View {
+        if part == .buttons {
+            buttons
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.caption2.weight(.bold))
@@ -46,10 +62,12 @@ private struct TopSpot: View {
                 .font(.caption2)
                 .foregroundStyle(Theme.ink2)
                 .lineLimit(1)
-            Spacer(minLength: 4)
-            buttons
+            if part == .all {
+                Spacer(minLength: 4)
+                buttons
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: part == .all ? .infinity : nil, alignment: .topLeading)
     }
 
     @ViewBuilder

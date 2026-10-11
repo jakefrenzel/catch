@@ -99,3 +99,29 @@ struct StartTalkingIntent: AppIntent {
         return .result()
     }
 }
+
+/// The Live Activity's Save: stop listening now and save what was heard.
+struct FinishVoiceActivityIntent: AppIntent, LiveActivityIntent {
+    static let title: LocalizedStringResource = "Save"
+    static let isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        #if !WIDGET_EXTENSION
+        await WidgetActions.finishVoiceActivity()
+        #endif
+        return .result()
+    }
+}
+
+/// The Live Activity's Undo after saving.
+struct UndoVoiceCatchIntent: AppIntent, LiveActivityIntent {
+    static let title: LocalizedStringResource = "Undo"
+    static let isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        #if !WIDGET_EXTENSION
+        await WidgetActions.undoVoiceCatch()
+        #endif
+        return .result()
+    }
+}

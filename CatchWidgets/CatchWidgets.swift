@@ -9,6 +9,7 @@ struct CatchWidgetsBundle: WidgetBundle {
         UpFirstWidget()
         InboxCountWidget()
         TalkWidget()
+        VoiceActivityWidget()
         if #available(iOS 18.0, *) {
             CatchControl()
         }
@@ -119,6 +120,35 @@ struct TalkWidget: Widget {
         .configurationDisplayName("Catch by Voice")
         .description("Opens Catch listening.")
         .supportedFamilies([.accessoryCircular])
+    }
+}
+
+/// 11g: listening after the Action button, on the Lock Screen and in the Dynamic Island.
+struct VoiceActivityWidget: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: VoiceActivityAttributes.self) { context in
+            VoiceActivityView(state: context.state)
+                .padding(16)
+                .activityBackgroundTint(Color.black.opacity(0.85))
+                .activitySystemActionForegroundColor(.white)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.bottom) {
+                    VoiceActivityView(state: context.state)
+                        .padding(.horizontal, 6)
+                }
+            } compactLeading: {
+                Image(systemName: context.state.phase == .saved ? "checkmark.circle.fill" : "mic.fill")
+                    .foregroundStyle(context.state.phase == .saved ? Theme.green : Theme.red)
+            } compactTrailing: {
+                Text(context.state.phase == .saved ? "Saved" : "Listening")
+                    .font(.caption.weight(.semibold))
+            } minimal: {
+                Image(systemName: context.state.phase == .saved ? "checkmark" : "mic.fill")
+                    .foregroundStyle(context.state.phase == .saved ? Theme.green : Theme.red)
+            }
+            .widgetURL(URL(string: "catch://today"))
+        }
     }
 }
 
