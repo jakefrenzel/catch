@@ -26,7 +26,14 @@ struct CatchApp: App {
         #endif
         let scheduler = SystemNotificationScheduler()
         scheduler.registerCategories()
-        let model = AppModel(store: store, settingsStore: settingsStore, notifications: scheduler)
+        var voice: VoiceInput?
+        #if DEBUG
+        // The simulator in CI has no microphone: type out a sample sentence instead.
+        if ProcessInfo.processInfo.arguments.contains("-voiceDemo") {
+            voice = DemoVoiceInput()
+        }
+        #endif
+        let model = AppModel(store: store, settingsStore: settingsStore, notifications: scheduler, voice: voice)
         notificationDelegate.model = model
         UNUserNotificationCenter.current().delegate = notificationDelegate
         _model = State(initialValue: model)

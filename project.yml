@@ -23,6 +23,8 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Catch listens while you hold + so you can say what's on your mind."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Catch turns what you say into text, on your iPhone when it can."
   CatchTests:
     type: bundle.unit-test
     platform: iOS

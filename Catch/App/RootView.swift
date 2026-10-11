@@ -6,6 +6,7 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Query(sort: \Item.capturedAt) private var items: [Item]
     @Query(sort: \Project.sortOrder) private var projects: [Project]
 
@@ -42,13 +43,29 @@ struct RootView: View {
                     FloatingTabBar(selection: $model.tab,
                                    inboxCount: items.filter { $0.list == .inbox }.count)
                     CaptureButton(onTap: { model.isCaptureOpen = true },
-                                  onHold: { model.notBuiltYet("Voice capture") })
+                                  onHoldStart: { model.startListening() },
+                                  onHoldEnd: { save in Task { await model.stopListening(save: save) } })
                 }
                 .padding(.horizontal, 20)
             }
             .padding(.bottom, 8)
             .animation(reduceMotion ? nil : .catchEaseOut(0.28), value: model.showsPinnedUpFirst && upFirst != nil)
         }
+        .overlay(alignment: .bottom) {
+            if model.isListening {
+                ZStack(alignment: .bottom) {
+                    Color.black.opacity(0.25)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                    VoiceSheet(startedAt: model.listeningStartedAt)
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom))
+                }
+                .ignoresSafeArea(edges: .bottom)
+                // The finger is still on +; only VoiceOver needs to touch the sheet.
+                .allowsHitTesting(voiceOverEnabled)
+            }
+        }
+        .animation(reduceMotion ? nil : .catchEaseOut(0.34), value: model.isListening)
         .background(ToastWindowInstaller(model: model))
         .sheet(isPresented: $model.isCaptureOpen) {
             CaptureSheet()
@@ -60,6 +77,8 @@ struct RootView: View {
             case .swap(let item): SwapSheet(incoming: item)
             case .newProject: NewProjectSheet()
             case .settings: SettingsSheet()
+            case .micDenied: MicDeniedSheet()
+            case .voiceRetry(let heard): VoiceRetrySheet(heard: heard)
             }
         }
         .fullScreenCover(item: $model.focus) { candidate in
@@ -104,6 +123,11 @@ struct RootView: View {
             }
             if arguments.contains("-openNewProject") { model.sheet = .newProject }
             if arguments.contains("-openSettings") { model.sheet = .settings }
+            if arguments.contains("-startVoice") { model.startListening() }
+            if arguments.contains("-openMicDenied") { model.sheet = .micDenied }
+            if arguments.contains("-openVoiceRetry") {
+                model.sheet = .voiceRetry("Send the slides to Priya before")
+            }
             if arguments.contains("-openSwap"), let item = items.first(where: { $0.list == .inbox }) {
                 model.sheet = .swap(incoming: item)
             }

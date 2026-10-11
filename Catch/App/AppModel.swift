@@ -18,6 +18,10 @@ final class AppModel {
         case swap(incoming: Item)
         case newProject
         case settings
+        /// 10a: the mic or speech recognition is off.
+        case micDenied
+        /// 10b: what was heard, to fix before saving.
+        case voiceRetry(String)
 
         var id: String {
             switch self {
@@ -26,6 +30,8 @@ final class AppModel {
             case .swap(let item): return "swap-\(item.id)"
             case .newProject: return "new-project"
             case .settings: return "settings"
+            case .micDenied: return "mic-denied"
+            case .voiceRetry(let text): return "voice-retry-\(text)"
             }
         }
     }
@@ -60,12 +66,18 @@ final class AppModel {
     private var undoableNewProject: Project?
 
     let notifications: NotificationScheduling
+    let voice: VoiceInput
+    /// + is held and Catch is listening.
+    var isListening = false
+    private(set) var listeningStartedAt = Date.now
     private var syncTask: Task<Void, Never>?
 
-    init(store: CatchStore, settingsStore: SettingsStore, notifications: NotificationScheduling) {
+    init(store: CatchStore, settingsStore: SettingsStore, notifications: NotificationScheduling,
+         voice: VoiceInput? = nil) {
         self.store = store
         self.settingsStore = settingsStore
         self.notifications = notifications
+        self.voice = voice ?? SpeechVoiceInput()
         store.onChange = { [weak self] in self?.scheduleReminderSync() }
     }
 
@@ -73,7 +85,7 @@ final class AppModel {
 
     /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        focus == nil && !isCaptureOpen && sheet == nil && !isEvening
+        focus == nil && !isCaptureOpen && sheet == nil && !isEvening && !isListening
             && (tab != .today || upFirstCardScrolledAway || !projectPath.isEmpty)
     }
 
@@ -138,6 +150,101 @@ final class AppModel {
             Task { await ensureNotificationPermission() }
         }
         return true
+    }
+
+    // MARK: - Voice
+
+    /// Hold +: start listening, or explain why not.
+    func startListening() {
+        switch voice.permission() {
+        case .denied:
+            haptic(.warning)
+            sheet = .micDenied
+        case .notDetermined:
+            Task {
+                if await voice.requestPermission() {
+                    flash("Hold + again to talk", undo: false)
+                } else {
+                    sheet = .micDenied
+                }
+            }
+        case .allowed:
+            do {
+                try voice.start(language: settings.voiceLanguage)
+                listeningStartedAt = .now
+                isListening = true
+                haptic(.medium)
+            } catch {
+                flash("Listening isn't available right now", undo: false)
+            }
+        }
+    }
+
+    /// Let go of +. Dragging away first cancels without saving.
+    func stopListening(save: Bool) async {
+        guard isListening else { return }
+        guard save else {
+            voice.cancel()
+            isListening = false
+            return
+        }
+        let result = await voice.stop()
+        isListening = false
+        saveVoice(result)
+    }
+
+    func saveVoice(_ result: VoiceResult) {
+        let text = result.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            flash("Didn't hear anything. Hold + and talk.", undo: false)
+            return
+        }
+        if result.isUncertain {
+            sheet = .voiceRetry(text)
+        } else {
+            saveSpoken(text)
+        }
+    }
+
+    /// Saves a spoken (or corrected) sentence where it says to go: Later at
+    /// the time heard, a step in the project heard, or Inbox.
+    @discardableResult
+    func saveSpoken(_ text: String) -> Bool {
+        let parse = parseVoice(text)
+        guard !parse.title.isEmpty else {
+            sheet = .voiceRetry(text)
+            return false
+        }
+        if case .voiceRetry? = sheet { sheet = nil }
+        switch parse.destination {
+        case .later(let date):
+            return capture(parse.title, to: .later, remindAt: date)
+        case .projectStep(let id):
+            if let project = store.projects().first(where: { $0.id == id }) {
+                return addStep(parse.title, to: project)
+            }
+            return capture(parse.title, to: .inbox)
+        case .inbox:
+            return capture(parse.title, to: .inbox)
+        }
+    }
+
+    func parseVoice(_ text: String) -> VoiceParse {
+        VoiceParser.parse(text,
+                          projects: store.projects().map { .init(id: $0.id, name: $0.name) },
+                          afterWork: settings.afterWork,
+                          now: store.currentDate(),
+                          calendar: store.calendar)
+    }
+
+    /// 10a's Type Instead: swap the mic sheet for the Capture sheet.
+    func typeInstead() {
+        sheet = nil
+        Task {
+            // Let the sheet finish closing before the next one opens.
+            try? await Task.sleep(for: .milliseconds(450))
+            isCaptureOpen = true
+        }
     }
 
     // MARK: - Items

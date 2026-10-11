@@ -82,6 +82,10 @@ jobs:
           shot settings-dark dark -openSettings
           shot evening-light light -evening
           shot evening-dark dark -evening
+          shot voice-light light -voiceDemo -startVoice
+          shot voice-dark dark -voiceDemo -startVoice
+          shot mic-denied-light light -openMicDenied
+          shot voice-retry-light light -openVoiceRetry
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4

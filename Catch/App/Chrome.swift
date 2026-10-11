@@ -51,10 +51,16 @@ struct FloatingTabBar: View {
     }
 }
 
-/// The blue + button. Tap to type, hold to talk.
+/// The blue + button. Tap to type; hold 0.38 s to talk and let go to save.
+/// Dragging well away before letting go cancels.
 struct CaptureButton: View {
     let onTap: () -> Void
-    let onHold: () -> Void
+    let onHoldStart: () -> Void
+    let onHoldEnd: (_ save: Bool) -> Void
+
+    @State private var isPressed = false
+    @State private var isHolding = false
+    @State private var holdTimer: Task<Void, Never>?
 
     var body: some View {
         Image(systemName: "plus")
@@ -63,15 +69,39 @@ struct CaptureButton: View {
             .frame(width: 62, height: 62)
             .background(Theme.blue, in: Circle())
             .shadow(color: Theme.blue.opacity(0.35), radius: 12, x: 0, y: 8)
+            .scaleEffect(isPressed ? 0.94 : 1)
+            .animation(.easeOut(duration: 0.12), value: isPressed)
             .contentShape(Circle())
-            .onTapGesture(perform: onTap)
-            .onLongPressGesture(minimumDuration: 0.38, perform: onHold)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !isPressed else { return }
+                        isPressed = true
+                        holdTimer = Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(380))
+                            guard !Task.isCancelled else { return }
+                            isHolding = true
+                            onHoldStart()
+                        }
+                    }
+                    .onEnded { value in
+                        holdTimer?.cancel()
+                        let draggedAway = hypot(value.translation.width, value.translation.height) > 80
+                        if isHolding {
+                            onHoldEnd(!draggedAway)
+                        } else if !draggedAway {
+                            onTap()
+                        }
+                        isPressed = false
+                        isHolding = false
+                    }
+            )
             .accessibilityElement()
             .accessibilityLabel("Capture")
-            .accessibilityHint("Opens a new idea. Hold to talk.")
+            .accessibilityHint("Opens a new idea. Use the Talk action to speak instead.")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(.default, onTap)
-            .accessibilityAction(named: "Talk", onHold)
+            .accessibilityAction(named: "Talk", onHoldStart)
     }
 }
 
