@@ -85,7 +85,7 @@ final class AppModel {
     let voice: VoiceInput
     let location: LocationService
     /// Settings' navigation stack (Places and its editor).
-    var settingsPath: [PlaceRoute] = []
+    var settingsPath: [SettingsRoute] = []
     /// + is held and Catch is listening.
     var isListening = false
     /// Listening was started by a tap (Lock Screen mic, control), so there's no

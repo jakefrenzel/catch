@@ -3,12 +3,14 @@ import MapKit
 import SwiftData
 import SwiftUI
 
-/// Where Settings → Places can go.
-enum PlaceRoute: Hashable {
+/// Pages pushed inside Settings.
+enum SettingsRoute: Hashable {
     case list
     case edit(Place)
     /// A new place, optionally with a name already filled in.
     case new(String)
+    case voiceLanguage
+    case actionButton
 }
 
 /// 12a: saved places, plus which place reminders to offer.
@@ -22,11 +24,11 @@ struct PlacesListView: View {
         List {
             Section {
                 ForEach(places) { place in
-                    NavigationLink(value: PlaceRoute.edit(place)) {
+                    NavigationLink(value: SettingsRoute.edit(place)) {
                         PlaceRow(place: place)
                     }
                 }
-                NavigationLink(value: PlaceRoute.new("")) {
+                NavigationLink(value: SettingsRoute.new("")) {
                     Label("Add Place", systemImage: "plus")
                         .foregroundStyle(Theme.blue)
                 }

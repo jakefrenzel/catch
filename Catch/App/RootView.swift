@@ -170,6 +170,10 @@ struct RootView: View {
             }
             if arguments.contains("-openNewProject") { model.sheet = .newProject }
             if arguments.contains("-openSettings") { model.sheet = .settings }
+            if arguments.contains("-openVoiceLanguage") {
+                model.sheet = .settings
+                model.settingsPath = [.voiceLanguage]
+            }
             if arguments.contains("-openPlaces") {
                 model.sheet = .settings
                 model.settingsPath = [.list]

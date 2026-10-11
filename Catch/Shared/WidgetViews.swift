@@ -111,8 +111,9 @@ private struct TopSpot: View {
     private func secondaryLabel(_ title: String?, icon: String?, tint: Color = Theme.blue) -> some View {
         HStack(spacing: 4) {
             if let icon { Image(systemName: icon) }
-            if let title { Text(title) }
+            if let title { Text(title).lineLimit(1) }
         }
+        .fixedSize()
         .font(.caption.weight(.semibold))
         .foregroundStyle(tint)
         .padding(.horizontal, title == nil ? 0 : 10)

@@ -18,11 +18,13 @@ struct SettingsSheet: View {
             content
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationTitle("Settings")
-                .navigationDestination(for: PlaceRoute.self) { route in
+                .navigationDestination(for: SettingsRoute.self) { route in
                     switch route {
                     case .list: PlacesListView()
                     case .edit(let place): PlaceEditorView(place: place)
                     case .new(let name): PlaceEditorView(place: nil, suggestedName: name)
+                    case .voiceLanguage: VoiceLanguageView()
+                    case .actionButton: ActionButtonHelpView()
                     }
                 }
         }
@@ -124,7 +126,7 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    NavigationLink(value: PlaceRoute.list) {
+                    NavigationLink(value: SettingsRoute.list) {
                         HStack {
                             SettingLabel("Places", icon: "mappin.and.ellipse", tint: Theme.green)
                             Spacer(minLength: 12)
@@ -140,12 +142,17 @@ struct SettingsSheet: View {
                 }
 
                 Section("Capture") {
-                    valueRow("Voice language", icon: "globe",
-                             value: settingsStore.settings.voiceLanguage ?? "Same as iPhone") {
-                        model.notBuiltYet("Voice language")
+                    NavigationLink(value: SettingsRoute.voiceLanguage) {
+                        HStack {
+                            SettingLabel("Voice language", icon: "globe", tint: Theme.gray)
+                            Spacer(minLength: 12)
+                            Text(VoiceLanguageView.name(for: settingsStore.settings.voiceLanguage))
+                                .foregroundStyle(Theme.ink2)
+                                .lineLimit(1)
+                        }
                     }
-                    valueRow("Action button", icon: "hand.tap.fill", value: "Hold to talk") {
-                        model.notBuiltYet("Action button setup")
+                    NavigationLink(value: SettingsRoute.actionButton) {
+                        SettingLabel("Action button", icon: "hand.tap.fill", tint: Theme.gray)
                     }
                 }
 
