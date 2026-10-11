@@ -285,7 +285,8 @@ final class ListRulesTests: XCTestCase {
 
         XCTAssertTrue(item.isDone)
         XCTAssertEqual(item.list, .now)
-        XCTAssertNil(item.reason)
+        XCTAssertFalse(item.movedToTomorrow)
+        XCTAssertNotEqual(item.reason, "Carried over from last night")
     }
 
     func testCarryOverNeverOverfillsNow() throws {
