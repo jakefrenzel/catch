@@ -135,7 +135,7 @@ struct OnboardingPermissionSheet: View {
                 .frame(width: 60, height: 60)
                 .background(Theme.orangeTint, in: Circle())
                 .accessibilityHidden(true)
-            Text("Remind you \(Self.label(for: reminderDate))?")
+            Text("Remind you \(Self.label(for: reminderDate, formatter: ReminderFormatter()))?")
                 .font(.title2.bold())
                 .multilineTextAlignment(.center)
             Text("Catch only sends reminders you set and one wrap-up in the evening. iOS will ask you next.")
@@ -171,17 +171,19 @@ struct OnboardingPermissionSheet: View {
         .interactiveDismissDisabled()
     }
 
-    /// "Saturday at 10", "tomorrow at 9:30".
-    static func label(for date: Date, now: Date = .now, calendar: Calendar = .current) -> String {
-        let minute = calendar.component(.minute, from: date)
-        let time = minute == 0
-            ? date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)))
-            : date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute())
+    /// "Saturday at 10 AM", "tomorrow at 9:30 AM", "today at 5:30 PM".
+    static func label(for date: Date, now: Date = .now, formatter: ReminderFormatter) -> String {
+        let calendar = formatter.calendar
+        let time = formatter.timeLabel(date)
         if calendar.isDate(date, inSameDayAs: now) { return "today at \(time)" }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now), calendar.isDate(date, inSameDayAs: tomorrow) {
             return "tomorrow at \(time)"
         }
-        return "\(date.formatted(.dateTime.weekday(.wide))) at \(time)"
+        var weekday = Date.FormatStyle.dateTime.weekday(.wide)
+        weekday.calendar = calendar
+        weekday.timeZone = calendar.timeZone
+        weekday.locale = formatter.locale
+        return "\(date.formatted(weekday)) at \(time)"
     }
 }
 

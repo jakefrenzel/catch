@@ -104,11 +104,16 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue(env.settingsStore.hasOnboarded)
     }
 
-    func testPermissionLabel() throws {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .current
-        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 12)))
-        let tomorrowTen = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 10, hour: 10)))
-        XCTAssertEqual(OnboardingPermissionSheet.label(for: tomorrowTen, now: now, calendar: calendar), "tomorrow at 10")
+    func testPermissionLabel() {
+        let clock = TestClock()
+        let formatter = ReminderFormatter(calendar: clock.calendar, locale: Locale(identifier: "en_US"))
+        let now = clock.at(day: 9, hour: 12)
+        func label(_ date: Date) -> String {
+            OnboardingPermissionSheet.label(for: date, now: now, formatter: formatter)
+                .replacingOccurrences(of: "\u{202F}", with: " ")
+        }
+        XCTAssertEqual(label(clock.at(day: 9, hour: 17, minute: 30)), "today at 5:30 PM")
+        XCTAssertEqual(label(clock.at(day: 10, hour: 10)), "tomorrow at 10 AM")
+        XCTAssertEqual(label(clock.at(day: 12, hour: 9)), "Monday at 9 AM")
     }
 }

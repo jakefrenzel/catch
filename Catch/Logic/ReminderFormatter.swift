@@ -56,7 +56,7 @@ struct ReminderFormatter {
     }
 
     /// "9 AM" on the hour, "5:30 PM" otherwise.
-    private func timeLabel(_ date: Date) -> String {
+    func timeLabel(_ date: Date) -> String {
         let minute = calendar.component(.minute, from: date)
         return minute == 0 ? format(date, .dateTime.hour()) : format(date, .dateTime.hour().minute())
     }
