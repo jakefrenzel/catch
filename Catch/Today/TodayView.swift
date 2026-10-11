@@ -140,7 +140,7 @@ struct TodayView: View {
                         showsTime: true, notificationsOn: notificationsOn,
                         onToggle: { model.toggleDone(item) },
                         onEdit: { model.notBuiltYet("Editing") },
-                        onTime: { model.notBuiltYet("Reminders") })
+                        onTime: { model.openReminder(for: item) })
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         doneSwipe(for: item)
                     }

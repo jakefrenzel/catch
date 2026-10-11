@@ -11,6 +11,19 @@ final class AppModel {
         case today, inbox, someday
     }
 
+    /// Sheets opened from list actions. Capture has its own flag because it opens from +.
+    enum Sheet: Identifiable {
+        case remind(Item)
+        case swap(incoming: Item)
+
+        var id: String {
+            switch self {
+            case .remind(let item): return "remind-\(item.id)"
+            case .swap(let item): return "swap-\(item.id)"
+            }
+        }
+    }
+
     struct Toast: Identifiable, Equatable {
         let id = UUID()
         let message: String
@@ -22,6 +35,7 @@ final class AppModel {
 
     var tab: Tab = .today
     var isCaptureOpen = false
+    var sheet: Sheet?
     var upFirst = UpFirst()
     /// The Up first suggestion open in Focus.
     var focus: UpFirstCandidate?
@@ -40,7 +54,7 @@ final class AppModel {
 
     /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        focus == nil && !isCaptureOpen && (tab != .today || upFirstCardScrolledAway)
+        focus == nil && !isCaptureOpen && sheet == nil && (tab != .today || upFirstCardScrolledAway)
     }
 
     // MARK: - Capture
@@ -79,22 +93,37 @@ final class AppModel {
     }
 
     /// Moves an item between lists from a swipe, a sort button or "Move to Now".
+    /// Later asks when (Remind sheet); a full Now asks what to swap out.
     func move(_ item: Item, to list: ListKind) {
         if list == .later {
-            // TODO: open the Remind sheet once it exists. Until then, use the default time.
-            store.move(item, to: .later)
-            haptic(.light)
-            flash("Moved to Later", undo: true)
+            openReminder(for: item)
             return
         }
         switch store.move(item, to: list) {
         case .moved:
             flash("Moved to \(list.title)", undo: true)
         case .nowIsFull:
-            // TODO: open the Swap sheet once it exists.
             haptic(.warning)
-            flash("Now is full (\(settings.maxNow)). Move something out first", undo: false)
+            sheet = .swap(incoming: item)
         }
+    }
+
+    func openReminder(for item: Item) {
+        sheet = .remind(item)
+    }
+
+    /// Saves from the Remind sheet. `label` names the choice in the toast.
+    func setReminder(_ item: Item, _ reminder: ReminderTime, nudge: Bool, label: String) {
+        store.setReminder(item, reminder, nudge: nudge)
+        sheet = nil
+        haptic(.light)
+        flash("Reminder set: \(label)", undo: true)
+    }
+
+    func swap(incoming: Item, outgoing: Item) {
+        store.swap(incoming: incoming, outgoing: outgoing)
+        sheet = nil
+        flash("Swapped. “\(outgoing.text)” went to Inbox", undo: true)
     }
 
     func delete(_ item: Item) {

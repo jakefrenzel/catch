@@ -30,8 +30,53 @@ final class AppModelTests: XCTestCase {
         model.move(item, to: .now)
 
         XCTAssertEqual(item.list, .inbox)
-        XCTAssertEqual(model.toast?.message, "Now is full (3). Move something out first")
-        XCTAssertEqual(model.toast?.canUndo, false)
+        guard case .swap(let incoming)? = model.sheet else { return XCTFail("Expected the Swap sheet") }
+        XCTAssertEqual(incoming, item)
+    }
+
+    func testSwapFromSheet() throws {
+        let (model, env) = try makeModel()
+        env.add("A", to: .now)
+        env.add("B", to: .now)
+        let outgoing = env.add("C", to: .now)
+        let incoming = env.add("D", to: .inbox)
+        model.move(incoming, to: .now)
+
+        model.swap(incoming: incoming, outgoing: outgoing)
+
+        XCTAssertNil(model.sheet)
+        XCTAssertEqual(incoming.list, .now)
+        XCTAssertEqual(outgoing.list, .inbox)
+        XCTAssertEqual(model.toast?.message, "Swapped. “C” went to Inbox")
+        model.undo()
+        XCTAssertEqual(incoming.list, .inbox)
+        XCTAssertEqual(outgoing.list, .now)
+    }
+
+    func testLaterOpensRemindSheet() throws {
+        let (model, env) = try makeModel()
+        let item = env.add("Dentist", to: .inbox)
+
+        model.move(item, to: .later)
+
+        XCTAssertEqual(item.list, .inbox, "Nothing moves until a time is chosen")
+        guard case .remind(let target)? = model.sheet else { return XCTFail("Expected the Remind sheet") }
+        XCTAssertEqual(target, item)
+    }
+
+    func testSetReminderFromSheet() throws {
+        let (model, env) = try makeModel()
+        let item = env.add("Dentist", to: .now)
+        let time = env.clock.at(day: 10, hour: 9)
+        model.openReminder(for: item)
+
+        model.setReminder(item, .date(time), nudge: false, label: "tomorrow morning")
+
+        XCTAssertNil(model.sheet)
+        XCTAssertEqual(item.list, .later)
+        XCTAssertEqual(item.remindAt, time)
+        XCTAssertEqual(item.nudge, false)
+        XCTAssertEqual(model.toast?.message, "Reminder set: tomorrow morning")
     }
 
     func testMoveToNowFromSomeday() throws {
@@ -57,11 +102,14 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(env.store.items(in: .inbox).map(\.text), ["Gym plan"])
     }
 
-    func testPinnedBarHiddenWhileCapturing() throws {
-        let (model, _) = try makeModel()
+    func testPinnedBarHiddenUnderSheets() throws {
+        let (model, env) = try makeModel()
         model.tab = .inbox
         XCTAssertTrue(model.showsPinnedUpFirst)
         model.isCaptureOpen = true
+        XCTAssertFalse(model.showsPinnedUpFirst)
+        model.isCaptureOpen = false
+        model.openReminder(for: env.add("A", to: .inbox))
         XCTAssertFalse(model.showsPinnedUpFirst)
     }
 }

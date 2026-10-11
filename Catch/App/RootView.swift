@@ -46,6 +46,12 @@ struct RootView: View {
         .sheet(isPresented: $model.isCaptureOpen) {
             CaptureSheet()
         }
+        .sheet(item: $model.sheet) { sheet in
+            switch sheet {
+            case .remind(let item): RemindSheet(item: item, settings: model.settings)
+            case .swap(let item): SwapSheet(incoming: item)
+            }
+        }
         .fullScreenCover(item: $model.focus) { candidate in
             FocusView(candidate: candidate,
                       onDone: { model.finishFocus() },
@@ -61,6 +67,12 @@ struct RootView: View {
             if arguments.contains("-showInbox") { model.tab = .inbox }
             if arguments.contains("-showSomeday") { model.tab = .someday }
             if arguments.contains("-openCapture") { model.isCaptureOpen = true }
+            if arguments.contains("-openRemind"), let item = items.first(where: { $0.list == .now }) {
+                model.sheet = .remind(item)
+            }
+            if arguments.contains("-openSwap"), let item = items.first(where: { $0.list == .inbox }) {
+                model.sheet = .swap(incoming: item)
+            }
             if arguments.contains("-sampleToast") {
                 try? await Task.sleep(for: .seconds(4))  // still showing when CI captures at 6 s
                 model.flash("Saved to Inbox", undo: false)

@@ -11,7 +11,6 @@ struct CaptureSheet: View {
     @State private var text = ""
     @State private var destination: ListKind = .inbox
     @State private var quickTime: QuickTime.Kind?
-    @State private var height: CGFloat = 280
     @FocusState private var isFieldFocused: Bool
 
     var body: some View {
@@ -48,13 +47,7 @@ struct CaptureSheet: View {
                 .padding(.horizontal, 4)
         }
         .padding(EdgeInsets(top: 22, leading: 16, bottom: 14, trailing: 16))
-        .fixedSize(horizontal: false, vertical: true)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
-        .frame(maxHeight: .infinity, alignment: .top)
-        .presentationDetents([.height(height)])
-        .presentationCornerRadius(38)
-        .presentationBackground(Theme.bg)
-        .presentationDragIndicator(.visible)
+        .fittedSheet()
         .onAppear { isFieldFocused = true }
     }
 
@@ -62,16 +55,7 @@ struct CaptureSheet: View {
 
     private var header: some View {
         HStack {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.primary)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.fill, in: Circle())
-            }
-            .accessibilityLabel("Close")
+            SheetCloseButton { dismiss() }
 
             Spacer()
             Text(title)
@@ -79,14 +63,7 @@ struct CaptureSheet: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer()
 
-            Button(action: saveAndClose) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.blue.opacity(canSave ? 1 : 0.35), in: Circle())
-            }
-            .accessibilityLabel("Save")
+            SheetSaveButton(isEnabled: canSave, action: saveAndClose)
         }
     }
 

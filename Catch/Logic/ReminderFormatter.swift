@@ -28,6 +28,12 @@ struct ReminderFormatter {
         return "\(format(date, .dateTime.month(.abbreviated).day())) \(time)"
     }
 
+    /// The date picker's summary line: "Saturday, October 10 at 9:00 AM".
+    func longLabel(for date: Date) -> String {
+        let day = format(date, .dateTime.weekday(.wide).month(.wide).day())
+        return "\(day) at \(format(date, .dateTime.hour().minute()))"
+    }
+
     /// When something was caught: "8:14 AM", "Yesterday 8:14 AM", "Tue 8:14 AM", "Oct 2 8:14 AM".
     func caughtLabel(for date: Date, now: Date) -> String {
         let time = timeLabel(date)

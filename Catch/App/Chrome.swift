@@ -93,7 +93,7 @@ struct ToastView: View {
             if toast.canUndo {
                 Button("Undo", action: onUndo)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color(red: 0.25, green: 0.61, blue: 1))
+                    .foregroundStyle(Color(red: 100 / 255, green: 210 / 255, blue: 1))
                     .frame(minHeight: 44)
             }
         }

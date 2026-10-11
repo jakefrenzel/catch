@@ -71,6 +71,9 @@ jobs:
           shot inbox-light light -showInbox
           shot inbox-dark dark -showInbox
           shot someday-light light -showSomeday
+          shot remind-light light -openRemind
+          shot remind-picker-dark dark -openRemind -remindPicking
+          shot swap-light light -openSwap
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
