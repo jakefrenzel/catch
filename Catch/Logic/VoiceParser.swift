@@ -198,10 +198,11 @@ enum VoiceParser {
             .trimmingCharacters(in: .punctuationCharacters)
     }
 
-    /// Same word, or one edit apart for words of four or more letters.
+    /// Same word, or one edit apart when both words have four or more letters
+    /// (so "renno" finds "reno", but "tip" doesn't find "trip").
     static func isClose(_ heard: String, _ target: String) -> Bool {
         if heard == target { return true }
-        guard target.count >= 4, abs(heard.count - target.count) <= 1 else { return false }
+        guard min(heard.count, target.count) >= 4, abs(heard.count - target.count) <= 1 else { return false }
         return editDistance(heard, target) <= 1
     }
 
