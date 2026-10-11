@@ -1,6 +1,6 @@
 name: Catch
 options:
-  bundleIdPrefix: com.jakefrenzel
+  bundleIdPrefix: com.buildmonkeys
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -22,7 +22,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleURLTypes:
-          - CFBundleURLName: com.jakefrenzel.catch
+          - CFBundleURLName: com.buildmonkeys.catch
             CFBundleURLSchemes: [catch]
         # The Action button's listening session keeps recording in the background.
         UIBackgroundModes: [audio]
@@ -32,12 +32,12 @@ targets:
       path: Catch/Catch.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.jakefrenzel.catch
+          - group.com.buildmonkeys.catch
     dependencies:
       - target: CatchWidgets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.jakefrenzel.catch
+        PRODUCT_BUNDLE_IDENTIFIER: com.buildmonkeys.catch
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Catch
@@ -71,10 +71,10 @@ targets:
       path: CatchWidgets/CatchWidgets.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.jakefrenzel.catch
+          - group.com.buildmonkeys.catch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.jakefrenzel.catch.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.buildmonkeys.catch.widgets
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         SKIP_INSTALL: YES

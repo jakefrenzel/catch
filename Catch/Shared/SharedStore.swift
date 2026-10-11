@@ -7,7 +7,7 @@ import Foundation
 /// same file with a plain `ModelContainer(for:)`. Without the entitlement (an
 /// unsigned CI build) each falls back to its own storage.
 enum SharedStore {
-    static let appGroup = "group.com.jakefrenzel.catch"
+    static let appGroup = "group.com.buildmonkeys.catch"
 
     /// Settings and small bits of state both processes read.
     static var defaults: UserDefaults {

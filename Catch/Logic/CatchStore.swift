@@ -37,7 +37,7 @@ final class CatchStore {
     var onChange: (() -> Void)?
     /// Called when a save fails; the change has been rolled back.
     var onSaveFailure: (() -> Void)?
-    private let log = Logger(subsystem: "com.jakefrenzel.catch", category: "store")
+    private let log = Logger(subsystem: "com.buildmonkeys.catch", category: "store")
 
     init(context: ModelContext,
          settingsStore: SettingsStore,
