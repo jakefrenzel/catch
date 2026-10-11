@@ -124,7 +124,7 @@ struct SettingsSheet: View {
 
                 Section {
                     valueRow("Replay the Tutorial", icon: "arrow.counterclockwise", value: nil) {
-                        model.notBuiltYet("The tutorial")
+                        model.replayOnboarding()
                     }
                 }
             }

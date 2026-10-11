@@ -36,6 +36,7 @@ struct CatchApp: App {
         let model = AppModel(store: store, settingsStore: settingsStore, notifications: scheduler, voice: voice)
         notificationDelegate.model = model
         UNUserNotificationCenter.current().delegate = notificationDelegate
+        model.startOnboardingIfNeeded()
         _model = State(initialValue: model)
     }
 

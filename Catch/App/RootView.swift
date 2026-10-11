@@ -19,19 +19,35 @@ struct RootView: View {
         ZStack(alignment: .bottom) {
             Theme.bg.ignoresSafeArea()
 
-            switch model.tab {
-            case .today:
-                NavigationStack(path: $model.projectPath) {
-                    TodayView()
-                        .navigationDestination(for: Project.self) { project in
-                            ProjectDetailView(project: project)
-                        }
+            Group {
+                switch model.tab {
+                case .today:
+                    NavigationStack(path: $model.projectPath) {
+                        TodayView()
+                            .navigationDestination(for: Project.self) { project in
+                                ProjectDetailView(project: project)
+                            }
+                    }
+                case .inbox: InboxView()
+                case .someday: SomedayView()
                 }
-            case .inbox: InboxView()
-            case .someday: SomedayView()
+            }
+            .disabled(model.onboarding != nil)
+
+            if model.onboarding == .hold {
+                // Step 1 dims everything but + (which sits above this layer).
+                Color.black.opacity(0.55)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
             }
 
             VStack(spacing: 12) {
+                if model.onboarding == .hold {
+                    OnboardingHoldPrompt { model.skipOnboarding() }
+                        .padding(.horizontal, 20)
+                        .transition(.opacity)
+                }
                 if let upFirst, model.showsPinnedUpFirst {
                     PinnedUpFirstBar(candidate: upFirst,
                                      onDone: { model.complete(upFirst) },
@@ -42,7 +58,15 @@ struct RootView: View {
                 HStack(spacing: 14) {
                     FloatingTabBar(selection: $model.tab,
                                    inboxCount: items.filter { $0.list == .inbox }.count)
-                    CaptureButton(onTap: { model.isCaptureOpen = true },
+                        .opacity(model.onboarding == .hold ? 0.35 : 1)
+                        .disabled(model.onboarding != nil)
+                    CaptureButton(onTap: {
+                                      if model.onboarding == .hold {
+                                          model.tapCaptureDuringOnboarding()
+                                      } else {
+                                          model.isCaptureOpen = true
+                                      }
+                                  },
                                   onHoldStart: { model.startListening() },
                                   onHoldEnd: { save in Task { await model.stopListening(save: save) } })
                 }
@@ -59,6 +83,12 @@ struct RootView: View {
                         .transition(.opacity)
                     VoiceSheet(startedAt: model.listeningStartedAt)
                         .transition(reduceMotion ? .opacity : .move(edge: .bottom))
+                    if model.onboarding == .talk {
+                        OnboardingTalkCoach()
+                            .frame(maxHeight: .infinity, alignment: .top)
+                            .padding(.top, 96)
+                            .padding(.horizontal, 20)
+                    }
                 }
                 .ignoresSafeArea(edges: .bottom)
                 // The finger is still on +; only VoiceOver needs to touch the sheet.
@@ -66,6 +96,13 @@ struct RootView: View {
             }
         }
         .animation(reduceMotion ? nil : .catchEaseOut(0.34), value: model.isListening)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: model.onboarding)
+        .overlay {
+            if model.onboarding == .welcome {
+                WelcomeView { model.beginOnboarding() }
+                    .transition(.opacity)
+            }
+        }
         .background(ToastWindowInstaller(model: model))
         .sheet(isPresented: $model.isCaptureOpen) {
             CaptureSheet()
@@ -79,6 +116,7 @@ struct RootView: View {
             case .settings: SettingsSheet()
             case .micDenied: MicDeniedSheet()
             case .voiceRetry(let heard): VoiceRetrySheet(heard: heard)
+            case .onboardingPermission(let date): OnboardingPermissionSheet(reminderDate: date)
             }
         }
         .fullScreenCover(item: $model.focus) { candidate in
@@ -123,6 +161,12 @@ struct RootView: View {
             }
             if arguments.contains("-openNewProject") { model.sheet = .newProject }
             if arguments.contains("-openSettings") { model.sheet = .settings }
+            if arguments.contains("-onboardingWelcome") { model.onboarding = .welcome }
+            if arguments.contains("-onboardingHold") { model.onboarding = .hold }
+            if arguments.contains("-onboardingPermission"), let date = items.first(where: { $0.list == .later })?.remindAt {
+                model.onboarding = .permission
+                model.sheet = .onboardingPermission(date)
+            }
             if arguments.contains("-startVoice") { model.startListening() }
             if arguments.contains("-openMicDenied") { model.sheet = .micDenied }
             if arguments.contains("-openVoiceRetry") {

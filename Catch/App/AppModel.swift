@@ -22,6 +22,8 @@ final class AppModel {
         case micDenied
         /// 10b: what was heard, to fix before saving.
         case voiceRetry(String)
+        /// 8a step 3, asking about reminders for the first item.
+        case onboardingPermission(Date)
 
         var id: String {
             switch self {
@@ -32,8 +34,20 @@ final class AppModel {
             case .settings: return "settings"
             case .micDenied: return "mic-denied"
             case .voiceRetry(let text): return "voice-retry-\(text)"
+            case .onboardingPermission: return "onboarding-permission"
             }
         }
+    }
+
+    /// 8a: first launch walks through one spoken capture.
+    enum OnboardingStep: Equatable {
+        case welcome
+        /// 1 of 3: hold + and talk.
+        case hold
+        /// 2 of 3: listening, waiting to hear a time.
+        case talk
+        /// 3 of 3: the reminders question.
+        case permission
     }
 
     struct Toast: Identifiable, Equatable {
@@ -46,6 +60,7 @@ final class AppModel {
     let settingsStore: SettingsStore
 
     var tab: Tab = .today
+    var onboarding: OnboardingStep?
     var isCaptureOpen = false
     var sheet: Sheet?
     /// Today's navigation stack: empty, or the open Project Detail.
@@ -85,7 +100,7 @@ final class AppModel {
 
     /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        focus == nil && !isCaptureOpen && sheet == nil && !isEvening && !isListening
+        focus == nil && !isCaptureOpen && sheet == nil && !isEvening && !isListening && onboarding == nil
             && (tab != .today || upFirstCardScrolledAway || !projectPath.isEmpty)
     }
 
@@ -154,6 +169,75 @@ final class AppModel {
 
     // MARK: - Voice
 
+    // MARK: - First launch
+
+    /// Shows the welcome screen on a fresh install. Anyone who already has
+    /// items (an update, or demo data) skips it.
+    func startOnboardingIfNeeded() {
+        guard !settingsStore.hasOnboarded else { return }
+        if store.allItems().isEmpty && store.projects().isEmpty {
+            onboarding = .welcome
+        } else {
+            settingsStore.hasOnboarded = true
+        }
+    }
+
+    func beginOnboarding() {
+        tab = .today
+        projectPath = []
+        onboarding = .hold
+    }
+
+    func skipOnboarding() {
+        onboarding = nil
+        settingsStore.hasOnboarded = true
+    }
+
+    /// Settings → Replay the Tutorial. Keeps everything the user has.
+    func replayOnboarding() {
+        sheet = nil
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            onboarding = .welcome
+        }
+    }
+
+    /// A plain tap on + during step 1.
+    func tapCaptureDuringOnboarding() {
+        flash("Hold it down to talk", undo: false)
+    }
+
+    /// Step 3's buttons. "Not Now" turns reminders off, so Today shows 10c.
+    func finishOnboarding(allowReminders: Bool) async {
+        sheet = nil
+        onboarding = nil
+        settingsStore.hasOnboarded = true
+        if allowReminders {
+            let granted = await notifications.requestAuthorization()
+            settingsStore.settings.notifications = granted
+            flash(granted ? "Reminders are on" : "You can turn reminders on later", undo: false)
+        } else {
+            settingsStore.settings.notifications = false
+            flash("You can turn reminders on later", undo: false)
+        }
+        await syncReminders()
+    }
+
+    /// Step 2 ends: saved only once a time was heard, otherwise back to step 1.
+    private func finishOnboardingVoice(_ result: VoiceResult, saved: Bool) {
+        let parse = parseVoice(result.transcript)
+        guard saved, let date = parse.date, !parse.title.isEmpty else {
+            onboarding = .hold
+            if saved { flash("Keep holding until you’ve said the time", undo: false) }
+            return
+        }
+        capture(parse.title, to: .later, remindAt: date)
+        onboarding = .permission
+        sheet = .onboardingPermission(date)
+    }
+
+    // MARK: - Voice
+
     /// Hold +: start listening, or explain why not.
     func startListening() {
         switch voice.permission() {
@@ -173,6 +257,7 @@ final class AppModel {
                 try voice.start(language: settings.voiceLanguage)
                 listeningStartedAt = .now
                 isListening = true
+                if onboarding == .hold { onboarding = .talk }
                 haptic(.medium)
             } catch {
                 flash("Listening isn't available right now", undo: false)
@@ -186,10 +271,15 @@ final class AppModel {
         guard save else {
             voice.cancel()
             isListening = false
+            if onboarding == .talk { onboarding = .hold }
             return
         }
         let result = await voice.stop()
         isListening = false
+        if onboarding == .talk {
+            finishOnboardingVoice(result, saved: true)
+            return
+        }
         saveVoice(result)
     }
 
