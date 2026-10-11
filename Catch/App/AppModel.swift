@@ -21,6 +21,7 @@ final class AppModel {
     let settingsStore: SettingsStore
 
     var tab: Tab = .today
+    var isCaptureOpen = false
     var upFirst = UpFirst()
     /// The Up first suggestion open in Focus.
     var focus: UpFirstCandidate?
@@ -37,9 +38,24 @@ final class AppModel {
 
     var settings: CatchSettings { settingsStore.settings }
 
-    /// Pinned Up first bar: shown when the card isn't on screen.
+    /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        focus == nil && (tab != .today || upFirstCardScrolledAway)
+        focus == nil && !isCaptureOpen && (tab != .today || upFirstCardScrolledAway)
+    }
+
+    // MARK: - Capture
+
+    /// Saves a new item and says where it went. Returns false for empty text.
+    @discardableResult
+    func capture(_ text: String, to list: ListKind, remindAt: Date? = nil) -> Bool {
+        guard let result = store.capture(text, to: list, remindAt: remindAt) else { return false }
+        if result.redirectedToInbox {
+            haptic(.warning)
+            flash("Now is full. Saved to Inbox", undo: true)
+        } else {
+            flash("Saved to \(result.item.list.title)", undo: true)
+        }
+        return true
     }
 
     // MARK: - Items

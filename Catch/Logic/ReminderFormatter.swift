@@ -28,6 +28,13 @@ struct ReminderFormatter {
         return "\(format(date, .dateTime.month(.abbreviated).day())) \(time)"
     }
 
+    /// The time part of a quick-time chip: "7 PM", or "Sat 10 AM" for the weekend.
+    func detail(for quickTime: QuickTime) -> String {
+        let time = timeLabel(quickTime.date)
+        guard quickTime.kind == .weekend else { return time }
+        return "\(format(quickTime.date, .dateTime.weekday(.abbreviated))) \(time)"
+    }
+
     /// "9 AM" on the hour, "5:30 PM" otherwise.
     private func timeLabel(_ date: Date) -> String {
         let minute = calendar.component(.minute, from: date)

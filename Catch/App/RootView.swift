@@ -34,7 +34,7 @@ struct RootView: View {
                 HStack(spacing: 14) {
                     FloatingTabBar(selection: $model.tab,
                                    inboxCount: items.filter { $0.list == .inbox }.count)
-                    CaptureButton(onTap: { model.notBuiltYet("Capture") },
+                    CaptureButton(onTap: { model.isCaptureOpen = true },
                                   onHold: { model.notBuiltYet("Voice capture") })
                 }
                 .padding(.horizontal, 20)
@@ -42,15 +42,10 @@ struct RootView: View {
             .padding(.bottom, 8)
             .animation(reduceMotion ? nil : .catchEaseOut(0.28), value: model.showsPinnedUpFirst && upFirst != nil)
         }
-        .overlay(alignment: .top) {
-            if let toast = model.toast {
-                ToastView(toast: toast, onUndo: { model.undo() })
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-            }
+        .background(ToastWindowInstaller(model: model))
+        .sheet(isPresented: $model.isCaptureOpen) {
+            CaptureSheet()
         }
-        .animation(reduceMotion ? nil : .catchEaseOut(0.3), value: model.toast)
         .fullScreenCover(item: $model.focus) { candidate in
             FocusView(candidate: candidate,
                       onDone: { model.finishFocus() },
@@ -58,6 +53,18 @@ struct RootView: View {
                       onClose: { model.focus = nil })
         }
         .preferredColorScheme(colorScheme)
+        #if DEBUG
+        .task {
+            // Used by CI to screenshot the capture sheet and a toast.
+            let arguments = ProcessInfo.processInfo.arguments
+            try? await Task.sleep(for: .milliseconds(500))
+            if arguments.contains("-openCapture") { model.isCaptureOpen = true }
+            if arguments.contains("-sampleToast") {
+                try? await Task.sleep(for: .seconds(4))  // still showing when CI captures at 6 s
+                model.flash("Saved to Inbox", undo: false)
+            }
+        }
+        #endif
     }
 
     private var colorScheme: ColorScheme? {

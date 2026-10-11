@@ -10,6 +10,8 @@ enum Theme {
     static let ink4 = Color(.tertiaryLabel)
     static let sep = Color(light: rgba(60, 60, 67, 0.12), dark: rgba(84, 84, 88, 0.6))
     static let fill = Color(light: rgba(120, 120, 128, 0.14), dark: rgba(120, 120, 128, 0.3))
+    /// The selected segment in a segmented control.
+    static let seg = Color(light: .white, dark: rgba(99, 99, 102, 1))
 
     static let blue = Color(.systemBlue)
     static let orange = Color(.systemOrange)
