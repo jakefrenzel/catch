@@ -96,6 +96,13 @@ jobs:
           shot widgets-dark dark -widgetGallery
           shot widgets-medium-light light -widgetGallery -medium
           shot live-activity light -widgetGallery -activity
+          # Dynamic Type: the design previews text up to about 130%.
+          xcrun simctl ui "$UDID" content_size extra-extra-extra-large
+          shot large-text-today light
+          shot large-text-inbox light -showInbox
+          shot large-text-capture light -openCapture
+          shot large-text-remind light -openRemind
+          xcrun simctl ui "$UDID" content_size large
           shot voice-language light -openVoiceLanguage
 
       - name: Upload screenshots

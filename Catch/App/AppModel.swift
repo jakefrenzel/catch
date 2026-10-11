@@ -655,11 +655,6 @@ final class AppModel {
         store.undo()
     }
 
-    /// Placeholder for screens that aren't built yet.
-    func notBuiltYet(_ name: String) {
-        flash("\(name) isn't built yet", undo: false)
-    }
-
     func haptic(_ haptic: Haptic) {
         guard settings.haptics else { return }
         haptic.play()
