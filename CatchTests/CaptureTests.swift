@@ -44,7 +44,7 @@ final class CaptureMessageTests: XCTestCase {
     private func makeModel() throws -> (AppModel, TestEnvironment) {
         let env = try TestEnvironment()
         env.settingsStore.settings.haptics = false
-        return (AppModel(store: env.store, settingsStore: env.settingsStore), env)
+        return (AppModel(store: env.store, settingsStore: env.settingsStore, notifications: FakeNotifications()), env)
     }
 
     func testSavedToast() throws {

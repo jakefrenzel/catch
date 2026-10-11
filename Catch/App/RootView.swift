@@ -76,7 +76,13 @@ struct RootView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.refreshClock() }
+            if phase == .active {
+                model.refreshClock()
+                model.scheduleReminderSync()
+            }
+        }
+        .onChange(of: model.settings) { old, new in
+            model.settingsChanged(from: old, to: new)
         }
         #if DEBUG
         .task {

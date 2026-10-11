@@ -26,6 +26,28 @@ final class TestClock {
     }
 }
 
+/// Records what would be scheduled instead of touching the notification center.
+@MainActor
+final class FakeNotifications: NotificationScheduling {
+    var currentPermission: NotificationPermission = .allowed
+    var grantsPermission = true
+    var requestCount = 0
+    var openedSystemSettings = false
+    var pending: [PlannedReminder] = []
+
+    func permission() async -> NotificationPermission { currentPermission }
+
+    func requestAuthorization() async -> Bool {
+        requestCount += 1
+        currentPermission = grantsPermission ? .allowed : .denied
+        return grantsPermission
+    }
+
+    func replacePending(with reminders: [PlannedReminder]) async { pending = reminders }
+
+    func openSystemSettings() { openedSystemSettings = true }
+}
+
 /// A store backed by an in-memory database and throwaway settings.
 @MainActor
 struct TestEnvironment {

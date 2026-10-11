@@ -59,9 +59,14 @@ final class AppModel {
     /// Set while "Created X" can be undone, so Undo can close its detail screen first.
     private var undoableNewProject: Project?
 
-    init(store: CatchStore, settingsStore: SettingsStore) {
+    let notifications: NotificationScheduling
+    private var syncTask: Task<Void, Never>?
+
+    init(store: CatchStore, settingsStore: SettingsStore, notifications: NotificationScheduling) {
         self.store = store
         self.settingsStore = settingsStore
+        self.notifications = notifications
+        store.onChange = { [weak self] in self?.scheduleReminderSync() }
     }
 
     var settings: CatchSettings { settingsStore.settings }
@@ -94,6 +99,7 @@ final class AppModel {
         if settingsStore.lastActiveDay != today {
             settingsStore.lastActiveDay = today
         }
+        store.promoteOverdueLaterItems()
     }
 
     /// The evening card's Finish: moves what's left to tomorrow and closes the day.
@@ -127,6 +133,9 @@ final class AppModel {
             flash("Now is full. Saved to Inbox", undo: true)
         } else {
             flash("Saved to \(result.item.list.title)", undo: true)
+        }
+        if result.item.list == .later {
+            Task { await ensureNotificationPermission() }
         }
         return true
     }
@@ -210,6 +219,7 @@ final class AppModel {
         sheet = nil
         haptic(.light)
         flash("Reminder set: \(label)", undo: true)
+        Task { await ensureNotificationPermission() }
     }
 
     func swap(incoming: Item, outgoing: Item) {
@@ -297,10 +307,79 @@ final class AppModel {
 
     // MARK: - Settings shortcuts
 
-    func turnOnNotifications() {
-        // TODO: request notification permission once reminders are scheduled.
-        settingsStore.settings.notifications = true
-        flash("Reminders are on", undo: false)
+    /// "Turn On" on the Reminders-are-off banner.
+    func turnOnNotifications() async {
+        switch await notifications.permission() {
+        case .allowed:
+            settingsStore.settings.notifications = true
+            flash("Reminders are on", undo: false)
+        case .notDetermined:
+            let granted = await notifications.requestAuthorization()
+            settingsStore.settings.notifications = granted
+            flash(granted ? "Reminders are on" : "Reminders stay off", undo: false)
+        case .denied:
+            // iOS won't ask again; send them to Settings.
+            notifications.openSystemSettings()
+        }
+        await syncReminders()
+    }
+
+    /// Asks for permission the first time it's needed. If the answer is no,
+    /// the Notifications setting turns off so Today shows the banner.
+    func ensureNotificationPermission() async {
+        guard settings.notifications else { return }
+        switch await notifications.permission() {
+        case .allowed:
+            break
+        case .notDetermined:
+            if !(await notifications.requestAuthorization()) {
+                settingsStore.settings.notifications = false
+            }
+        case .denied:
+            settingsStore.settings.notifications = false
+        }
+        await syncReminders()
+    }
+
+    func settingsChanged(from old: CatchSettings, to new: CatchSettings) {
+        if new.notifications && !old.notifications {
+            Task { await ensureNotificationPermission() }
+        } else {
+            scheduleReminderSync()
+        }
+    }
+
+    // MARK: - Reminders
+
+    /// Reschedules shortly after changes settle, so a burst of edits makes one pass.
+    func scheduleReminderSync() {
+        syncTask?.cancel()
+        syncTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            await self?.syncReminders()
+        }
+    }
+
+    func syncReminders() async {
+        let planned = settings.notifications
+            ? ReminderPlanner.plan(items: store.allItems(), now: store.currentDate(), nudgeDefault: settings.nudgeDefault)
+            : []
+        await notifications.replacePending(with: planned)
+    }
+
+    /// Done or In 1 Hour on an alert, or a tap on it.
+    func handleNotificationAction(_ action: String, itemID: UUID) {
+        guard let item = store.allItems().first(where: { $0.id == itemID }) else { return }
+        switch action {
+        case NotificationAction.done:
+            store.setDone(item, true)
+        case NotificationAction.snooze:
+            store.snooze(item)
+        default:
+            tab = .today
+            projectPath = []
+        }
     }
 
     // MARK: - Toasts and haptics

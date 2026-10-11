@@ -1,9 +1,11 @@
 import SwiftData
 import SwiftUI
+import UserNotifications
 
 @main
 struct CatchApp: App {
     private let container: ModelContainer
+    private let notificationDelegate = NotificationDelegate()
     @State private var model: AppModel
 
     init() {
@@ -22,7 +24,12 @@ struct CatchApp: App {
             SampleData.seedIfEmpty(store)
         }
         #endif
-        _model = State(initialValue: AppModel(store: store, settingsStore: settingsStore))
+        let scheduler = SystemNotificationScheduler()
+        scheduler.registerCategories()
+        let model = AppModel(store: store, settingsStore: settingsStore, notifications: scheduler)
+        notificationDelegate.model = model
+        UNUserNotificationCenter.current().delegate = notificationDelegate
+        _model = State(initialValue: model)
     }
 
     var body: some Scene {

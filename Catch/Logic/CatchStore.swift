@@ -28,6 +28,8 @@ final class CatchStore {
     let calendar: Calendar
     private let now: () -> Date
     private var undoAction: (() -> Void)?
+    /// Called after every save, so reminders can be rescheduled.
+    var onChange: (() -> Void)?
     private let log = Logger(subsystem: "com.jakefrenzel.catch", category: "store")
 
     init(context: ModelContext,
@@ -213,6 +215,35 @@ final class CatchStore {
         return open.count
     }
 
+    /// An ignored Later reminder comes into Now once its time (and nudge, if
+    /// any) has passed, as long as Now has room. Not undoable; returns what moved.
+    @discardableResult
+    func promoteOverdueLaterItems() -> [Item] {
+        let current = now()
+        var promoted: [Item] = []
+        for item in allItems() where item.list == .later && !item.isDone {
+            guard case .date(let date)? = item.reminder else { continue }
+            let due = date.addingTimeInterval(nudges(item) ? ReminderPlanner.nudgeDelay : 0)
+            guard due <= current, !isNowFull else { continue }
+            applyMove(item, to: .now, remindAt: nil)
+            promoted.append(item)
+        }
+        if !promoted.isEmpty {
+            undoAction = nil
+            save()
+        }
+        return promoted
+    }
+
+    /// "In 1 Hour" on a reminder alert.
+    func snooze(_ item: Item, by interval: TimeInterval = 60 * 60) {
+        recordUndo(restoring: [item])
+        item.list = .later
+        item.reminder = .date(now().addingTimeInterval(interval))
+        item.reason = nil
+        save()
+    }
+
     /// Next morning: brings back everything moved to tomorrow. Not undoable.
     func carryOverFromLastNight() {
         undoAction = nil
@@ -340,5 +371,6 @@ final class CatchStore {
         } catch {
             log.error("Save failed: \(error.localizedDescription)")
         }
+        onChange?()
     }
 }

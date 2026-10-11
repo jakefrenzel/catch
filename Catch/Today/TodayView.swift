@@ -188,7 +188,7 @@ struct TodayView: View {
         let notificationsOn = model.settings.notifications
         return Section {
             if !notificationsOn && !laterItems.isEmpty {
-                RemindersOffBanner { model.turnOnNotifications() }
+                RemindersOffBanner { Task { await model.turnOnNotifications() } }
             }
             if laterItems.isEmpty {
                 EmptyRow(text: "No reminders set.")
