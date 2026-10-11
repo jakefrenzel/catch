@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import UIKit
 
 /// 11g: one listening session started from the Action button. Starts a Live
 /// Activity, listens with the app's speech input, mirrors the transcript into
@@ -43,7 +44,7 @@ final class VoiceActivityController {
         do {
             activity = try Activity.request(
                 attributes: VoiceActivityAttributes(),
-                content: ActivityContent(state: .listening(model.parseVoice("")), staleDate: nil))
+                content: ActivityContent(state: .listening(model.parseVoice("", includeProjects: false)), staleDate: nil))
         } catch {
             throw StartFailure.liveActivitiesOff
         }
@@ -71,6 +72,9 @@ final class VoiceActivityController {
         defer { isFinishing = false }
         monitor?.cancel()
         monitor = nil
+        // An auto-save on silence has no intent keeping the app running; ask for
+        // time to save, schedule the reminder and take the banner down.
+        let background = UIApplication.shared.beginBackgroundTask(withName: "Catch save")
 
         let result = await model.voice.stop()
         model.isBackgroundListening = false
@@ -90,6 +94,7 @@ final class VoiceActivityController {
         Task {
             try? await Task.sleep(for: .seconds(Self.confirmation))
             await activity.end(content, dismissalPolicy: .immediate)
+            UIApplication.shared.endBackgroundTask(background)
         }
     }
 
@@ -118,7 +123,8 @@ final class VoiceActivityController {
             if text != lastText {
                 lastText = text
                 lastChange = .now
-                await activity?.update(ActivityContent(state: .listening(model.parseVoice(text)), staleDate: nil))
+                await activity?.update(ActivityContent(
+                    state: .listening(model.parseVoice(text, includeProjects: false)), staleDate: nil))
             }
             let quiet = Date.now.timeIntervalSince(lastChange)
             let done = (!text.isEmpty && quiet >= Self.silence)

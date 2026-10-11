@@ -21,6 +21,8 @@ struct CatchThoughtIntent: AppIntent {
         guard let saved = ShortcutActions.catchThought(text, store: AppServices.shared.store) else {
             throw $text.needsValueError("What's on your mind?")
         }
+        // Siri runs this in a background launch; finish scheduling the reminder first.
+        await AppServices.shared.model.syncReminders()
         return .result(dialog: "Saved to \(saved.destination).", view: SavedSnippet(saved: saved))
     }
 }
@@ -42,12 +44,15 @@ struct AddToNowIntent: AppIntent {
         guard let saved = ShortcutActions.addToNow(text, store: AppServices.shared.store) else {
             throw $text.needsValueError("What should go in Now?")
         }
+        await AppServices.shared.model.syncReminders()
         return .result(dialog: "Saved to \(saved.destination).", view: SavedSnippet(saved: saved))
     }
 }
 
 struct UpFirstIntent: AppIntent {
     static let title: LocalizedStringResource = "What's Up First?"
+    /// Reads your list aloud, so not to whoever is holding a locked phone.
+    static let authenticationPolicy = IntentAuthenticationPolicy.requiresAuthentication
     static let description = IntentDescription("Tells you the one thing to do next.")
 
     @MainActor
@@ -60,6 +65,7 @@ struct UpFirstIntent: AppIntent {
 
 struct ReadNowListIntent: AppIntent {
     static let title: LocalizedStringResource = "Read My Now List"
+    static let authenticationPolicy = IntentAuthenticationPolicy.requiresAuthentication
     static let description = IntentDescription("Reads what's open in Now.")
 
     @MainActor
@@ -71,13 +77,16 @@ struct ReadNowListIntent: AppIntent {
 
 struct WrapUpDayIntent: AppIntent {
     static let title: LocalizedStringResource = "Wrap Up My Day"
+    static let authenticationPolicy = IntentAuthenticationPolicy.requiresAuthentication
     static let description = IntentDescription("Moves what's left in Now to tomorrow and finishes the day.")
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let services = AppServices.shared
         services.model.refreshClock()
-        return .result(dialog: "\(ShortcutActions.wrapUp(store: services.store, settingsStore: services.settingsStore))")
+        let summary = ShortcutActions.wrapUp(store: services.store, settingsStore: services.settingsStore)
+        await services.model.syncReminders()
+        return .result(dialog: "\(summary)")
     }
 }
 

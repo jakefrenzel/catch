@@ -12,6 +12,12 @@ final class VoiceParserTests: XCTestCase {
                           now: .now, calendar: calendar)
     }
 
+    func testAfterWorkIsAWholePhrase() throws {
+        let result = parse("Book the after workout massage")
+        XCTAssertNil(result.date)
+        XCTAssertEqual(result.title, "Book the after workout massage")
+    }
+
     func testTimeGoesToLater() throws {
         let result = parse("Remind me to call Dana tomorrow at 10 about the lease")
 

@@ -245,6 +245,49 @@ final class ListRulesTests: XCTestCase {
         XCTAssertEqual(Set(open.compactMap(\.reason)), ["Carried over from last night"])
     }
 
+    func testFlagFromAnOlderBuildWaitsForTheNextDay() throws {
+        let env = try TestEnvironment()
+        let item = env.add("A", to: .now)
+        // Set by a build that didn't record when.
+        item.movedToTomorrow = true
+        item.movedToTomorrowAt = nil
+
+        XCTAssertEqual(env.store.carryOverIfNewDay(), 0)
+        XCTAssertTrue(item.movedToTomorrow)
+        XCTAssertNotNil(item.movedToTomorrowAt)
+
+        env.clock.date = env.clock.at(day: 10, hour: 8)
+        XCTAssertEqual(env.store.carryOverIfNewDay(), 1)
+        XCTAssertFalse(item.movedToTomorrow)
+    }
+
+    func testSnoozeClearsMovedToTomorrow() throws {
+        let env = try TestEnvironment()
+        let item = env.add("A", to: .now)
+        env.store.moveToTomorrow(item)
+        env.store.snooze(item)
+
+        XCTAssertFalse(item.movedToTomorrow)
+        env.clock.date = env.clock.at(day: 10, hour: 8)
+        env.store.carryOverIfNewDay()
+        XCTAssertEqual(item.list, .later)
+        XCTAssertNil(item.reason)
+    }
+
+    func testCarryOverLeavesDoneItemsDone() throws {
+        let env = try TestEnvironment()
+        let item = env.add("A", to: .now)
+        env.store.moveToTomorrow(item)
+        env.store.setDone(item, true)
+
+        env.clock.date = env.clock.at(day: 10, hour: 8)
+        env.store.carryOverIfNewDay()
+
+        XCTAssertTrue(item.isDone)
+        XCTAssertEqual(item.list, .now)
+        XCTAssertNil(item.reason)
+    }
+
     func testCarryOverNeverOverfillsNow() throws {
         let env = try TestEnvironment()
         env.add("A", to: .now)

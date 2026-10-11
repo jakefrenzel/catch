@@ -131,10 +131,11 @@ struct NewProjectSheet: View {
         HStack(spacing: 8) {
             TextField("Phase name", text: row.text)
                 .font(.footnote.weight(.bold))
+                .textInputAutocapitalization(.characters)
                 .kerning(0.4)
                 .foregroundStyle(Theme.blue)
                 .accessibilityLabel("Phase name")
-            removeButton(for: row.wrappedValue.id)
+            removeButton(for: row.wrappedValue.id, named: "phase \(row.wrappedValue.text)")
         }
         .padding(.top, 12)
         .padding(.bottom, 4)
@@ -160,14 +161,14 @@ struct NewProjectSheet: View {
             if isFirst {
                 NextChip()
             }
-            removeButton(for: row.id)
+            removeButton(for: row.id, named: row.text)
         }
         .padding(.vertical, 10)
         .padding(.trailing, 12)
         .overlay(alignment: .bottom) { Theme.sep.frame(height: 1) }
     }
 
-    private func removeButton(for id: UUID) -> some View {
+    private func removeButton(for id: UUID, named name: String) -> some View {
         Button {
             rows.removeAll { $0.id == id }
         } label: {
@@ -179,7 +180,7 @@ struct NewProjectSheet: View {
                 .contentShape(Rectangle().inset(by: -8))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Remove")
+        .accessibilityLabel("Remove \(name)")
     }
 
     // MARK: - Inbox

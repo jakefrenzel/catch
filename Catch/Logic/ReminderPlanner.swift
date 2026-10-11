@@ -11,10 +11,11 @@ struct PlaceRegion: Equatable {
 
 /// One alert Catch wants iOS to deliver.
 struct PlannedReminder: Equatable {
-    enum Kind: Equatable { case main, nudge, place }
+    enum Kind: Equatable { case main, nudge, place, wrapUp }
 
     let id: String
-    let itemID: UUID
+    /// nil for the evening wrap-up alert, which isn't about one item.
+    let itemID: UUID?
     let kind: Kind
     let title: String
     let body: String
@@ -32,6 +33,18 @@ enum ReminderPlanner {
     static let limit = 60
     /// iOS watches at most 20 regions per app.
     static let placeLimit = 15
+
+    /// The evening wrap-up alert that onboarding promises: tonight, at the wrap-up
+    /// time, only when something is left in Now and the day isn't finished.
+    static func wrapUp(openInNow: Int, settings: CatchSettings, dayFinished: Bool,
+                       now: Date, calendar: Calendar) -> [PlannedReminder] {
+        guard settings.wrapUpStyle == .onToday, openInNow > 0, !dayFinished else { return [] }
+        let next = settings.wrapUpTime.next(after: now, calendar: calendar)
+        guard DayClock.isSameDay(next, now, calendar: calendar) else { return [] }
+        let body = openInNow == 1 ? "1 thing left for today." : "\(openInNow) things left for today."
+        return [PlannedReminder(id: "wrapup", itemID: nil, kind: .wrapUp, title: "Wrap up your day",
+                                body: body + " Move it on, then finish the day.", fireDate: next)]
+    }
 
     static func plan(items: [Item], now: Date, nudgeDefault: Bool) -> [PlannedReminder] {
         var result: [PlannedReminder] = []

@@ -74,7 +74,7 @@ struct InboxView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Text(ReminderFormatter().caughtLabel(for: item.capturedAt, now: .now))
                             .font(.subheadline)
-                            .foregroundStyle(Theme.ink3)
+                            .foregroundStyle(Theme.ink2)
                             .fixedSize()
                     }
                     .padding(.vertical, 12)

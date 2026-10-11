@@ -19,7 +19,7 @@ struct ProjectDetailView: View {
 
                 ForEach(Array(phases.enumerated()), id: \.element.id) { index, phase in
                     PhaseNode(phase: phase,
-                              state: state(of: index, current: current),
+                              state: state(of: index, current: current, isDone: phase.isDone),
                               previousName: index > 0 ? phases[index - 1].name : nil,
                               isLast: index == phases.count - 1,
                               nextStepID: project.nextStep?.id,
@@ -62,10 +62,11 @@ struct ProjectDetailView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func state(of index: Int, current: Int?) -> PhaseNode.State {
+    /// A phase finished ahead of the current one shows as done too.
+    private func state(of index: Int, current: Int?, isDone: Bool) -> PhaseNode.State {
         guard let current else { return .done }
-        if index < current { return .done }
-        return index == current ? .current : .upcoming
+        if index == current { return .current }
+        return index < current || isDone ? .done : .upcoming
     }
 
     private func addStep() {
@@ -118,7 +119,7 @@ private struct PhaseNode: View {
                 } else {
                     Text(phase.steps.map(\.text).joined(separator: " · "))
                         .font(.subheadline)
-                        .foregroundStyle(state == .upcoming ? Theme.ink3 : Theme.ink2)
+                        .foregroundStyle(Theme.ink2)
                         .lineSpacing(2)
                 }
             }
@@ -152,7 +153,7 @@ private struct PhaseNode: View {
         switch state {
         case .done: return Color.primary
         case .current: return Theme.blue
-        case .upcoming: return Theme.ink3
+        case .upcoming: return Theme.ink2
         }
     }
 

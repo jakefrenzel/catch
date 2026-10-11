@@ -83,9 +83,16 @@ final class EditTests: XCTestCase {
         model.saveEditAndPickTime(item, text: "A edited", note: "Note")
 
         XCTAssertEqual(item.text, "A edited")
-        XCTAssertEqual(item.list, .later)
+        // It only moves when a time is saved; closing the Remind sheet leaves it in Inbox.
+        XCTAssertEqual(item.list, .inbox)
         guard case .remind(let target)? = model.sheet else { return XCTFail("Expected the Remind sheet") }
         XCTAssertEqual(target, item)
+
+        model.setReminder(item, .date(env.clock.at(day: 10, hour: 9)), nudge: false, label: "Tomorrow morning")
+        XCTAssertEqual(item.list, .later)
+        model.undo()
+        XCTAssertEqual(item.list, .inbox, "Undo returns it to where it was")
+        XCTAssertEqual(item.text, "A edited")
     }
 
     func testDeleteFromEditor() throws {

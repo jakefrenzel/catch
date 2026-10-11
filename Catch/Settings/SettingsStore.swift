@@ -29,7 +29,15 @@ final class SettingsStore {
     private static let dayFinishedKey = "dayFinishedOn"
     private static let lastActiveDayKey = "lastActiveDay"
 
-    init(defaults: UserDefaults = .standard) {
+    /// `legacy` is where settings lived before they moved to the shared App Group;
+    /// they're copied over once.
+    init(defaults: UserDefaults = .standard, migratingFrom legacy: UserDefaults? = nil) {
+        if let legacy, legacy !== defaults, defaults.data(forKey: Self.key) == nil,
+           legacy.data(forKey: Self.key) != nil {
+            for key in [Self.key, Self.dayFinishedKey, Self.onboardedKey] {
+                if let value = legacy.object(forKey: key) { defaults.set(value, forKey: key) }
+            }
+        }
         self.defaults = defaults
         if let data = defaults.data(forKey: Self.key),
            let saved = try? JSONDecoder().decode(CatchSettings.self, from: data) {

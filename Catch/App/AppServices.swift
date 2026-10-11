@@ -24,9 +24,10 @@ final class AppServices {
         }
 
         // Shared with the widget extension through the App Group.
-        settingsStore = SettingsStore(defaults: SharedStore.defaults)
+        settingsStore = SettingsStore(defaults: SharedStore.defaults, migratingFrom: .standard)
         store = CatchStore(context: container.mainContext, settingsStore: settingsStore)
-        #if DEBUG
+        // Demo data only ever goes into the simulator, never a real phone's database.
+        #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("-seedSampleData") {
             SampleData.seedIfEmpty(store)
         }

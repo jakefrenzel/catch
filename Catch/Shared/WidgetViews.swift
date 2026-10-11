@@ -73,13 +73,13 @@ private struct TopSpot: View {
     @ViewBuilder
     private var buttons: some View {
         switch snapshot.mode {
-        case .upFirst(let itemID, let stepID, _, _):
+        case .upFirst(let itemID, let stepID, let title, _):
             HStack(spacing: 6) {
                 if let itemID {
-                    Button(intent: CompleteItemIntent(itemID: itemID)) { checkLabel }
+                    Button(intent: CompleteItemIntent(itemID: itemID)) { checkLabel(title) }
                         .buttonStyle(.plain)
                 } else if let stepID {
-                    Button(intent: CompleteStepIntent(stepID: stepID)) { checkLabel }
+                    Button(intent: CompleteStepIntent(stepID: stepID)) { checkLabel(title) }
                         .buttonStyle(.plain)
                 }
                 if let id = itemID ?? stepID {
@@ -87,16 +87,18 @@ private struct TopSpot: View {
                         secondaryLabel(compact ? nil : "Skip", icon: "forward.fill")
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Skip")
                 }
             }
-        case .laterDue(let itemID, _, _, _):
+        case .laterDue(let itemID, let title, _, _):
             HStack(spacing: 6) {
-                Button(intent: CompleteItemIntent(itemID: itemID)) { checkLabel }
+                Button(intent: CompleteItemIntent(itemID: itemID)) { checkLabel(title) }
                     .buttonStyle(.plain)
                 Button(intent: SnoozeItemIntent(itemID: itemID)) {
                     secondaryLabel(compact ? nil : "In 1 hour", icon: "clock.arrow.circlepath")
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Remind me in 1 hour")
             }
         case .evening(let left, _, _):
             if left > 0 {
@@ -105,6 +107,7 @@ private struct TopSpot: View {
                         secondaryLabel(compact ? nil : "To Tomorrow", icon: "arrow.right.to.line", tint: Theme.orangeText)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Move all to tomorrow")
                     if !compact {
                         Link(destination: URL(string: "catch://today")!) {
                             secondaryLabel("Review", icon: nil)
@@ -117,13 +120,13 @@ private struct TopSpot: View {
         }
     }
 
-    private var checkLabel: some View {
+    private func checkLabel(_ title: String) -> some View {
         Image(systemName: "checkmark")
             .font(.system(size: 13, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 30, height: 30)
             .background(Theme.blue, in: Circle())
-            .accessibilityLabel("Done")
+            .accessibilityLabel("Mark done: \(title)")
     }
 
     private func secondaryLabel(_ title: String?, icon: String?, tint: Color = Theme.blue) -> some View {
@@ -209,6 +212,8 @@ struct LockScreenUpFirst: View {
             Text(title)
                 .font(.headline)
                 .lineLimit(2)
+                // Hidden on a locked phone when the user has turned that on.
+                .privacySensitive()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -233,7 +238,8 @@ struct LockScreenInboxCount: View {
                 Text("\(count)")
                     .font(.title2.weight(.semibold))
                 Text("Inbox")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
+                    .minimumScaleFactor(0.7)
             }
         }
         .accessibilityLabel("\(count) in Inbox")

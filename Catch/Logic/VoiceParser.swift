@@ -73,8 +73,12 @@ enum VoiceParser {
 
     // MARK: - Steps
 
+    // Built once; the voice sheet parses on every transcript change.
+    private static let dateDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
+    private static let wordPattern = try? NSRegularExpression(pattern: "\\S+")
+
     private static func tokenize(_ ns: NSString) -> [Token] {
-        guard let regex = try? NSRegularExpression(pattern: "\\S+") else { return [] }
+        guard let regex = wordPattern else { return [] }
         return regex.matches(in: ns as String, range: NSRange(location: 0, length: ns.length)).map { match in
             let text = ns.substring(with: match.range)
             return Token(range: match.range, text: text, word: normalize(text))
@@ -109,7 +113,9 @@ enum VoiceParser {
             }),
         ]
         for (phrase, makeDate) in custom {
-            let range = lower.range(of: phrase)
+            // Whole words only: "after work" isn't in "after workout".
+            let pattern = "\\b" + NSRegularExpression.escapedPattern(for: phrase) + "\\b"
+            let range = lower.range(of: pattern, options: .regularExpression)
             if range.location != NSNotFound, let date = makeDate() {
                 found = (range, date)
                 break
@@ -117,7 +123,7 @@ enum VoiceParser {
         }
 
         if found == nil,
-           let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue),
+           let detector = dateDetector,
            let match = detector.firstMatch(in: ns as String, range: NSRange(location: 0, length: ns.length)),
            var date = match.date {
             // "at 9" said after 9 means tomorrow.

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UIKit
 import WidgetKit
 
 /// UI state shared across screens (tab, toast, Up first skips, Focus) and the
@@ -99,6 +100,9 @@ final class AppModel {
     var isTapToTalk = false
     private(set) var listeningStartedAt = Date.now
     private var syncTask: Task<Void, Never>?
+    private var syncChain: Task<Void, Never>?
+    /// Cancel was asked for while the last capture was still being finished.
+    private var discardPendingStop = false
 
     init(store: CatchStore, settingsStore: SettingsStore, notifications: NotificationScheduling,
          voice: VoiceInput? = nil) {
@@ -108,6 +112,10 @@ final class AppModel {
         self.voice = voice ?? SpeechVoiceInput()
         self.location = LocationService()
         store.onChange = { [weak self] in self?.scheduleReminderSync() }
+        store.onSaveFailure = { [weak self] in
+            self?.haptic(.warning)
+            self?.flash("Couldn't save that change. Try again.", undo: false)
+        }
     }
 
     var settings: CatchSettings { settingsStore.settings }
@@ -283,6 +291,14 @@ final class AppModel {
     /// Let go of +. Dragging away first cancels without saving.
     func stopListening(save: Bool) async {
         guard isListening else { return }
+        // Already finishing (a double tap on Save, or Cancel during the wait).
+        guard !isStoppingListening else {
+            if !save {
+                discardPendingStop = true
+                voice.cancel()
+            }
+            return
+        }
         isTapToTalk = false
         guard save else {
             voice.cancel()
@@ -294,6 +310,11 @@ final class AppModel {
         let result = await voice.stop()
         isStoppingListening = false
         isListening = false
+        if discardPendingStop {
+            discardPendingStop = false
+            if onboarding == .talk { onboarding = .hold }
+            return
+        }
         if onboarding == .talk {
             finishOnboardingVoice(result, saved: true)
             return
@@ -337,9 +358,11 @@ final class AppModel {
         }
     }
 
-    func parseVoice(_ text: String) -> VoiceParse {
+    /// `includeProjects` is off where saving ignores projects (Siri, the Action button),
+    /// so the preview doesn't promise a project step that won't happen.
+    func parseVoice(_ text: String, includeProjects: Bool = true) -> VoiceParse {
         VoiceParser.parse(text,
-                          projects: store.projects().map { .init(id: $0.id, name: $0.name) },
+                          projects: includeProjects ? store.projects().map { .init(id: $0.id, name: $0.name) } : [],
                           afterWork: settings.afterWork,
                           now: store.currentDate(),
                           calendar: store.calendar)
@@ -408,9 +431,11 @@ final class AppModel {
         }
     }
 
-    /// Edit sheet's "Remind me" row: keep the edits, then pick the time.
+    /// Edit sheet's "Remind me" row: keep the edits, then pick the time. The item
+    /// only moves to Later when the Remind sheet saves, so closing it leaves the
+    /// item where it was and Undo takes it back there.
     func saveEditAndPickTime(_ item: Item, text: String, note: String?) {
-        store.edit(item, text: text, note: note, list: .later)
+        store.edit(item, text: text, note: note, list: item.list)
         sheet = .remind(item)
     }
 
@@ -599,10 +624,26 @@ final class AppModel {
         }
     }
 
+    /// Reschedules every alert. Runs one at a time, so a slow pass can't re-add
+    /// alerts after a newer pass cleared them.
     func syncReminders() async {
-        let planned = settings.notifications
-            ? ReminderPlanner.plan(items: store.allItems(), now: store.currentDate(), nudgeDefault: settings.nudgeDefault)
-            : []
+        let previous = syncChain
+        let next = Task { @MainActor [weak self] in
+            await previous?.value
+            await self?.performReminderSync()
+        }
+        syncChain = next
+        await next.value
+    }
+
+    private func performReminderSync() async {
+        var planned: [PlannedReminder] = []
+        if settings.notifications {
+            let now = store.currentDate()
+            planned = ReminderPlanner.plan(items: store.allItems(), now: now, nudgeDefault: settings.nudgeDefault)
+            planned += ReminderPlanner.wrapUp(openInNow: store.openNowItems.count, settings: settings,
+                                              dayFinished: isDayFinished, now: now, calendar: store.calendar)
+        }
         await notifications.replacePending(with: planned)
         // The same changes can change what the widgets show.
         WidgetCenter.shared.reloadAllTimelines()
@@ -675,8 +716,15 @@ final class AppModel {
         undoableNewProject = nil
         toast = Toast(message: message, canUndo: undo && store.canUndo,
                       undoVersion: undo ? store.undoVersion : nil)
+        // VoiceOver hears the toast, and assistive-tech users get time to reach Undo.
+        let assisted = UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
+        if UIAccessibility.isVoiceOverRunning {
+            UIAccessibility.post(notification: .announcement,
+                                 argument: toast?.canUndo == true ? "\(message). Undo available." : message)
+        }
+        let duration: Double = assisted ? 10 : 3.2
         toastTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(3.2))
+            try? await Task.sleep(for: .seconds(duration))
             guard !Task.isCancelled else { return }
             self?.toast = nil
         }

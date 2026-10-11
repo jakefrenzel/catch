@@ -11,6 +11,21 @@ struct FocusView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var timerSize: CGFloat = 64
 
     var body: some View {
+        // Fills the screen, and scrolls once large text makes it taller.
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .padding(.bottom, 14)
+                    .frame(minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .background(Theme.card.ignoresSafeArea())
+    }
+
+    private var content: some View {
         VStack(alignment: .leading) {
             HStack {
                 Text("Focus")
@@ -64,10 +79,6 @@ struct FocusView: View {
                 }
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 8)
-        .padding(.bottom, 14)
-        .background(Theme.card.ignoresSafeArea())
     }
 
     private func elapsed(until date: Date) -> String {

@@ -40,8 +40,10 @@ struct ProgressRing: View {
 
     var body: some View {
         ZStack {
-            Circle().stroke(Theme.fill, lineWidth: lineWidth)
+            // Inset by half the stroke so the ring stays inside its 26 pt.
+            Circle().inset(by: lineWidth / 2).stroke(Theme.fill, lineWidth: lineWidth)
             Circle()
+                .inset(by: lineWidth / 2)
                 .trim(from: 0, to: max(0, min(progress, 1)))
                 .stroke(progress >= 1 ? Theme.green : Theme.blue,
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))

@@ -40,12 +40,14 @@ struct CatchProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<CatchEntry>) -> Void) {
         let entries = entries(from: .now)
-        let midnight = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: .now)) ?? .now
-        completion(Timeline(entries: entries, policy: .after(midnight)))
+        let nextDay = DayClock.nextStart(after: .now, calendar: .current)
+        completion(Timeline(entries: entries, policy: .after(nextDay)))
     }
 
     private func entries(from now: Date) -> [CatchEntry] {
-        guard let container = try? ModelContainer(for: Schema(CatchSchema.models)) else {
+        // Read-only: only the app writes (and migrates) the shared store.
+        guard let container = try? ModelContainer(for: Schema(CatchSchema.models),
+                                                  configurations: ModelConfiguration(allowsSave: false)) else {
             return [CatchEntry(date: now, snapshot: .placeholder)]
         }
         let context = ModelContext(container)
@@ -61,6 +63,17 @@ struct CatchProvider: TimelineProvider {
                 at: date, items: items, projects: projects, settings: settings,
                 skipped: skipped, calendar: calendar, formatter: formatter))
         }
+    }
+}
+
+/// The mic button shows no data, so it never needs to read the store.
+struct MicProvider: TimelineProvider {
+    func placeholder(in context: Context) -> CatchEntry { CatchEntry(date: .now, snapshot: .placeholder) }
+    func getSnapshot(in context: Context, completion: @escaping (CatchEntry) -> Void) {
+        completion(placeholder(in: context))
+    }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<CatchEntry>) -> Void) {
+        completion(Timeline(entries: [placeholder(in: context)], policy: .never))
     }
 }
 
@@ -112,7 +125,7 @@ struct InboxCountWidget: Widget {
 /// 11f: a mic button under the clock that opens Catch listening.
 struct TalkWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "Talk", provider: CatchProvider()) { _ in
+        StaticConfiguration(kind: "Talk", provider: MicProvider()) { _ in
             LockScreenMic()
                 .widgetURL(URL(string: "catch://voice"))
                 .containerBackground(for: .widget) { Color.clear }
@@ -157,7 +170,9 @@ struct VoiceActivityWidget: Widget {
 struct CatchControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "CatchControl") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "catch://voice")!)) {
+            // An intent with openAppWhenRun, compiled into both targets: the documented way
+            // for a control to open the app and act.
+            ControlWidgetButton(action: StartTalkingIntent()) {
                 Label("Catch", systemImage: "mic.fill")
             }
         }

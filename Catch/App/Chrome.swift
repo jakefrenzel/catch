@@ -25,7 +25,7 @@ struct FloatingTabBar: View {
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: icon)
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                     .overlay(alignment: .topTrailing) {
                         if badge > 0 {
                             Text("\(badge)")
@@ -58,6 +58,7 @@ struct CaptureButton: View {
     let onHoldStart: () -> Void
     let onHoldEnd: (_ save: Bool) -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
     @State private var isHolding = false
     @State private var holdTimer: Task<Void, Never>?
@@ -72,7 +73,7 @@ struct CaptureButton: View {
             .frame(width: 62, height: 62)
             .background(Theme.blue, in: Circle())
             .shadow(color: Theme.blue.opacity(0.35), radius: 12, x: 0, y: 8)
-            .scaleEffect(isPressed ? 0.94 : 1)
+            .scaleEffect(isPressed && !reduceMotion ? 0.94 : 1)
             .animation(.easeOut(duration: 0.12), value: isPressed)
             .contentShape(Circle())
             .gesture(

@@ -113,7 +113,36 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertEqual(dates, [now,
                                env.clock.at(day: 9, hour: 17, minute: 30),
                                env.clock.at(day: 9, hour: 21),
-                               env.clock.at(day: 10, hour: 0)])
+                               env.clock.at(day: 10, hour: 4)])
+    }
+
+    func testAfterMidnightTheTimelineReachesTheMorning() throws {
+        let env = try TestEnvironment()
+        let now = env.clock.at(day: 10, hour: 0, minute: 30)
+
+        let dates = WidgetTimeline.entryDates(now: now, items: env.store.allItems(),
+                                              settings: env.store.settings, calendar: env.clock.calendar)
+
+        // The day turns over at 4 AM; tonight's wrap-up is the next evening's, not an entry now.
+        XCTAssertEqual(dates, [now, env.clock.at(day: 10, hour: 4)])
+    }
+
+    func testWidgetNowNeverShowsMoreThanTheLimit() throws {
+        let env = try TestEnvironment()
+        env.add("A", to: .now)
+        env.add("B", to: .now)
+        env.add("C", to: .now)
+        env.store.moveAllToTomorrow()
+        env.add("D", to: .now)
+        env.add("E", to: .now)
+
+        let morning = snapshot(env, at: env.clock.at(day: 10, hour: 8))
+
+        // B and C came back to a full Now; carry-over will send them to Inbox, so the widget skips them.
+        guard case .upFirst(_, _, let title, _) = morning.mode else { return XCTFail("Expected Up first") }
+        let shown = morning.list + [title]
+        XCTAssertFalse(shown.contains("B"))
+        XCTAssertFalse(shown.contains("C"))
     }
 
     func testDeepLinks() throws {

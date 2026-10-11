@@ -21,6 +21,26 @@ final class WrapUpTests: XCTestCase {
         XCTAssertFalse(isEvening(hour: 12))
     }
 
+    func testMorningWrapUpTimeIsNeverEvening() {
+        var settings = CatchSettings()
+        settings.wrapUpTime = TimeOfDay(hour: 4, minute: 30)
+        for hour in [5, 12, 23] {
+            XCTAssertFalse(WrapUp.isEvening(now: clock.at(day: 9, hour: hour), settings: settings,
+                                            calendar: clock.calendar))
+        }
+    }
+
+    func testDayTurnsOverAtFour() {
+        let calendar = clock.calendar
+        XCTAssertEqual(DayClock.day(of: clock.at(day: 10, hour: 3, minute: 59), calendar: calendar),
+                       clock.at(day: 9, hour: 0))
+        XCTAssertEqual(DayClock.day(of: clock.at(day: 10, hour: 4), calendar: calendar), clock.at(day: 10, hour: 0))
+        XCTAssertEqual(DayClock.nextStart(after: clock.at(day: 9, hour: 22), calendar: calendar),
+                       clock.at(day: 10, hour: 4))
+        XCTAssertEqual(DayClock.nextStart(after: clock.at(day: 10, hour: 1), calendar: calendar),
+                       clock.at(day: 10, hour: 4))
+    }
+
     func testMidnightWrapUpIsNotAllDay() {
         var settings = CatchSettings()
         settings.wrapUpTime = TimeOfDay(hour: 0, minute: 0)

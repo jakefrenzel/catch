@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// The tab content plus the floating chrome: tab bar, + button, pinned Up first bar and toasts.
 struct RootView: View {
@@ -58,7 +59,12 @@ struct RootView: View {
                 HStack(spacing: 14) {
                     FloatingTabBar(selection: $model.tab,
                                    inboxCount: items.filter { $0.list == .inbox }.count)
-                        .opacity(model.onboarding == .hold ? 0.35 : 1)
+                        // Dimmed like the rest of the app, but solid, so rows don't show through.
+                        .overlay {
+                            if model.onboarding == .hold {
+                                Capsule().fill(Color.black.opacity(0.55)).allowsHitTesting(false)
+                            }
+                        }
                         .disabled(model.onboarding != nil)
                     CaptureButton(onTap: {
                                       if model.onboarding == .hold {
@@ -72,7 +78,9 @@ struct RootView: View {
                 }
                 .padding(.horizontal, 20)
             }
-            .padding(.bottom, 8)
+            // 30 pt from the bottom edge, as in the handoff, on every iPhone.
+            .padding(.bottom, 30)
+            .ignoresSafeArea(.container, edges: .bottom)
             // Stay at the bottom behind the keyboard instead of riding up over text fields.
             .ignoresSafeArea(.keyboard)
             .animation(reduceMotion ? nil : .catchEaseOut(0.28), value: model.showsPinnedUpFirst && upFirst != nil)
@@ -93,6 +101,10 @@ struct RootView: View {
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
+                // VoiceOver stays in the sheet and starts there, not in the app behind it.
+                .accessibilityElement(children: .contain)
+                .accessibilityAddTraits(.isModal)
+                .onAppear { UIAccessibility.post(notification: .screenChanged, argument: nil) }
                 // The finger is still on +; only VoiceOver and tap-to-talk need to touch the sheet.
                 .allowsHitTesting(voiceOverEnabled || model.isTapToTalk)
             }

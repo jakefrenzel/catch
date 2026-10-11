@@ -2,6 +2,22 @@ import XCTest
 @testable import Catch
 
 final class SettingsTests: XCTestCase {
+    func testSettingsMoveToTheSharedStoreOnce() throws {
+        let legacy = try XCTUnwrap(UserDefaults(suiteName: "catch-tests-legacy-\(UUID().uuidString)"))
+        let shared = try XCTUnwrap(UserDefaults(suiteName: "catch-tests-shared-\(UUID().uuidString)"))
+        let old = SettingsStore(defaults: legacy)
+        old.settings.maxNow = 5
+        old.hasOnboarded = true
+
+        let moved = SettingsStore(defaults: shared, migratingFrom: legacy)
+
+        XCTAssertEqual(moved.settings.maxNow, 5)
+        XCTAssertTrue(moved.hasOnboarded)
+        // Later changes in the shared store aren't overwritten by the old copy.
+        moved.settings.maxNow = 4
+        XCTAssertEqual(SettingsStore(defaults: shared, migratingFrom: legacy).settings.maxNow, 4)
+    }
+
     private func freshDefaults() -> UserDefaults {
         UserDefaults(suiteName: "test-\(UUID().uuidString)")!
     }

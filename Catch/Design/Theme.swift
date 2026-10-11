@@ -6,10 +6,13 @@ enum Theme {
     static let bg = Color(.systemGroupedBackground)
     static let card = Color(.secondarySystemGroupedBackground)
     static let ink2 = Color(.secondaryLabel)
-    static let ink3 = Color(light: rgba(60, 60, 67, 0.45), dark: rgba(235, 235, 245, 0.42))
+    static let ink3 = Color(light: rgba(60, 60, 67, 0.45), dark: rgba(235, 235, 245, 0.42),
+                            lightContrast: rgba(60, 60, 67, 0.75), darkContrast: rgba(235, 235, 245, 0.72))
     static let ink4 = Color(.tertiaryLabel)
-    static let sep = Color(light: rgba(60, 60, 67, 0.12), dark: rgba(84, 84, 88, 0.6))
-    static let fill = Color(light: rgba(120, 120, 128, 0.14), dark: rgba(120, 120, 128, 0.3))
+    static let sep = Color(light: rgba(60, 60, 67, 0.12), dark: rgba(84, 84, 88, 0.6),
+                           lightContrast: rgba(60, 60, 67, 0.36), darkContrast: rgba(124, 124, 130, 1))
+    static let fill = Color(light: rgba(120, 120, 128, 0.14), dark: rgba(120, 120, 128, 0.3),
+                            lightContrast: rgba(120, 120, 128, 0.26), darkContrast: rgba(120, 120, 128, 0.46))
     /// The selected segment in a segmented control.
     static let seg = Color(light: .white, dark: rgba(99, 99, 102, 1))
 
@@ -36,8 +39,15 @@ enum Theme {
 }
 
 extension Color {
-    init(light: UIColor, dark: UIColor) {
-        self.init(uiColor: UIColor { $0.userInterfaceStyle == .dark ? dark : light })
+    /// The contrast versions are used when Increase Contrast is on.
+    init(light: UIColor, dark: UIColor, lightContrast: UIColor? = nil, darkContrast: UIColor? = nil) {
+        self.init(uiColor: UIColor { traits in
+            let high = traits.accessibilityContrast == .high
+            if traits.userInterfaceStyle == .dark {
+                return high ? darkContrast ?? dark : dark
+            }
+            return high ? lightContrast ?? light : light
+        })
     }
 }
 

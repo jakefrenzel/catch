@@ -13,6 +13,11 @@ struct ItemRow: View {
     var onTomorrow: (() -> Void)?
     var onSomeday: (() -> Void)?
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// At accessibility text sizes the control goes under the title, so the title keeps the width.
+    private var actionsBelow: Bool { typeSize.isAccessibilitySize }
+
     var body: some View {
         HStack(spacing: 12) {
             CheckCircle(isDone: item.isDone, color: accent, action: onToggle)
@@ -28,6 +33,10 @@ struct ItemRow: View {
                         .foregroundStyle(Theme.ink2)
                         .lineLimit(1)
                 }
+                if actionsBelow, let onTomorrow, let onSomeday {
+                    EveningRowActions(onTomorrow: onTomorrow, onSomeday: onSomeday)
+                        .padding(.top, 6)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
@@ -38,10 +47,16 @@ struct ItemRow: View {
             .accessibilityHint("Double-tap to edit.")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(.default, onEdit)
+            // Under the title the control is folded into this element, so offer it as actions.
+            .accessibilityActions {
+                if actionsBelow, let onTomorrow, let onSomeday {
+                    Button("Move to Tomorrow", action: onTomorrow)
+                    Button("Move to Someday", action: onSomeday)
+                }
+            }
 
-            if let onTomorrow, let onSomeday {
+            if !actionsBelow, let onTomorrow, let onSomeday {
                 EveningRowActions(onTomorrow: onTomorrow, onSomeday: onSomeday)
-                    .padding(.trailing, -6)
             }
 
             if showsTime, let reminder = item.reminder {

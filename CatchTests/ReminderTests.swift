@@ -146,6 +146,29 @@ final class NotificationFlowTests: XCTestCase {
         XCTAssertEqual(fake.pending.map(\.title), ["Call Dana", "Call Dana"])
     }
 
+    func testWrapUpAlertWhenSomethingIsLeft() async throws {
+        let (model, env, fake) = try makeModel()
+        env.add("A", to: .now)
+        env.add("B", to: .now)
+
+        await model.syncReminders()
+
+        let wrapUp = try XCTUnwrap(fake.pending.first { $0.kind == .wrapUp })
+        XCTAssertNil(wrapUp.itemID)
+        XCTAssertEqual(wrapUp.fireDate, env.clock.at(day: 9, hour: 21))
+        XCTAssertTrue(wrapUp.body.hasPrefix("2 things left"))
+
+        model.finishDay()
+        await model.syncReminders()
+        XCTAssertFalse(fake.pending.contains { $0.kind == .wrapUp }, "No alert once the day is finished")
+    }
+
+    func testNoWrapUpAlertWhenNowIsEmpty() async throws {
+        let (model, _, fake) = try makeModel()
+        await model.syncReminders()
+        XCTAssertTrue(fake.pending.isEmpty)
+    }
+
     func testSyncClearsEverythingWhenNotificationsAreOff() async throws {
         let (model, env, fake) = try makeModel()
         env.store.capture("Call Dana", to: .later, remindAt: env.clock.at(day: 10, hour: 9))

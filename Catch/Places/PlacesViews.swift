@@ -280,7 +280,10 @@ struct PlaceEditorView: View {
         if let placemark = try? await CLGeocoder().reverseGeocodeLocation(location).first {
             address = [placemark.name, placemark.locality].compactMap { $0 }.joined(separator: ", ")
         }
-        message = nil
+        // Without Precise Location the spot can be off by a few hundred metres.
+        message = model.location.isApproximate
+            ? "Precise Location is off, so this spot is approximate. Search the address, or turn Precise Location on in iOS Settings."
+            : nil
         moveCamera()
     }
 }

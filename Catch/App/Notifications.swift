@@ -59,9 +59,13 @@ final class SystemNotificationScheduler: NotificationScheduling {
             content.title = reminder.title
             content.body = reminder.body
             content.sound = .default
-            content.categoryIdentifier = NotificationAction.category
-            content.userInfo = [NotificationAction.itemIDKey: reminder.itemID.uuidString]
-            content.threadIdentifier = reminder.itemID.uuidString
+            if let itemID = reminder.itemID {
+                content.categoryIdentifier = NotificationAction.category
+                content.userInfo = [NotificationAction.itemIDKey: itemID.uuidString]
+                content.threadIdentifier = itemID.uuidString
+            } else {
+                content.threadIdentifier = "wrapup"
+            }
 
             let trigger: UNNotificationTrigger
             if let place = reminder.region {
@@ -87,21 +91,31 @@ final class SystemNotificationScheduler: NotificationScheduling {
 }
 
 /// Shows alerts while Catch is open and routes the Done / In 1 Hour buttons.
+/// Uses the completion-handler callbacks and calls them on the main thread, as
+/// iOS expects; the async versions can finish on a background thread.
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
-    weak var model: AppModel?
+    @MainActor weak var model: AppModel?
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list, .sound])
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse) async {
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
         let userInfo = response.notification.request.content.userInfo
-        guard let idString = userInfo[NotificationAction.itemIDKey] as? String,
-              let itemID = UUID(uuidString: idString) else { return }
+        let itemID = (userInfo[NotificationAction.itemIDKey] as? String).flatMap(UUID.init(uuidString:))
         let action = response.actionIdentifier
-        let model = await MainActor.run { [weak self] in self?.model }
-        await model?.handleNotificationAction(action, itemID: itemID)
+        Task { @MainActor in
+            if let itemID {
+                await self.model?.handleNotificationAction(action, itemID: itemID)
+            } else {
+                // The wrap-up alert: open Today.
+                self.model?.tab = .today
+            }
+            completionHandler()
+        }
     }
 }

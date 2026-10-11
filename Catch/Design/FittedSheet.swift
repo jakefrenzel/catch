@@ -2,7 +2,8 @@ import SwiftUI
 
 extension View {
     /// Presents this view as a bottom sheet exactly as tall as its content,
-    /// with the handoff's 38 pt corners and grouped background.
+    /// with the handoff's 38 pt corners and grouped background. Content taller
+    /// than the screen (large text sizes) scrolls instead of being clipped.
     func fittedSheet(showsHandle: Bool = true, background: Color = Theme.bg) -> some View {
         modifier(FittedSheet(showsHandle: showsHandle, background: background))
     }
@@ -14,11 +15,12 @@ private struct FittedSheet: ViewModifier {
     @State private var height: CGFloat = 320
 
     func body(content: Content) -> some View {
-        content
-            .fixedSize(horizontal: false, vertical: true)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
-            .frame(maxHeight: .infinity, alignment: .top)
-            .presentationDetents([.height(height)])
+        ScrollView {
+            content
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .presentationDetents([.height(height)])
             .presentationCornerRadius(38)
             .presentationBackground(background)
             .presentationDragIndicator(showsHandle ? .visible : .hidden)

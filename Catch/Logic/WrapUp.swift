@@ -5,9 +5,22 @@ import Foundation
 enum DayClock {
     static let startHour = 4
 
-    /// The start of the Catch day `date` falls in.
+    /// The start of the Catch day `date` falls in. Reads the wall clock, so
+    /// daylight-saving changes don't move the 4 AM boundary.
     static func day(of date: Date, calendar: Calendar) -> Date {
-        calendar.startOfDay(for: date.addingTimeInterval(-Double(startHour) * 3600))
+        let start = calendar.startOfDay(for: date)
+        guard calendar.component(.hour, from: date) < startHour else { return start }
+        return calendar.date(byAdding: .day, value: -1, to: start) ?? start
+    }
+
+    /// When the next Catch day begins (the coming 4 AM).
+    static func nextStart(after date: Date, calendar: Calendar) -> Date {
+        let next = calendar.date(byAdding: .day, value: 1, to: day(of: date, calendar: calendar)) ?? date
+        return calendar.date(bySettingHour: startHour, minute: 0, second: 0, of: next) ?? next
+    }
+
+    static func isSameDay(_ a: Date, _ b: Date, calendar: Calendar) -> Bool {
+        day(of: a, calendar: calendar) == day(of: b, calendar: calendar)
     }
 
     /// Minutes since the Catch day started (0 at 4 AM).
@@ -23,7 +36,10 @@ enum WrapUp {
         guard settings.wrapUpStyle == .onToday else { return false }
         let parts = calendar.dateComponents([.hour, .minute], from: now)
         let minutes = DayClock.minutesIntoDay(hour: parts.hour ?? 0, minute: parts.minute ?? 0)
-        return minutes >= DayClock.minutesIntoDay(hour: settings.wrapUpTime.hour, minute: settings.wrapUpTime.minute)
+        let wrapUp = DayClock.minutesIntoDay(hour: settings.wrapUpTime.hour, minute: settings.wrapUpTime.minute)
+        // A wrap-up time between 4 AM and noon isn't an evening; don't turn the whole day into one.
+        guard wrapUp >= 8 * 60 else { return false }
+        return minutes >= wrapUp
     }
 
     /// Moved to tomorrow, and tomorrow has come (even if the app hasn't run yet).
@@ -56,6 +72,6 @@ enum WrapUp {
     /// Keeps finished items from piling up in Now and Later day after day.
     static func isVisibleToday(_ item: Item, now: Date, calendar: Calendar) -> Bool {
         guard let completedAt = item.completedAt else { return true }
-        return calendar.isDate(completedAt, inSameDayAs: now)
+        return DayClock.isSameDay(completedAt, now, calendar: calendar)
     }
 }

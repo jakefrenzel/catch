@@ -133,6 +133,7 @@ final class SpeechVoiceInput: VoiceInput {
         guard request != nil else { return VoiceResult(transcript: transcript, isUncertain: false) }
         stopAudio()
         request?.endAudio()
+        let stopping = session
         // Wait for the final result, but never more than 1.5 s.
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             // Never leave an earlier waiter hanging.
@@ -140,6 +141,8 @@ final class SpeechVoiceInput: VoiceInput {
             finalResult = continuation
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(1.5))
+                // Only time out this stop, not a newer session's.
+                guard self.session == stopping else { return }
                 self.finalResult?.resume()
                 self.finalResult = nil
             }

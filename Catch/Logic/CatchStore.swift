@@ -35,6 +35,8 @@ final class CatchStore {
     private(set) var undoVersion = 0
     /// Called after every save, so reminders can be rescheduled.
     var onChange: (() -> Void)?
+    /// Called when a save fails; the change has been rolled back.
+    var onSaveFailure: (() -> Void)?
     private let log = Logger(subsystem: "com.jakefrenzel.catch", category: "store")
 
     init(context: ModelContext,
@@ -152,6 +154,7 @@ final class CatchStore {
         item.nudge = nudge
         item.reason = nil
         item.movedToTomorrow = false
+        item.movedToTomorrowAt = nil
         save()
     }
 
@@ -234,13 +237,17 @@ final class CatchStore {
     @discardableResult
     func promoteOverdueLaterItems() -> [Item] {
         let current = now()
+        let items = allItems()
+        var openCount = items.filter(\.isOpenInNow).count
         var promoted: [Item] = []
-        for item in allItems() where item.list == .later && !item.isDone {
+        for item in items where item.list == .later && !item.isDone {
+            guard openCount < settings.maxNow else { break }
             guard case .date(let date)? = item.reminder else { continue }
             let due = date.addingTimeInterval(nudges(item) ? ReminderPlanner.nudgeDelay : 0)
-            guard due <= current, !isNowFull else { continue }
+            guard due <= current else { continue }
             applyMove(item, to: .now, remindAt: nil)
             promoted.append(item)
+            openCount += 1
         }
         // Leaves the pending undo alone: it only touches its own items.
         if !promoted.isEmpty { save() }
@@ -253,6 +260,8 @@ final class CatchStore {
         item.list = .later
         item.reminder = .date(now().addingTimeInterval(interval))
         item.reason = nil
+        item.movedToTomorrow = false
+        item.movedToTomorrowAt = nil
         save()
     }
 
@@ -262,13 +271,22 @@ final class CatchStore {
     @discardableResult
     func carryOverIfNewDay() -> Int {
         let current = now()
-        let returning = allItems().filter { WrapUp.isBackFromTomorrow($0, at: current, calendar: calendar) }
-        guard !returning.isEmpty else { return 0 }
+        let flagged = allItems().filter(\.movedToTomorrow)
+        // Flags set by an older build have no time; start counting from now.
+        let unstamped = flagged.filter { $0.movedToTomorrowAt == nil }
+        for item in unstamped { item.movedToTomorrowAt = current }
+        let returning = flagged.filter { WrapUp.isBackFromTomorrow($0, at: current, calendar: calendar) }
+        guard !returning.isEmpty else {
+            if !unstamped.isEmpty { save() }
+            return 0
+        }
         undoAction = nil
         var room = max(0, settings.maxNow - openNowItems.count)
         for item in returning {
             item.movedToTomorrow = false
             item.movedToTomorrowAt = nil
+            // Anything that has since left Now, or been done, just loses the flag.
+            guard item.list == .now, !item.isDone else { continue }
             if room > 0 {
                 item.reason = Reason.carriedOver
                 room -= 1
@@ -304,8 +322,10 @@ final class CatchStore {
         for step in steps { context.insert(step) }
         project.steps = steps
 
-        let consumed = draft.inboxItems.map(ItemSnapshot.init)
-        for item in draft.inboxItems { context.delete(item) }
+        // Skip Inbox items deleted elsewhere (Siri, a widget) while the sheet was open.
+        let usedItems = draft.inboxItems.filter { $0.modelContext != nil && !$0.isDeleted }
+        let consumed = usedItems.map(ItemSnapshot.init)
+        for item in usedItems { context.delete(item) }
 
         undoAction = { [context] in
             context.delete(project)
@@ -430,7 +450,11 @@ final class CatchStore {
         do {
             try context.save()
         } catch {
+            // Don't leave unsaved changes in memory looking saved.
             log.error("Save failed: \(error.localizedDescription)")
+            context.rollback()
+            undoAction = nil
+            onSaveFailure?()
         }
         onChange?()
     }

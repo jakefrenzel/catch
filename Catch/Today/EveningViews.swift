@@ -62,10 +62,10 @@ struct EveningRowActions: View {
     private func button(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.footnote.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
-                .padding(.horizontal, 9)
+                .padding(.horizontal, 7)
                 .padding(.vertical, 5)
                 .contentShape(Rectangle().inset(by: -8))
         }

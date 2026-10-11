@@ -7,7 +7,7 @@ import SwiftData
 enum SampleData {
     @MainActor
     static func seedIfEmpty(_ store: CatchStore) {
-        guard store.allItems().isEmpty, store.projects().isEmpty else { return }
+        guard store.allItems().isEmpty, store.projects().isEmpty, store.places().isEmpty else { return }
         let context = store.context
         let calendar = store.calendar
         let now = Date.now

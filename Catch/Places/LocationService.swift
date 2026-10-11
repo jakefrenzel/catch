@@ -23,6 +23,11 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// Precise Location is off, so saved places can be well off target.
+    var isApproximate: Bool {
+        isAllowed && manager.accuracyAuthorization == .reducedAccuracy
+    }
+
     var isDenied: Bool {
         switch manager.authorizationStatus {
         case .denied, .restricted: return true
@@ -36,6 +41,14 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
             await withCheckedContinuation { continuation in
                 authorizationWaiters.append(continuation)
                 manager.requestWhenInUseAuthorization()
+                // If iOS never answers, stop waiting after a minute.
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .seconds(60))
+                    guard let self else { return }
+                    let waiters = self.authorizationWaiters
+                    self.authorizationWaiters = []
+                    waiters.forEach { $0.resume() }
+                }
             }
         }
         return isAllowed

@@ -185,6 +185,8 @@ struct RemindSheet: View {
         VStack(spacing: 12) {
             Button {
                 isPicking = false
+                // Back to the suggestions means choosing one of them again.
+                if selection == nil { selection = .afterWork }
             } label: {
                 Label("Suggestions", systemImage: "chevron.left")
                     .font(.subheadline.weight(.semibold))
@@ -310,15 +312,7 @@ struct RemindSheet: View {
             guard let option = options.first(where: { $0.kind == selection }) ?? options.first(where: { $0.kind == .afterWork }) else {
                 return
             }
-            model.setReminder(item, option.reminder, nudge: nudge, label: option.title.lowercasedFirst)
+            model.setReminder(item, option.reminder, nudge: nudge, label: option.title)
         }
-    }
-}
-
-private extension String {
-    /// "After work" → "after work", for "Reminder set: after work".
-    var lowercasedFirst: String {
-        guard let first else { return self }
-        return first.lowercased() + dropFirst()
     }
 }

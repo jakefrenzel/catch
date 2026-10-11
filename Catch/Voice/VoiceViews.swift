@@ -1,6 +1,16 @@
 import SwiftUI
 import UIKit
 
+/// Reads the mic levels in its own body, so ten-plus level updates a second
+/// redraw only the bars, not the sheet (which re-parses the transcript).
+private struct LiveWaveform: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        Waveform(levels: model.voice.levels)
+    }
+}
+
 /// 6j: the sheet that rises while + is held. It never takes touches (the finger
 /// is still on +), except under VoiceOver, which gets a Save button instead.
 struct VoiceSheet: View {
@@ -42,7 +52,7 @@ struct VoiceSheet: View {
             Spacer(minLength: 12)
                 .frame(maxHeight: 60)
 
-            Waveform(levels: model.voice.levels)
+            LiveWaveform()
                 .frame(height: 44)
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
@@ -96,15 +106,22 @@ struct VoiceSheet: View {
             case .filler:
                 part.foregroundColor = Theme.ink4
             case .time:
+                part = Self.padded(chunk.text)
                 part.foregroundColor = Theme.orangeText
                 part.backgroundColor = Theme.orange.opacity(0.18)
             case .project:
+                part = Self.padded(chunk.text)
                 part.foregroundColor = Theme.purple
                 part.backgroundColor = Theme.purple.opacity(0.12)
             }
             result += part
         }
         return Text(result)
+    }
+
+    /// Thin spaces inside a highlight stand in for the handoff's 0 4px padding.
+    private static func padded(_ text: String) -> AttributedString {
+        AttributedString("\u{2009}\(text)\u{2009}")
     }
 }
 
@@ -228,9 +245,11 @@ struct MicDeniedSheet: View {
 struct VoiceRetrySheet: View {
     @Environment(AppModel.self) private var model
     @State private var text: String
+    private let heard: String
     @ScaledMetric(relativeTo: .title) private var textSize: CGFloat = 26
 
     init(heard: String) {
+        self.heard = heard
         _text = State(initialValue: heard)
     }
 
@@ -243,6 +262,13 @@ struct VoiceRetrySheet: View {
             TextField("What did you say?", text: $text, axis: .vertical)
                 .font(.system(size: textSize, weight: .semibold))
                 .lineLimit(1...4)
+                .submitLabel(.done)
+                // Return saves rather than adding a line.
+                .onChange(of: text) { _, new in
+                    guard new.contains("\n") else { return }
+                    text = new.replacingOccurrences(of: "\n", with: "")
+                    model.saveSpoken(text)
+                }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(Theme.fill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -266,7 +292,7 @@ struct VoiceRetrySheet: View {
                 Button {
                     model.saveSpoken(text)
                 } label: {
-                    Text("Save")
+                    Text(text == heard ? "Save as Is" : "Save")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity, minHeight: 52)

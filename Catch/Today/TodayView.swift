@@ -18,12 +18,13 @@ struct TodayView: View {
 
         ScrollViewReader { proxy in
             List {
+                // The inset-grouped list already adds a 16 pt margin; these rows add only the difference.
                 header(isEvening: isEvening)
-                    .plainListRow(EdgeInsets(top: 8, leading: 20, bottom: 12, trailing: 16))
+                    .plainListRow(EdgeInsets(top: 8, leading: 4, bottom: 12, trailing: 0))
 
                 if isEvening {
                     EveningCard(card: eveningCard) { model.finishDay() }
-                        .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
+                        .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
                 } else if let upFirst = model.upFirst.current(in: candidates) {
                     UpFirstCard(candidate: upFirst,
                                 onStart: { model.startFocus(on: upFirst) },
@@ -41,12 +42,12 @@ struct TodayView: View {
                                 model.upFirstCardScrolledAway = true
                             }
                         }
-                        .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
-                } else {
+                        .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
+                } else if model.onboarding == nil {
                     AllClearCard(doneToday: doneTodayCount,
                                  inboxCount: items.filter { $0.list == .inbox }.count,
                                  hasSomeday: items.contains { $0.list == .someday })
-                        .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
+                        .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
                 }
 
                 nowSection(nowItems, isEvening: isEvening)
@@ -60,6 +61,16 @@ struct TodayView: View {
             .listSectionSpacing(20)
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
+            // The navigation bar is hidden, so give the status bar a backing to scroll under.
+            .overlay {
+                GeometryReader { geo in
+                    Theme.bg
+                        .frame(height: geo.safeAreaInsets.top)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
             .contentMargins(.top, 0, for: .scrollContent)
             .contentMargins(.bottom, 120, for: .scrollContent)
             .environment(\.defaultMinListHeaderHeight, 0)
@@ -265,7 +276,7 @@ struct TodayView: View {
     private var doneTodayCount: Int {
         items.filter { item in
             guard let completedAt = item.completedAt else { return false }
-            return (item.list == .now || item.list == .later) && Calendar.current.isDateInToday(completedAt)
+            return (item.list == .now || item.list == .later) && DayClock.isSameDay(completedAt, model.store.currentDate(), calendar: model.store.calendar)
         }.count
     }
 }

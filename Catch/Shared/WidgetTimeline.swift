@@ -30,15 +30,16 @@ enum WidgetTimeline {
                          skipped: Set<UUID>, calendar: Calendar, formatter: ReminderFormatter) -> WidgetSnapshot {
         // Items moved to tomorrow count again once tomorrow arrives, even before
         // the app has run and brought them back.
-        let open = items
-            .filter { item in
-                item.list == .now && !item.isDone
-                    && (!item.movedToTomorrow || WrapUp.isBackFromTomorrow(item, at: date, calendar: calendar))
-            }
+        // Returning items only fill the room left in Now, as carry-over will.
+        let staying = items.filter { $0.list == .now && !$0.isDone && !$0.movedToTomorrow }
+        let returning = items
+            .filter { $0.list == .now && !$0.isDone && WrapUp.isBackFromTomorrow($0, at: date, calendar: calendar) }
             .sorted { $0.capturedAt < $1.capturedAt }
+        let room = max(0, settings.maxNow - staying.count)
+        let open = (staying + returning.prefix(room)).sorted { $0.capturedAt < $1.capturedAt }
         let doneToday = items.filter { item in
             guard let completedAt = item.completedAt else { return false }
-            return (item.list == .now || item.list == .later) && calendar.isDate(completedAt, inSameDayAs: date)
+            return (item.list == .now || item.list == .later) && DayClock.isSameDay(completedAt, date, calendar: calendar)
         }.count
         let inboxCount = items.filter { $0.list == .inbox }.count
 
@@ -91,21 +92,20 @@ enum WidgetTimeline {
     }
 
     /// When the widget should change: now, each Later reminder still to come
-    /// today, the wrap-up time, and midnight.
+    /// today, the wrap-up time, and when the day turns over at 4 AM.
     static func entryDates(now: Date, items: [Item], settings: CatchSettings, calendar: Calendar) -> [Date] {
         var dates: Set<Date> = [now]
-        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        let nextDay = DayClock.nextStart(after: now, calendar: calendar)
         for item in items where item.list == .later && !item.isDone {
-            if let remindAt = item.remindAt, remindAt > now, remindAt < startOfTomorrow {
+            if let remindAt = item.remindAt, remindAt > now, remindAt < nextDay {
                 dates.insert(remindAt)
             }
         }
-        if settings.wrapUpStyle == .onToday,
-           let wrapUp = calendar.date(bySettingHour: settings.wrapUpTime.hour, minute: settings.wrapUpTime.minute,
-                                      second: 0, of: now), wrapUp > now {
-            dates.insert(wrapUp)
+        if settings.wrapUpStyle == .onToday {
+            let wrapUp = settings.wrapUpTime.next(after: now, calendar: calendar)
+            if wrapUp < nextDay { dates.insert(wrapUp) }
         }
-        dates.insert(startOfTomorrow)
+        dates.insert(nextDay)
         return dates.sorted()
     }
 }
