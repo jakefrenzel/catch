@@ -30,8 +30,8 @@ struct TodayView: View {
                         // A fast scroll can recycle the row before its last geometry
                         // update, so treat leaving the screen as scrolled away too.
                         .onDisappear {
-                            // Ignore tab switches and Focus covering the screen.
-                            if model.tab == .today && model.focus == nil {
+                            // Ignore tab switches, Focus covering the screen and Project Detail.
+                            if model.tab == .today && model.focus == nil && model.projectPath.isEmpty {
                                 model.upFirstCardScrolledAway = true
                             }
                         }
@@ -54,7 +54,11 @@ struct TodayView: View {
             .contentMargins(.top, 0, for: .scrollContent)
             .contentMargins(.bottom, 120, for: .scrollContent)
             .environment(\.defaultMinListHeaderHeight, 0)
-            .onDisappear { model.upFirstCardScrolledAway = false }
+            .navigationTitle("Today")
+        .toolbar(.hidden, for: .navigationBar)
+        .onDisappear {
+            if model.projectPath.isEmpty { model.upFirstCardScrolledAway = false }
+        }
             #if DEBUG
             .task {
                 // Used by CI to screenshot the lower half of Today.
@@ -162,11 +166,11 @@ struct TodayView: View {
     private var projectsSection: some View {
         Section {
             if projects.isEmpty {
-                StartProjectRow { model.notBuiltYet("New Project") }
+                StartProjectRow { model.openNewProject() }
             }
             ForEach(projects) { project in
                 ProjectRow(project: project,
-                           onOpen: { model.notBuiltYet("Project Detail") },
+                           onOpen: { model.openProject(project) },
                            onToggleExpanded: { model.setExpanded(project, !project.isExpanded) })
                 if project.isExpanded {
                     ForEach(project.orderedSteps) { step in
@@ -179,7 +183,7 @@ struct TodayView: View {
         } header: {
             SectionHeader(title: "Projects", color: .primary, detail: "\(projects.count)") {
                 Button {
-                    model.notBuiltYet("New Project")
+                    model.openNewProject()
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 15, weight: .semibold))

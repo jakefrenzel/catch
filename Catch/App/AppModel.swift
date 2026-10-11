@@ -16,12 +16,14 @@ final class AppModel {
         case edit(Item)
         case remind(Item)
         case swap(incoming: Item)
+        case newProject
 
         var id: String {
             switch self {
             case .edit(let item): return "edit-\(item.id)"
             case .remind(let item): return "remind-\(item.id)"
             case .swap(let item): return "swap-\(item.id)"
+            case .newProject: return "new-project"
             }
         }
     }
@@ -38,6 +40,8 @@ final class AppModel {
     var tab: Tab = .today
     var isCaptureOpen = false
     var sheet: Sheet?
+    /// Today's navigation stack: empty, or the open Project Detail.
+    var projectPath: [Project] = []
     var upFirst = UpFirst()
     /// The Up first suggestion open in Focus.
     var focus: UpFirstCandidate?
@@ -46,6 +50,8 @@ final class AppModel {
     var upFirstCardScrolledAway = false
 
     private var toastTask: Task<Void, Never>?
+    /// Set while "Created X" can be undone, so Undo can close its detail screen first.
+    private var undoableNewProject: Project?
 
     init(store: CatchStore, settingsStore: SettingsStore) {
         self.store = store
@@ -56,7 +62,8 @@ final class AppModel {
 
     /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        focus == nil && !isCaptureOpen && sheet == nil && (tab != .today || upFirstCardScrolledAway)
+        focus == nil && !isCaptureOpen && sheet == nil
+            && (tab != .today || upFirstCardScrolledAway || !projectPath.isEmpty)
     }
 
     // MARK: - Capture
@@ -171,6 +178,41 @@ final class AppModel {
         store.setExpanded(project, expanded)
     }
 
+    // MARK: - Projects
+
+    func openProject(_ project: Project) {
+        tab = .today
+        projectPath = [project]
+    }
+
+    func openNewProject() {
+        sheet = .newProject
+    }
+
+    /// Creates the project and opens it. Returns false (with a nudge) without a name.
+    @discardableResult
+    func createProject(from draft: ProjectDraft) -> Bool {
+        guard let project = store.createProject(from: draft) else {
+            haptic(.warning)
+            flash("Give the project a name", undo: false)
+            return false
+        }
+        sheet = nil
+        haptic(.success)
+        flash("Created \(project.name)", undo: true)
+        undoableNewProject = project
+        openProject(project)
+        return true
+    }
+
+    @discardableResult
+    func addStep(_ text: String, to project: Project) -> Bool {
+        guard store.addStep(text, to: project) != nil else { return false }
+        haptic(.light)
+        flash("Added to \(project.name)", undo: true)
+        return true
+    }
+
     // MARK: - Up first
 
     func skipUpFirst(in candidates: [UpFirstCandidate]) {
@@ -211,6 +253,7 @@ final class AppModel {
 
     func flash(_ message: String, undo: Bool) {
         toastTask?.cancel()
+        undoableNewProject = nil
         toast = Toast(message: message, canUndo: undo && store.canUndo)
         toastTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3.2))
@@ -222,6 +265,11 @@ final class AppModel {
     func undo() {
         toastTask?.cancel()
         toast = nil
+        // Undoing "Created X" deletes X; leave its screen before the model goes away.
+        if let project = undoableNewProject, projectPath.contains(project) {
+            projectPath.removeAll()
+        }
+        undoableNewProject = nil
         store.undo()
     }
 

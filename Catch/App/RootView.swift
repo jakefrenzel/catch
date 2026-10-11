@@ -18,7 +18,13 @@ struct RootView: View {
             Theme.bg.ignoresSafeArea()
 
             switch model.tab {
-            case .today: TodayView()
+            case .today:
+                NavigationStack(path: $model.projectPath) {
+                    TodayView()
+                        .navigationDestination(for: Project.self) { project in
+                            ProjectDetailView(project: project)
+                        }
+                }
             case .inbox: InboxView()
             case .someday: SomedayView()
             }
@@ -51,6 +57,7 @@ struct RootView: View {
             case .edit(let item): EditSheet(item: item)
             case .remind(let item): RemindSheet(item: item, settings: model.settings)
             case .swap(let item): SwapSheet(incoming: item)
+            case .newProject: NewProjectSheet()
             }
         }
         .fullScreenCover(item: $model.focus) { candidate in
@@ -74,6 +81,10 @@ struct RootView: View {
             if arguments.contains("-openEdit"), let item = items.first(where: { $0.list == .later }) {
                 model.sheet = .edit(item)
             }
+            if arguments.contains("-openProject"), let project = projects.first {
+                model.openProject(project)
+            }
+            if arguments.contains("-openNewProject") { model.sheet = .newProject }
             if arguments.contains("-openSwap"), let item = items.first(where: { $0.list == .inbox }) {
                 model.sheet = .swap(incoming: item)
             }
