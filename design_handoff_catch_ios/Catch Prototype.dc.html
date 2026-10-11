@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#e9e9ee;color:#000;font-family:-apple-system,'SF Pro Text',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*,*::before,*::after{box-sizing:border-box}
+a{color:#007AFF}a:hover{color:#0062cc}
+button{font-family:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
+input{font-family:inherit}
+input::placeholder,textarea::placeholder{color:var(--ink4,rgba(60,60,67,.35))}
+textarea{font-family:inherit}
+::-webkit-scrollbar{display:none}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes toastIn{from{opacity:0;transform:translateY(-12px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes hapIn{0%{opacity:0;margin-top:-6px}15%{opacity:1;margin-top:0}75%{opacity:1}100%{opacity:0}}
+:focus{outline:none}:focus-visible{outline:2px solid #007AFF;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start; gap:56px; padding:48px 32px">
+  <div style="max-width:320px; display:flex; flex-direction:column; gap:14px; padding-top:40px">
+    <span style="font-size:13px; font-weight:600; color:var(--blue,#007AFF)">Clickable prototype · 5a + 6b, 6g, 6j, 7a, 8a, 9a, 10</span>
+    <span style="font-size:34px; font-weight:700; letter-spacing:-.01em; line-height:1.1">Catch</span>
+    <div style="display:flex; flex-direction:column; background:var(--card,#fff); border-radius:20px; padding:4px 16px">
+      <div style="display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); font-size:15px; line-height:1.4"><span style="font-weight:700; color:var(--blue,#007AFF)">1</span><span>Scroll Today. The Up first card turns into a bar above the tabs. Start opens focus mode. Swipe a row right for Done, left to move it.</span></div>
+      <div style="display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); font-size:15px; line-height:1.4"><span style="font-weight:700; color:var(--blue,#007AFF)">2</span><span>Tap a project name to open its phases. Add a step at the bottom of the current phase.</span></div>
+      <div style="display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); font-size:15px; line-height:1.4"><span style="font-weight:700; color:var(--blue,#007AFF)">3</span><span>Hold + to talk. Times and projects are highlighted as you speak. Try it three times.</span></div>
+      <div style="display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); font-size:15px; line-height:1.4"><span style="font-weight:700; color:var(--blue,#007AFF)">4</span><span>In Inbox, choose Later to pick a reminder time. Tap a time under Later to change it.</span></div>
+      <div style="display:flex; gap:12px; padding:11px 0; font-size:15px; line-height:1.4"><span style="font-weight:700; color:var(--blue,#007AFF)">5</span><span>Turn on Evening mode to wrap up the day. The gear on Today opens Settings; Max in Now and the reminder defaults work.</span></div>
+    </div>
+    <div style="display:flex; flex-direction:column; background:var(--card,#fff); border-radius:20px; padding-left:16px">
+      <span style="padding:12px 16px 2px 0; font-size:13px; font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">Demo switches</span>
+      <button onClick="{{ toggleDark }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 0; border:0; background:transparent; text-align:left; cursor:pointer"><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:16px">Dark mode</span><span style="font-size:13px; color:var(--ink2,rgba(60,60,67,.6))">Overrides System. Also in Settings</span></span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ darkTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ darkKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button>
+      <div style="height:1px; background:var(--sep,rgba(60,60,67,.12))"></div>
+      <button onClick="{{ toggleHap }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 0; border:0; background:transparent; text-align:left; cursor:pointer"><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:16px">Show haptic cues</span><span style="font-size:13px; color:var(--ink2,rgba(60,60,67,.6))">Labels where the phone would tap</span></span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ hapTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ hapKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button>
+      <div style="height:1px; background:var(--sep,rgba(60,60,67,.12))"></div>
+      <button onClick="{{ toggleMicDemo }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 0; border:0; background:transparent; text-align:left; cursor:pointer"><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:16px">Block the microphone</span><span style="font-size:13px; color:var(--ink2,rgba(60,60,67,.6))">Then hold +</span></span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ micTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ micKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button>
+      <div style="height:1px; background:var(--sep,rgba(60,60,67,.12))"></div>
+      <button onClick="{{ toggleGarbleDemo }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 0; border:0; background:transparent; text-align:left; cursor:pointer"><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:16px">Voice gets garbled</span><span style="font-size:13px; color:var(--ink2,rgba(60,60,67,.6))">Then hold + and let go</span></span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ garbleTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ garbleKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button>
+      <div style="height:1px; background:var(--sep,rgba(60,60,67,.12))"></div>
+      <div style="display:flex; flex-direction:column; gap:8px; padding:10px 16px 6px 0"><span style="display:flex; flex-direction:column"><span style="font-size:16px">Text size</span><span style="font-size:13px; color:var(--ink2,rgba(60,60,67,.6))">Simulates iOS Larger Text</span></span><div style="display:grid; grid-template-columns:repeat(3,1fr); padding:2px; border-radius:9px; background:var(--fill,rgba(120,120,128,.12))"><sc-for list="{{ tsOpts }}" as="t" hint-placeholder-count="3"><button onClick="{{ t.onPick }}" style="padding:6px 0; border:0; border-radius:7px; background:{{ t.bg }}; box-shadow:{{ t.sh }}; font-size:13px; font-weight:600; cursor:pointer">{{ t.label }}</button></sc-for></div></div>
+      <span style="padding:4px 16px 12px 0; font-size:13px; line-height:1.4; color:var(--ink2,rgba(60,60,67,.6))">To see reminders off, turn off Notifications in Settings.</span>
+    </div>
+    <button onClick="{{ toggleEvening }}" style="display:flex; align-items:center; gap:12px; padding:12px 16px; border:0; border-radius:20px; background:var(--card,#fff); text-align:left; cursor:pointer"><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:17px">Evening mode</span><span style="font-size:13px; color:var(--ink2,rgba(60,60,67,.6))">Pretend it's 9 PM</span></span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ eveTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ eveKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button>
+    <div style="display:flex; flex-wrap:wrap; gap:8px">
+    <button onClick="{{ replayOnboarding }}" style="height:36px; padding:0 16px; border:0; border-radius:18px; background:var(--blue,#007AFF); font-size:15px; font-weight:600; color:#fff; cursor:pointer" style-hover="background:var(--blueH,#0062cc)">Replay First Launch</button>
+    <button onClick="{{ resetDemo }}" style="align-self:flex-start; height:36px; padding:0 16px; border:0; border-radius:18px; background:var(--fill,rgba(120,120,128,.14)); font-size:15px; font-weight:600; color:var(--blue,#007AFF); cursor:pointer" style-hover="background:var(--fillH,rgba(120,120,128,.22))">Reset demo</button>
+    </div>
+  </div>
+
+  <div style="display:contents; --bg:{{ tBg }}; --card:{{ tCard }}; --ink:{{ tInk }}; --ink2:{{ tInk2 }}; --ink3:{{ tInk3 }}; --ink4:{{ tInk4 }}; --sep:{{ tSep }}; --fill:{{ tFill }}; --fillH:{{ tFillH }}; --bar:{{ tBar }}; --barEdge:{{ tBarEdge }}; --blue:{{ tBlue }}; --blueH:{{ tBlueH }}; --orange:{{ tOrange }}; --orangeInk:{{ tOrangeInk }}; --orangeInk2:{{ tOrangeInk2 }}; --red:{{ tRed }}; --green:{{ tGreen }}; --purple:{{ tPurple }}; --seg:{{ tSeg }}; --orangeText:{{ tOrangeText }}; --ts:{{ tTs }}">
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" keyboard="{{ kbOn }}" dark="{{ dark }}" hint-size="402px,874px">
+    <div style="height:100%; position:relative; overflow:hidden; background:var(--bg,#F2F2F7); color:var(--ink,#000); font-family:-apple-system,'SF Pro Text',system-ui,sans-serif">
+      <div ref="{{ scrollRef }}" onScroll="{{ onScroll }}" style="position:absolute; inset:0; overflow-y:auto; scrollbar-width:none; padding-top:58px; padding-bottom:200px">
+
+        <sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:8px 20px 12px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px">
+            <div style="display:flex; flex-direction:column"><span style="font-size:calc(15px * var(--ts,1)); font-weight:600; color:{{ dateColor }}">{{ dateLabel }}</span><span style="font-size:calc(34px * var(--ts,1)); font-weight:700; letter-spacing:-.01em">Today</span></div>
+            <button onClick="{{ setOpen }}" aria-label="Settings" style="width:36px; height:36px; flex:none; margin-bottom:4px; border:0; border-radius:18px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer" style-hover="background:var(--fillH,rgba(120,120,128,.22))"><svg width="20" height="20" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2; stroke-linecap:round; stroke-linejoin:round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+          </div>
+          <sc-if value="{{ upCard }}" hint-placeholder-val="{{ true }}">
+            <div style="margin:0 16px 14px; border-radius:22px; background:var(--card,#fff); padding:14px 14px 14px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 16px rgba(0,0,0,.06)">
+              <span style="width:36px; height:36px; flex:none; border-radius:18px; background:rgba(0,122,255,.12); display:flex; align-items:center; justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:1px; min-width:0">
+                <span style="display:flex; gap:8px; align-items:center"><span style="font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--blue,#007AFF); white-space:nowrap; flex:none">Up first</span><button onClick="{{ upSkip }}" aria-label="Skip this suggestion" style="border:0; background:transparent; padding:4px 8px; margin:-4px -8px; white-space:nowrap; flex:none; font-size:calc(13px * var(--ts,1)); color:var(--ink3,rgba(60,60,67,.5)); cursor:pointer">Skip</button></span>
+                <span style="font-size:calc(17px * var(--ts,1)); font-weight:600; line-height:1.2">{{ upText }}</span>
+                <span style="font-size:calc(12px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ upReason }}</span>
+              </div>
+              <button onClick="{{ upStart }}" style="min-height:36px; padding:0 14px; flex:none; border:0; border-radius:18px; background:var(--blue,#007AFF); color:#fff; font-size:calc(15px * var(--ts,1)); font-weight:600; cursor:pointer" style-hover="background:var(--blueH,#0062cc)" style-active="background:#0051a8">Start</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ eveOn }}">
+            <div style="margin:0 16px 14px; border-radius:22px; background:var(--card,#fff); padding:14px 14px 14px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 16px rgba(0,0,0,.06)">
+              <span style="width:36px; height:36px; flex:none; border-radius:18px; background:rgba(255,149,0,.14); display:flex; align-items:center; justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:var(--orange,#FF9500); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"></path></svg></span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:1px; min-width:0"><span style="font-size:calc(17px * var(--ts,1)); font-weight:600">{{ eveTitle }}</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ eveSub }}</span></div>
+              <sc-if value="{{ eveCanFinish }}"><button onClick="{{ eveFinish }}" style="min-height:36px; padding:0 14px; flex:none; border:0; border-radius:18px; background:rgba(255,149,0,.16); color:var(--orangeText,#C93400); font-size:calc(15px * var(--ts,1)); font-weight:600; cursor:pointer" style-hover="background:rgba(255,149,0,.24)">Finish</button></sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ upNoneCard }}">
+            <div style="margin:0 16px 14px; border-radius:22px; background:var(--card,#fff); padding:16px; display:flex; flex-direction:column; gap:4px">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:6px 4px; text-align:center">
+                <span style="width:60px; height:60px; flex:none; border-radius:30px; background:rgba(52,199,89,.14); display:flex; align-items:center; justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" style="fill:none; stroke:var(--green,#34C759); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+                <span style="font-size:calc(22px * var(--ts,1)); font-weight:700">Today is clear</span>
+                <span style="font-size:calc(15px * var(--ts,1)); line-height:1.4; color:var(--ink2,rgba(60,60,67,.6))">{{ clearSub }}</span>
+                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:4px">
+                  <sc-if value="{{ hasInbox }}"><button onClick="{{ goInbox }}" style="min-height:36px; padding:0 14px; border:0; border-radius:18px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); font-size:calc(15px * var(--ts,1)); font-weight:600; cursor:pointer">Sort Inbox ({{ inboxCount }})</button></sc-if>
+                  <sc-if value="{{ hasSomeday }}"><button onClick="{{ goSomeday }}" style="min-height:36px; padding:0 14px; border:0; border-radius:18px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); font-size:calc(15px * var(--ts,1)); font-weight:600; cursor:pointer">Pull from Someday</button></sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 36px 8px"><span style="font-size:calc(20px * var(--ts,1)); font-weight:700; color:var(--blue,#007AFF)">Now</span><sc-if value="{{ nowLabelOn }}"><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); white-space:nowrap; flex:none">{{ nowLabel }}</span></sc-if><sc-if value="{{ eveHasLeft }}"><button onClick="{{ allToTomorrow }}" style="border:0; background:transparent; padding:0; font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--blue,#007AFF); cursor:pointer">All to Tomorrow</button></sc-if></div>
+          <div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px; overflow:hidden">
+            <sc-for list="{{ nowRows }}" as="r" hint-placeholder-count="2">
+              <div style="position:relative; overflow:hidden; border-bottom:{{ r.bb }}; animation:rowIn .3s cubic-bezier(.2,.8,.2,1)">
+                <div style="position:absolute; inset:0; display:flex; justify-content:space-between; align-items:center; padding:0 20px 0 6px; background:{{ r.swBg }}; color:#fff; font-size:calc(15px * var(--ts,1)); font-weight:600">
+                  <span style="display:flex; align-items:center; gap:6px; opacity:{{ r.rOp }}; transform:scale({{ r.rSc }}); transition:transform .15s"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg>{{ r.rLabel }}</span>
+                  <span style="opacity:{{ r.lOp }}; transform:scale({{ r.lSc }}); transition:transform .15s">{{ r.lLabel }}</span>
+                </div>
+                <div onPointerDown="{{ r.onPD }}" onPointerMove="{{ r.onPM }}" onPointerUp="{{ r.onPU }}" onPointerCancel="{{ r.onPC }}" style="position:relative; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; background:var(--card,#fff); transform:translateX({{ r.dx }}px); transition:{{ r.tr }}; touch-action:pan-y; user-select:none; -webkit-user-select:none">
+                  <button onClick="{{ r.onToggle }}" aria-label="{{ r.ariaToggle }}" style="width:24px; height:24px; flex:none; padding:0; border:0; background:transparent; cursor:pointer">
+                    <span style="width:24px; height:24px; border-radius:12px; border:1.5px solid {{ r.ringC }}; background:{{ r.fillC }}; display:flex; align-items:center; justify-content:center; transition:background .2s, border-color .2s"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; opacity:{{ r.chkOp }}; transform:scale({{ r.chkSc }}); transition:opacity .15s, transform .3s cubic-bezier(.3,1.7,.5,1)"><path d="M20 6 9 17l-5-5"></path></svg></span>
+                  </button>
+                  <span onClick="{{ r.onEdit }}" role="button" aria-label="{{ r.ariaEdit }}" style="flex:1; min-width:0; display:flex; flex-direction:column; cursor:pointer"><span style="font-size:calc(17px * var(--ts,1)); color:{{ r.color }}; text-decoration:{{ r.deco }}; transition:color .2s">{{ r.text }}</span><sc-if value="{{ r.hasNote }}"><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ r.note }}</span></sc-if></span>
+                  <sc-if value="{{ r.eve }}"><span style="display:flex; flex:none; padding:2px; margin-right:-6px; border-radius:9px; background:var(--fill,rgba(120,120,128,.12))"><button onClick="{{ r.onTomorrow }}" style="padding:5px 9px; border:0; border-radius:7px; background:transparent; font-size:calc(13px * var(--ts,1)); font-weight:600; cursor:pointer" style-hover="background:var(--card,#fff)">Tomorrow</button><button onClick="{{ r.onSomeday }}" style="padding:5px 9px; border:0; border-radius:7px; background:transparent; font-size:calc(13px * var(--ts,1)); font-weight:600; cursor:pointer" style-hover="background:var(--card,#fff)">Someday</button></span></sc-if>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ nowEmpty }}"><div style="padding:13px 16px 13px 0; font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ nowEmptyMsg }}</div></sc-if>
+          </div>
+          <sc-if value="{{ eveDoneRow }}">
+            <div style="margin:12px 16px 0; background:var(--card,#fff); border-radius:20px; padding:12px 16px; display:flex; align-items:center; gap:12px"><span style="width:24px; height:24px; flex:none; border-radius:12px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="flex:1; font-size:calc(17px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ eveDoneLabel }}</span></div>
+          </sc-if>
+          <sc-if value="{{ eveInbox }}">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; padding:20px 36px 8px"><span style="font-size:calc(20px * var(--ts,1)); font-weight:700">Inbox</span><button onClick="{{ goInbox }}" style="border:0; background:transparent; padding:0; font-size:calc(15px * var(--ts,1)); color:var(--blue,#007AFF); cursor:pointer">Sort</button></div>
+            <button onClick="{{ goInbox }}" style="width:calc(100% - 32px); margin:0 16px; border:0; background:var(--card,#fff); border-radius:20px; padding:12px 16px; display:flex; align-items:center; gap:12px; text-align:left; cursor:pointer"><span style="width:28px; height:28px; flex:none; border-radius:7px; background:var(--red,#FF3B30); display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></span><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:calc(17px * var(--ts,1))">{{ eveInboxLabel }}</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">Can wait until tomorrow</span></span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+          </sc-if>
+
+          <div style="display:flex; justify-content:space-between; align-items:baseline; padding:20px 36px 8px"><span style="font-size:calc(20px * var(--ts,1)); font-weight:700; color:var(--orangeText,#C93400)">Later</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); white-space:nowrap; flex:none">{{ laterCount }}</span></div>
+          <sc-if value="{{ notifBanner }}">
+            <div style="margin:0 16px 8px; padding:12px 14px; border-radius:18px; background:rgba(255,149,0,.12); display:flex; gap:12px; align-items:center">
+              <span style="flex:none; display:flex"><svg width="22" height="22" viewBox="0 0 24 24" style="fill:none; stroke:var(--orangeInk,#C93400); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M2 2l20 20"></path><path d="M8.7 3A6 6 0 0 1 18 8c0 3 .5 5 1.2 6.4"></path><path d="M17 17H3s3-2 3-9c0-.8.1-1.5.4-2.2"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></span>
+              <span style="flex:1; display:flex; flex-direction:column; gap:1px"><span style="font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--orangeInk2,#8a3a00)">Reminders are off</span><span style="font-size:calc(13px * var(--ts,1)); line-height:1.35; color:var(--orangeInk2,#8a3a00)">These won't alert you. You'll only see them here.</span></span>
+              <button onClick="{{ notifOn }}" style="min-height:32px; padding:0 12px; flex:none; border:0; border-radius:16px; background:rgba(255,149,0,.16); color:var(--orangeText,#C93400); font-size:calc(14px * var(--ts,1)); font-weight:600; cursor:pointer">Turn On</button>
+            </div>
+          </sc-if>
+          <div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px; overflow:hidden">
+            <sc-for list="{{ laterRows }}" as="r" hint-placeholder-count="2">
+              <div style="position:relative; overflow:hidden; border-bottom:{{ r.bb }}; animation:rowIn .3s cubic-bezier(.2,.8,.2,1)">
+                <div style="position:absolute; inset:0; display:flex; justify-content:space-between; align-items:center; padding:0 20px 0 6px; background:{{ r.swBg }}; color:#fff; font-size:calc(15px * var(--ts,1)); font-weight:600">
+                  <span style="display:flex; align-items:center; gap:6px; opacity:{{ r.rOp }}; transform:scale({{ r.rSc }}); transition:transform .15s"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg>{{ r.rLabel }}</span>
+                  <span style="opacity:{{ r.lOp }}; transform:scale({{ r.lSc }}); transition:transform .15s">{{ r.lLabel }}</span>
+                </div>
+                <div onPointerDown="{{ r.onPD }}" onPointerMove="{{ r.onPM }}" onPointerUp="{{ r.onPU }}" onPointerCancel="{{ r.onPC }}" style="position:relative; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; background:var(--card,#fff); transform:translateX({{ r.dx }}px); transition:{{ r.tr }}; touch-action:pan-y; user-select:none; -webkit-user-select:none">
+                  <button onClick="{{ r.onToggle }}" aria-label="{{ r.ariaToggle }}" style="width:24px; height:24px; flex:none; padding:0; border:0; background:transparent; cursor:pointer">
+                    <span style="width:24px; height:24px; border-radius:12px; border:1.5px solid {{ r.ringC }}; background:{{ r.fillC }}; display:flex; align-items:center; justify-content:center; transition:background .2s, border-color .2s"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; opacity:{{ r.chkOp }}; transform:scale({{ r.chkSc }}); transition:opacity .15s, transform .3s cubic-bezier(.3,1.7,.5,1)"><path d="M20 6 9 17l-5-5"></path></svg></span>
+                  </button>
+                  <span onClick="{{ r.onEdit }}" role="button" aria-label="{{ r.ariaEdit }}" style="flex:1; min-width:0; display:flex; flex-direction:column; cursor:pointer"><span style="font-size:calc(17px * var(--ts,1)); color:{{ r.color }}; text-decoration:{{ r.deco }}; transition:color .2s">{{ r.text }}</span><sc-if value="{{ r.hasNote }}"><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ r.note }}</span></sc-if></span>
+                  <button onClick="{{ r.onWhen }}" style="display:flex; align-items:center; gap:4px; border:0; background:transparent; padding:4px 0; font-size:calc(15px * var(--ts,1)); color:{{ r.whenColor }}; cursor:pointer"><sc-if value="{{ r.muted }}"><svg width="13" height="13" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink2,rgba(60,60,67,.6)); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M2 2l20 20"></path><path d="M8.7 3A6 6 0 0 1 18 8c0 3 .5 5 1.2 6.4"></path><path d="M17 17H3s3-2 3-9c0-.8.1-1.5.4-2.2"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></sc-if>{{ r.when }}</button>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ laterEmpty }}"><div style="padding:13px 16px 13px 0; font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">No reminders set.</div></sc-if>
+          </div>
+
+          <sc-if value="{{ projSection }}">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; padding:20px 36px 8px"><span style="font-size:calc(20px * var(--ts,1)); font-weight:700">Projects</span><button onClick="{{ npOpen }}" aria-label="New Project" style="width:30px; height:30px; margin:-6px -4px -6px 0; border:0; border-radius:15px; background:rgba(0,122,255,.12); display:flex; align-items:center; justify-content:center; align-self:center; cursor:pointer" style-hover="background:rgba(0,122,255,.2)" style-active="transform:scale(.92)"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.8; stroke-linecap:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button></div>
+          <sc-if value="{{ noProjects }}">
+            <button onClick="{{ npOpen }}" style="width:calc(100% - 32px); margin:0 16px; border:0; border-radius:20px; background:var(--card,#fff); padding:14px 16px; display:flex; align-items:center; gap:12px; text-align:left; cursor:pointer"><span style="width:28px; height:28px; flex:none; border-radius:14px; background:rgba(0,122,255,.12); display:flex; align-items:center; justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></span><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)">Start a project</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">For anything with more than one step</span></span></button>
+          </sc-if>
+          <sc-if value="{{ hasProjects }}">
+          <div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px">
+            <sc-for list="{{ projRows }}" as="p" hint-placeholder-count="2">
+              <div style="display:flex; flex-direction:column">
+                <div style="display:flex; align-items:center; border-bottom:{{ p.bb }}">
+                  <button onClick="{{ p.onOpen }}" style="flex:1; min-width:0; display:flex; align-items:center; gap:12px; padding:11px 0; border:0; background:transparent; text-align:left; cursor:pointer">
+                    <span style="width:26px; height:26px; flex:none; border-radius:13px; background:{{ p.ring }}; display:flex; align-items:center; justify-content:center"><span style="width:18px; height:18px; border-radius:9px; background:var(--card,#fff)"></span></span>
+                    <span style="flex:1; font-size:calc(17px * var(--ts,1)); font-weight:600">{{ p.name }}</span>
+                    <span style="font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ p.stat }}</span>
+                  </button>
+                  <button onClick="{{ p.onToggleOpen }}" aria-label="Show steps" style="width:44px; height:44px; flex:none; border:0; background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="14" height="14" viewBox="0 0 14 14" style="transform:rotate({{ p.chev }}deg); transition:transform .2s"><path d="M2 5l5 5 5-5" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+                </div>
+                <sc-if value="{{ p.open }}">
+                  <sc-for list="{{ p.steps }}" as="s">
+                    <div style="display:flex; align-items:center; gap:12px; padding:9px 16px 9px 38px; border-bottom:1px solid var(--sep,rgba(60,60,67,.12))">
+                      <button onClick="{{ s.onToggle }}" aria-label="Toggle step" style="width:20px; height:20px; flex:none; padding:0; border:0; background:transparent; cursor:pointer">
+                        <sc-if value="{{ s.done }}"><span style="width:20px; height:20px; border-radius:10px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.6; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span></sc-if>
+                        <sc-if value="{{ s.open }}"><span style="display:block; width:20px; height:20px; border-radius:10px; border:1.5px solid {{ s.ring }}"></span></sc-if>
+                      </button>
+                      <span style="flex:1; font-size:calc(15px * var(--ts,1)); font-weight:{{ s.weight }}; color:{{ s.color }}">{{ s.text }}</span>
+                      <sc-if value="{{ s.isNext }}"><span style="padding:2px 8px; border-radius:8px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); font-size:calc(12px * var(--ts,1)); font-weight:600">Next</span></sc-if>
+                    </div>
+                  </sc-for>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isProject }}">
+          <div style="display:flex; align-items:center; padding:0 12px 0 8px; height:44px">
+            <button onClick="{{ closeProject }}" style="display:flex; align-items:center; gap:4px; border:0; background:transparent; padding:6px 4px; color:var(--blue,#007AFF); font-size:calc(17px * var(--ts,1)); cursor:pointer"><svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" style="stroke:var(--blue,#007AFF)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Today</button>
+          </div>
+          <div style="padding:4px 20px 22px; display:flex; align-items:center; gap:14px">
+            <span style="width:44px; height:44px; flex:none; border-radius:22px; background:{{ pdRing }}; display:flex; align-items:center; justify-content:center"><span style="width:32px; height:32px; border-radius:16px; background:var(--bg,#F2F2F7)"></span></span>
+            <div style="display:flex; flex-direction:column; min-width:0"><span style="font-size:calc(30px * var(--ts,1)); font-weight:700; letter-spacing:-.01em; line-height:1.1">{{ pdName }}</span><span style="font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ pdSub }}</span></div>
+          </div>
+          <sc-for list="{{ pdPhases }}" as="ph" hint-placeholder-count="3">
+            <div style="display:flex; gap:14px; padding:0 20px">
+              <div style="width:24px; flex:none; display:flex; flex-direction:column; align-items:center">
+                <sc-if value="{{ ph.isDone }}"><span style="width:24px; height:24px; flex:none; border-radius:12px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span></sc-if>
+                <sc-if value="{{ ph.isCur }}"><span style="width:24px; height:24px; flex:none; border-radius:12px; border:2px solid var(--blue,#007AFF); display:flex; align-items:center; justify-content:center"><span style="width:10px; height:10px; border-radius:5px; background:var(--blue,#007AFF)"></span></span></sc-if>
+                <sc-if value="{{ ph.isUp }}"><span style="width:24px; height:24px; flex:none; border-radius:12px; border:1.5px solid var(--ink4,rgba(60,60,67,.25))"></span></sc-if>
+                <span style="flex:1; width:2px; background:{{ ph.line }}"></span>
+              </div>
+              <div style="flex:1; padding-bottom:18px; min-width:0">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding-top:1px; margin-bottom:{{ ph.mb }}px"><span style="font-size:calc(17px * var(--ts,1)); font-weight:600; color:{{ ph.color }}">{{ ph.name }}</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ ph.stat }}</span></div>
+                <sc-if value="{{ ph.collapsed }}"><span style="font-size:calc(15px * var(--ts,1)); line-height:1.35; color:{{ ph.subColor }}">{{ ph.summary }}</span></sc-if>
+                <sc-if value="{{ ph.isCur }}">
+                  <div style="background:var(--card,#fff); border-radius:18px; padding-left:14px">
+                    <sc-for list="{{ ph.steps }}" as="s">
+                      <div style="display:flex; align-items:center; gap:10px; padding:11px 12px 11px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12))">
+                        <button onClick="{{ s.onToggle }}" aria-label="Toggle step" style="width:22px; height:22px; flex:none; padding:0; border:0; background:transparent; cursor:pointer">
+                          <sc-if value="{{ s.done }}"><span style="width:22px; height:22px; border-radius:11px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.6; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span></sc-if>
+                          <sc-if value="{{ s.open }}"><span style="display:block; width:22px; height:22px; border-radius:11px; border:1.5px solid {{ s.ring }}"></span></sc-if>
+                        </button>
+                        <span style="flex:1; min-width:0; font-size:calc(16px * var(--ts,1)); font-weight:{{ s.weight }}; color:{{ s.color }}; text-decoration:{{ s.deco }}">{{ s.text }}</span>
+                        <sc-if value="{{ s.isNext }}"><span style="padding:2px 8px; border-radius:8px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); font-size:calc(12px * var(--ts,1)); font-weight:600">Next</span></sc-if>
+                      </div>
+                    </sc-for>
+                    <div style="display:flex; align-items:center; gap:10px; padding:4px 12px 4px 0">
+                      <span style="width:22px; flex:none; display:flex; justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.6; stroke-linecap:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></span>
+                      <input value="{{ stepText }}" onChange="{{ onStepChange }}" onKeyDown="{{ onStepKey }}" placeholder="Add Step" enterKeyHint="done" style="flex:1; min-width:0; border:0; background:transparent; padding:8px 0; font-size:calc(16px * var(--ts,1)); color:var(--ink,#000)">
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{ isInbox }}">
+          <div style="padding:8px 20px 16px; display:flex; flex-direction:column">
+            <span style="font-size:calc(34px * var(--ts,1)); font-weight:700; letter-spacing:-.01em">Inbox</span>
+            <span style="font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ inboxSub }}</span>
+          </div>
+          <sc-if value="{{ hasInbox }}">
+            <div style="margin:0 16px; height:230px; border-radius:26px; background:var(--card,#fff); padding:22px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 10px 30px rgba(0,0,0,.08)">
+              <span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">Caught {{ inboxCurSince }}</span>
+              <span onClick="{{ inboxEdit }}" style="font-size:calc(26px * var(--ts,1)); font-weight:600; line-height:1.18; text-wrap:pretty; cursor:pointer">{{ inboxCurText }}</span>
+              <button onClick="{{ sortDrop }}" style="align-self:flex-start; border:0; background:transparent; padding:0; font-size:calc(15px * var(--ts,1)); color:var(--red,#FF3B30); cursor:pointer">Delete</button>
+            </div>
+            <sc-if value="{{ notPickingLater }}">
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); margin:26px 16px 0">
+                <button onClick="{{ sortSomeday }}" style="display:flex; flex-direction:column; align-items:center; gap:8px; border:0; background:transparent; cursor:pointer">
+                  <span style="width:64px; height:64px; border-radius:32px; background:var(--card,#fff); box-shadow:0 2px 8px rgba(0,0,0,.08); display:flex; align-items:center; justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" style="fill:none; stroke:#8E8E93; stroke-width:2; stroke-linecap:round; stroke-linejoin:round"><rect x="2" y="4" width="20" height="5" rx="1"></rect><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"></path><path d="M10 13h4"></path></svg></span>
+                  <span style="font-size:calc(13px * var(--ts,1)); font-weight:600">Someday</span>
+                </button>
+                <button onClick="{{ sortLater }}" style="display:flex; flex-direction:column; align-items:center; gap:8px; border:0; background:transparent; cursor:pointer">
+                  <span style="width:64px; height:64px; border-radius:32px; background:var(--card,#fff); box-shadow:0 2px 8px rgba(0,0,0,.08); display:flex; align-items:center; justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" style="fill:none; stroke:var(--orange,#FF9500); stroke-width:2.2; stroke-linecap:round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></span>
+                  <span style="font-size:calc(13px * var(--ts,1)); font-weight:600">Later</span>
+                </button>
+                <button onClick="{{ sortNow }}" style="display:flex; flex-direction:column; align-items:center; gap:8px; border:0; background:transparent; cursor:pointer; opacity:{{ nowBtnOp }}">
+                  <span style="width:64px; height:64px; border-radius:32px; background:var(--blue,#007AFF); box-shadow:0 4px 12px rgba(0,122,255,.35); display:flex; align-items:center; justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M2 12h2"></path><path d="M20 12h2"></path></svg></span>
+                  <span style="font-size:calc(13px * var(--ts,1)); font-weight:600">{{ nowBtnLabel }}</span>
+                </button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ pickingLater }}">
+              <div style="display:flex; justify-content:space-between; padding:22px 36px 8px"><span style="font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">Remind me</span><button onClick="{{ cancelLater }}" style="border:0; background:transparent; padding:0; font-size:calc(15px * var(--ts,1)); color:var(--blue,#007AFF); cursor:pointer">Cancel</button></div>
+              <div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px">
+                <sc-for list="{{ laterOpts }}" as="o" hint-placeholder-count="3">
+                  <button onClick="{{ o.onPick }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px 12px 0; border:0; border-bottom:{{ o.bb }}; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1))">
+                    <span style="flex:1">{{ o.label }}</span><span style="font-size:calc(15px * var(--ts,1)); color:var(--orangeText,#C93400)">{{ o.sub }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasQueue }}">
+              <span style="display:block; padding:26px 36px 8px; font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">Up next</span>
+              <div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px">
+                <sc-for list="{{ inboxQueue }}" as="q" hint-placeholder-count="2">
+                  <div style="display:flex; justify-content:space-between; gap:12px; padding:12px 16px 12px 0; border-bottom:{{ q.bb }}; font-size:calc(16px * var(--ts,1))"><span>{{ q.text }}</span><span style="flex:none; color:var(--ink3,rgba(60,60,67,.45)); font-size:calc(14px * var(--ts,1))">{{ q.since }}</span></div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-if>
+          <sc-if value="{{ inboxEmpty }}">
+            <div style="margin:0 16px; background:var(--card,#fff); border-radius:22px; padding:22px; display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:calc(20px * var(--ts,1)); font-weight:700">Inbox is empty</span>
+              <span style="font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">Everything you caught has a place. Hold + to talk, or tap it to type.</span>
+              <button onClick="{{ goToday }}" style="align-self:flex-start; margin-top:8px; min-height:36px; padding:0 16px; border:0; border-radius:18px; background:var(--blue,#007AFF); color:#fff; font-size:calc(15px * var(--ts,1)); font-weight:600; cursor:pointer">Back to Today</button>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isSomeday }}">
+          <div style="padding:8px 20px 16px; display:flex; flex-direction:column">
+            <span style="font-size:calc(34px * var(--ts,1)); font-weight:700; letter-spacing:-.01em">Someday</span>
+            <span style="font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">No dates. Look through it once a month.</span>
+          </div>
+          <sc-if value="{{ hasSomeday }}" hint-placeholder-val="{{ true }}">
+          <div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px">
+            <sc-for list="{{ somedayRows }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:12px; padding:11px 12px 11px 0; border-bottom:{{ r.bb }}">
+                <span onClick="{{ r.onEdit }}" style="flex:1; min-width:0; font-size:calc(17px * var(--ts,1)); cursor:pointer">{{ r.text }}</span>
+                <button onClick="{{ r.onPromote }}" style="min-height:30px; padding:0 12px; border:0; border-radius:15px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); font-size:calc(14px * var(--ts,1)); font-weight:600; cursor:pointer; opacity:{{ r.op }}">{{ r.label }}</button>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ somedayEmpty }}">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:80px 40px 0; text-align:center">
+              <span style="width:60px; height:60px; flex:none; border-radius:30px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" style="fill:none; stroke:#8E8E93; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><rect x="2" y="4" width="20" height="5" rx="1"></rect><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"></path><path d="M10 13h4"></path></svg></span>
+              <span style="font-size:calc(22px * var(--ts,1)); font-weight:700">Nothing here yet</span>
+              <span style="font-size:calc(15px * var(--ts,1)); line-height:1.45; color:var(--ink2,rgba(60,60,67,.6)); text-wrap:pretty">Ideas with no date and no rush end up here, like “learn to make fresh pasta”. Sort one here from Inbox, or say “someday” when you talk.</span>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+
+      <div onClick="{{ upStart }}" style="position:absolute; left:16px; right:16px; bottom:104px; z-index:6; border-radius:22px; background:var(--bar,rgba(255,255,255,.94)); backdrop-filter:blur(20px); padding:10px 10px 10px 14px; display:flex; align-items:center; gap:12px; box-shadow:0 8px 24px rgba(0,0,0,.14); cursor:pointer; transform:translateY({{ miniY }}px); opacity:{{ miniOp }}; pointer-events:{{ miniPE }}; transition:transform .28s cubic-bezier(.2,.8,.2,1), opacity .2s">
+        <div style="flex:1; display:flex; flex-direction:column; min-width:0">
+          <span style="font-size:calc(12px * var(--ts,1)); font-weight:600; color:var(--blue,#007AFF)">Up first</span>
+          <span style="font-size:calc(16px * var(--ts,1)); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ upText }}</span>
+        </div>
+        <button onClick="{{ upSkip }}" style="border:0; background:transparent; font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6)); padding:8px 4px; cursor:pointer">Skip</button>
+        <button onClick="{{ upDone }}" aria-label="Done" style="width:40px; height:40px; flex:none; border:0; border-radius:20px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center; cursor:pointer" style-hover="background:var(--blueH,#0062cc)"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></button>
+      </div>
+
+      <sc-if value="{{ onbHold }}">
+        <div style="position:absolute; inset:0; z-index:8; pointer-events:none; background:radial-gradient(circle at calc(100% - 51px) calc(100% - 61px), transparent 42px, rgba(0,0,0,.55) 45px)"></div>
+        <div style="position:absolute; left:20px; right:20px; bottom:118px; z-index:9; display:flex; flex-direction:column; gap:10px">
+          <div style="display:flex; justify-content:space-between; align-items:center"><span style="padding:6px 12px; border-radius:14px; background:rgba(255,255,255,.2); color:#fff; font-size:calc(13px * var(--ts,1)); font-weight:600">1 of 3</span><button onClick="{{ onbSkip }}" style="border:0; background:transparent; padding:6px 0; font-size:calc(15px * var(--ts,1)); font-weight:600; color:#fff; cursor:pointer">Skip</button></div>
+          <div style="position:relative; background:#1c1c1e; color:#fff; border-radius:18px; padding:14px 16px; display:flex; flex-direction:column; gap:4px; box-shadow:0 10px 30px rgba(0,0,0,.3)"><span style="position:absolute; right:30px; bottom:-7px; width:16px; height:16px; background:#1c1c1e; transform:rotate(45deg); border-radius:3px"></span><span style="position:relative; font-size:calc(17px * var(--ts,1)); font-weight:600; line-height:1.25">Hold + and say something you need to do</span><span style="position:relative; font-size:calc(14px * var(--ts,1)); line-height:1.35; color:rgba(255,255,255,.7)">Try “Remind me to call Dana tomorrow at 10 about the lease”</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ onbTalk }}">
+        <div style="position:absolute; left:20px; right:20px; top:96px; z-index:26; pointer-events:none; display:flex; flex-direction:column; align-items:flex-start; gap:10px">
+          <span style="padding:6px 12px; border-radius:14px; background:rgba(255,255,255,.2); color:#fff; font-size:calc(13px * var(--ts,1)); font-weight:600">2 of 3</span>
+          <div style="align-self:stretch; background:#1c1c1e; color:#fff; border-radius:18px; padding:14px 16px; display:flex; flex-direction:column; gap:4px; box-shadow:0 10px 30px rgba(0,0,0,.3)"><span style="font-size:calc(17px * var(--ts,1)); font-weight:600; line-height:1.25">{{ onbTalkTitle }}</span><span style="font-size:calc(14px * var(--ts,1)); line-height:1.35; color:rgba(255,255,255,.7)">{{ onbTalkSub }}</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ onbPerm }}">
+        <div style="position:absolute; inset:0; z-index:45; display:flex; flex-direction:column; justify-content:flex-end">
+          <div style="position:absolute; inset:0; background:rgba(0,0,0,.3); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--card,#fff); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:28px 24px 40px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center">
+            <span style="font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">3 of 3</span>
+            <span style="width:60px; height:60px; border-radius:30px; background:rgba(255,149,0,.14); display:flex; align-items:center; justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" style="fill:none; stroke:var(--orange,#FF9500); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></span>
+            <span style="font-size:calc(24px * var(--ts,1)); font-weight:700; letter-spacing:-.01em">Remind you Saturday at 10?</span>
+            <span style="font-size:calc(15px * var(--ts,1)); line-height:1.45; color:var(--ink2,rgba(60,60,67,.6)); text-wrap:pretty">Catch only sends reminders you set and one wrap-up in the evening. iOS will ask you next.</span>
+            <div style="align-self:stretch; display:flex; flex-direction:column; gap:10px; margin-top:8px">
+              <button onClick="{{ onbAllow }}" style="min-height:52px; border:0; border-radius:26px; background:var(--blue,#007AFF); color:#fff; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer" style-hover="background:var(--blueH,#0062cc)">Turn On Reminders</button>
+              <button onClick="{{ onbNotNow }}" style="min-height:52px; border:0; border-radius:26px; background:transparent; color:var(--blue,#007AFF); font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer">Not Now</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ onbWelcome }}">
+        <div style="position:absolute; inset:0; z-index:50; background:var(--card,#fff); display:flex; flex-direction:column; padding-top:58px">
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:18px; padding:0 36px; text-align:center">
+            <span style="width:96px; height:96px; border-radius:24px; background:var(--blue,#007AFF); box-shadow:0 12px 30px rgba(0,122,255,.3); display:flex; align-items:center; justify-content:center"><svg width="48" height="48" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.8; stroke-linecap:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></span>
+            <span style="font-size:calc(40px * var(--ts,1)); font-weight:700; letter-spacing:-.02em">Catch</span>
+            <span style="font-size:calc(17px * var(--ts,1)); line-height:1.45; color:var(--ink2,rgba(60,60,67,.6)); text-wrap:pretty">Say or type whatever's on your mind. Catch sorts it into Now, Later or Someday and tells you what to do next.</span>
+          </div>
+          <div style="padding:0 20px 44px; display:flex; flex-direction:column; gap:12px">
+            <button onClick="{{ onbStart }}" style="min-height:52px; border:0; border-radius:26px; background:var(--blue,#007AFF); color:#fff; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer" style-hover="background:var(--blueH,#0062cc)">Try It</button>
+            <span style="text-align:center; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">Takes about a minute. No account needed.</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ micErr }}">
+        <div style="position:absolute; inset:0; z-index:28; display:flex; flex-direction:column; justify-content:flex-end">
+          <div onClick="{{ micClose }}" style="position:absolute; inset:0; background:rgba(0,0,0,.3); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--card,#fff); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:30px 24px 40px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center">
+            <span style="width:60px; height:60px; flex:none; border-radius:30px; background:rgba(255,59,48,.12); display:flex; align-items:center; justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" style="fill:none; stroke:var(--red,#FF3B30); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M2 2l20 20"></path><path d="M18.89 13.23A7 7 0 0 0 19 12v-2"></path><path d="M5 10v2a7 7 0 0 0 12 5"></path><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path><path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path><path d="M12 19v3"></path></svg></span>
+            <span style="font-size:calc(24px * var(--ts,1)); font-weight:700; letter-spacing:-.01em">Catch can't use the mic</span>
+            <span style="font-size:calc(15px * var(--ts,1)); line-height:1.45; color:var(--ink2,rgba(60,60,67,.6)); text-wrap:pretty">Microphone access is off for Catch. Turn it on in iOS Settings to talk, or type for now.</span>
+            <div style="align-self:stretch; display:flex; flex-direction:column; gap:10px; margin-top:8px"><button onClick="{{ micSettings }}" style="min-height:52px; border:0; border-radius:26px; background:var(--blue,#007AFF); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer">Open iOS Settings</button><button onClick="{{ micType }}" style="min-height:52px; border:0; border-radius:26px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center; gap:8px; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg>Type Instead</button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ garbleOn }}">
+        <div style="position:absolute; inset:0; z-index:28; display:flex; flex-direction:column; justify-content:flex-end">
+          <div style="position:absolute; inset:0; background:rgba(0,0,0,.3); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--card,#fff); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:24px 24px 40px; display:flex; flex-direction:column; gap:16px">
+            <span style="font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--orangeText,#C93400)">Didn't catch all of that</span>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; font-size:calc(26px * var(--ts,1)); font-weight:600; line-height:1.3; letter-spacing:-.01em"><span>Send the</span><input ref="{{ garbleRef }}" value="{{ garbleFill }}" onChange="{{ onGarbleChange }}" onKeyDown="{{ onGarbleKey }}" placeholder="···" style="width:{{ garbleW }}px; min-width:80px; max-width:100%; border:0; border-radius:8px; background:var(--fill,rgba(120,120,128,.14)); padding:2px 8px; font-size:calc(26px * var(--ts,1)); font-weight:600; color:var(--ink,#000)"><span>to Priya</span></div>
+            <span style="font-size:calc(15px * var(--ts,1)); line-height:1.4; color:var(--ink2,rgba(60,60,67,.6))">It was noisy around the gap. Type the missing part, or try again. Nothing is saved until you choose.</span>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px"><button onClick="{{ garbleRetry }}" style="min-height:52px; border:0; border-radius:26px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center; gap:8px; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><path d="M12 19v3"></path></svg>Try Again</button><button onClick="{{ garbleSave }}" style="min-height:52px; border:0; border-radius:26px; background:var(--blue,#007AFF); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer">{{ garbleSaveLabel }}</button></div>
+            <button onClick="{{ garbleDiscard }}" style="align-self:center; border:0; background:transparent; padding:4px; font-size:calc(15px * var(--ts,1)); color:var(--red,#FF3B30); cursor:pointer">Discard</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ swapOn }}">
+        <div style="position:absolute; inset:0; z-index:32; display:flex; flex-direction:column; justify-content:flex-end">
+          <div onClick="{{ swapClose }}" style="position:absolute; inset:0; background:rgba(0,0,0,.3); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--bg,#F2F2F7); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:26px 16px 40px; display:flex; flex-direction:column; gap:14px">
+            <div style="display:flex; flex-direction:column; gap:4px; padding:0 8px"><span style="font-size:calc(24px * var(--ts,1)); font-weight:700; letter-spacing:-.01em">{{ swapTitle }}</span><span style="font-size:calc(15px * var(--ts,1)); line-height:1.4; color:var(--ink2,rgba(60,60,67,.6))">{{ swapSub }}</span></div>
+            <div style="background:var(--card,#fff); border-radius:20px; padding-left:16px">
+              <sc-for list="{{ swapRows }}" as="o" hint-placeholder-count="3">
+                <button onClick="{{ o.onPick }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 0; border:0; border-bottom:{{ o.bb }}; background:transparent; text-align:left; cursor:pointer">
+                  <sc-if value="{{ o.sel }}"><span style="width:24px; height:24px; flex:none; border-radius:12px; background:var(--orange,#FF9500); display:flex; align-items:center; justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span></sc-if>
+                  <sc-if value="{{ o.unsel }}"><span style="width:24px; height:24px; flex:none; border-radius:12px; border:1.5px solid var(--ink4,rgba(60,60,67,.3))"></span></sc-if>
+                  <span style="flex:1; display:flex; flex-direction:column; min-width:0"><span style="font-size:calc(17px * var(--ts,1))">{{ o.text }}</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ o.sub }}</span></span>
+                </button>
+              </sc-for>
+            </div>
+            <button onClick="{{ swapGo }}" style="min-height:52px; border:0; border-radius:26px; background:var(--blue,#007AFF); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer">Swap</button>
+            <button onClick="{{ swapClose }}" style="align-self:center; border:0; background:transparent; padding:4px; font-size:calc(17px * var(--ts,1)); color:var(--blue,#007AFF); cursor:pointer">{{ swapAlt }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ setOn }}">
+        <div style="position:absolute; inset:0; z-index:35">
+          <div onClick="{{ setClose }}" style="position:absolute; inset:0; background:rgba(0,0,0,.4); animation:fadeIn .25s"></div>
+          <div style="position:absolute; left:0; right:0; top:58px; bottom:0; border-radius:14px 14px 0 0; background:var(--bg,#F2F2F7); animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); overflow-y:auto; scrollbar-width:none; padding-bottom:40px">
+            <div style="display:flex; justify-content:flex-end; align-items:center; padding:10px 16px 0; height:56px"><button onClick="{{ setClose }}" aria-label="Done" style="width:44px; height:44px; border:0; border-radius:22px; background:var(--blue,#007AFF); box-shadow:0 4px 12px rgba(0,122,255,.3); display:flex; align-items:center; justify-content:center; cursor:pointer" style-hover="background:var(--blueH,#0062cc)" style-active="transform:scale(.94)"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></button></div>
+            <span style="display:block; padding:2px 20px 0; font-size:calc(34px * var(--ts,1)); font-weight:700; letter-spacing:-.01em">Settings</span>
+            <span style="display:block; padding:18px 36px 7px; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); text-transform:uppercase; letter-spacing:.02em">Reminders</span><div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px"><button onClick="{{ notifToggle }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--red,#FF3B30); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></span><span style="flex:1; min-width:0">Notifications</span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ notifTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ notifKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button><button onClick="{{ nudgeToggle }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--orange,#FF9500); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg></span><span style="flex:1; min-width:0">Nudge again if missed</span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ nudgeTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ nudgeKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button><button onClick="{{ cycleAfterWork }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:0; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--orange,#FF9500); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><span style="flex:1; min-width:0">“After work” means</span><span style="color:var(--ink2,rgba(60,60,67,.6))">{{ setAfterWork }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+            <span style="display:block; padding:18px 36px 7px; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); text-transform:uppercase; letter-spacing:.02em">Evening wrap-up</span><div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px"><button onClick="{{ cycleEveTime }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--purple,#5856D6); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"></path></svg></span><span style="flex:1; min-width:0">Time</span><span style="color:var(--ink2,rgba(60,60,67,.6))">{{ setEveTime }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button onClick="{{ cycleEveStyle }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:0; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--purple,#5856D6); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="flex:1; min-width:0">Style</span><span style="color:var(--ink2,rgba(60,60,67,.6))">{{ setEveStyle }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+            <span style="display:block; padding:18px 36px 7px; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); text-transform:uppercase; letter-spacing:.02em">Today</span><div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px"><div style="display:flex; align-items:center; gap:12px; padding:9px 16px 9px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12))"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M2 12h2"></path><path d="M20 12h2"></path></svg></span><span style="flex:1; font-size:calc(17px * var(--ts,1))">Max in Now</span><span style="font-size:calc(17px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); margin-right:4px">{{ setMaxNow }}</span><span style="display:flex; align-items:center; height:32px; border-radius:9px; background:var(--fill,rgba(120,120,128,.12))"><button onClick="{{ maxDown }}" style="width:44px; min-height:32px; border:0; background:transparent; font-size:calc(20px * var(--ts,1)); font-weight:500; cursor:pointer">−</button><span style="width:1px; height:18px; background:var(--sep,rgba(60,60,67,.2))"></span><button onClick="{{ maxUp }}" style="width:44px; min-height:32px; border:0; background:transparent; font-size:calc(20px * var(--ts,1)); font-weight:500; cursor:pointer">+</button></span></div><button onClick="{{ upStepsToggle }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:0; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span><span style="flex:1; min-width:0">Up first includes project steps</span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ upStepsTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ upStepsKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button></div>
+            <span style="display:block; padding:18px 36px 7px; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); text-transform:uppercase; letter-spacing:.02em">Display</span><div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px"><div style="display:flex; align-items:center; gap:12px; padding:9px 12px 9px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12))"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:#1c1c1e; display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"></path></svg></span><span style="flex:1; min-width:0; font-size:calc(17px * var(--ts,1))">Appearance</span><div style="display:flex; padding:2px; border-radius:9px; background:var(--fill,rgba(120,120,128,.14))"><sc-for list="{{ appOpts }}" as="a" hint-placeholder-count="3"><button onClick="{{ a.onPick }}" style="padding:6px 10px; border:0; border-radius:7px; background:{{ a.bg }}; box-shadow:{{ a.sh }}; font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--ink,#000); cursor:pointer; transition:background .15s">{{ a.label }}</button></sc-for></div></div><button onClick="{{ hapticsToggle }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--purple,#5856D6); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M2 12h2"></path><path d="M6 8v8"></path><path d="M10 5v14"></path><path d="M14 8v8"></path><path d="M18 10v4"></path><path d="M22 12h-2"></path></svg></span><span style="flex:1; min-width:0">Haptics</span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ hapticsTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ hapticsKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button></div><span style="display:block; padding:7px 36px 0; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">System follows your iPhone's Light or Dark setting. Haptics are the small taps you feel when you finish or swipe something.</span>
+            <span style="display:block; padding:18px 36px 7px; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); text-transform:uppercase; letter-spacing:.02em">Places</span><div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px"><button onClick="{{ notInDemo }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--green,#34C759); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9v11h14V9"></path></svg></span><span style="flex:1; min-width:0">Home</span><span style="color:var(--ink2,rgba(60,60,67,.6))">{{ setHome }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button onClick="{{ notInDemo }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:0; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:var(--green,#34C759); display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></span><span style="flex:1; min-width:0">Office</span><span style="color:var(--ink2,rgba(60,60,67,.6))">{{ setOffice }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+            <span style="display:block; padding:18px 36px 7px; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); text-transform:uppercase; letter-spacing:.02em">Capture</span><div style="margin:0 16px; background:var(--card,#fff); border-radius:20px; padding-left:16px"><button onClick="{{ notInDemo }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12)); background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:#8E8E93; display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><path d="M12 19v3"></path></svg></span><span style="flex:1; min-width:0">Voice language</span><span style="color:var(--ink2,rgba(60,60,67,.6))">{{ setLang }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button onClick="{{ notInDemo }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:0; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:#8E8E93; display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><rect x="9" y="2" width="6" height="20" rx="3"></rect></svg></span><span style="flex:1; min-width:0">Action button</span><span style="color:var(--ink2,rgba(60,60,67,.6))">{{ setAction }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+            <div style="margin:18px 16px 0; background:var(--card,#fff); border-radius:20px; padding-left:16px"><button onClick="{{ setReplay }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 16px 11px 0; border:0; border-bottom:0; background:transparent; text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:30px; height:30px; flex:none; border-radius:8px; background:#8E8E93; display:flex; align-items:center; justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"></path><path d="M12 17h.01"></path></svg></span><span style="flex:1">Replay the Tutorial</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hapOn }}">
+        <div aria-hidden="true" style="position:absolute; top:112px; left:50%; z-index:70; display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:12px; background:rgba(88,86,214,.92); color:#fff; font-size:calc(12px * var(--ts,1)); font-weight:600; white-space:nowrap; pointer-events:none; transform:translateX(-50%); animation:hapIn .9s ease-out forwards"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round"><path d="M2 12h2"></path><path d="M6 8v8"></path><path d="M10 5v14"></path><path d="M14 8v8"></path><path d="M18 10v4"></path><path d="M22 12h-2"></path></svg>Haptic · {{ hapKind }}</div>
+      </sc-if>
+
+      <sc-if value="{{ toastOn }}">
+        <div style="position:absolute; left:16px; right:16px; top:60px; z-index:40; animation:toastIn .3s cubic-bezier(.2,.8,.2,1); display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:22px; background:rgba(30,30,32,.92); color:#fff; box-shadow:0 8px 24px rgba(0,0,0,.2)">
+          <span style="width:22px; height:22px; flex:none; border-radius:11px; background:var(--green,#34C759); display:flex; align-items:center; justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3.6; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+          <span style="flex:1; font-size:calc(15px * var(--ts,1)); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ toastMsg }}</span>
+          <sc-if value="{{ canUndo }}"><button onClick="{{ undo }}" style="border:0; background:transparent; color:#64D2FF; font-size:calc(15px * var(--ts,1)); font-weight:600; padding:0; cursor:pointer">Undo</button></sc-if>
+        </div>
+      </sc-if>
+
+      <div style="position:absolute; left:20px; right:96px; bottom:30px; z-index:5; height:62px; border-radius:31px; background:var(--bar,rgba(255,255,255,.84)); backdrop-filter:blur(20px); box-shadow:0 8px 24px rgba(0,0,0,.12), inset 0 0 0 1px var(--barEdge,rgba(255,255,255,.6)); display:grid; grid-template-columns:repeat(3,1fr); align-items:center; padding:0 6px">
+        <button onClick="{{ goToday }}" style="min-height:52px; border:0; border-radius:26px; background:{{ tTodayBg }}; color:{{ tTodayC }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:calc(11px * var(--ts,1)); font-weight:600; cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" style="fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M2 12h2"></path><path d="M20 12h2"></path></svg>Today</button>
+        <button onClick="{{ goInbox }}" style="position:relative; min-height:52px; border:0; border-radius:26px; background:{{ tInboxBg }}; color:{{ tInboxC }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:calc(11px * var(--ts,1)); font-weight:600; cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" style="fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>Inbox<sc-if value="{{ hasInbox }}"><span style="position:absolute; top:2px; left:calc(50% + 6px); min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--red,#FF3B30); color:#fff; font-size:calc(11px * var(--ts,1)); font-weight:600; display:flex; align-items:center; justify-content:center">{{ inboxCount }}</span></sc-if></button>
+        <button onClick="{{ goSomeday }}" style="min-height:52px; border:0; border-radius:26px; background:{{ tSomeBg }}; color:{{ tSomeC }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:calc(11px * var(--ts,1)); font-weight:600; cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" style="fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round"><rect x="2" y="4" width="20" height="5" rx="1"></rect><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"></path><path d="M10 13h4"></path></svg>Someday</button>
+      </div>
+      <button onPointerDown="{{ fabDown }}" onPointerUp="{{ fabUp }}" onPointerCancel="{{ fabCancel }}" onContextMenu="{{ noMenu }}" aria-label="Catch a thought" style="position:absolute; right:20px; bottom:30px; z-index:5; width:62px; height:62px; border:0; border-radius:31px; background:var(--blue,#007AFF); box-shadow:0 8px 24px rgba(0,122,255,.35); display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none" style-hover="background:var(--blueH,#0062cc)" style-active="transform:scale(.94)"><svg width="28" height="28" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.6; stroke-linecap:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+
+      <sc-if value="{{ sheetOpen }}">
+        <div style="position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; justify-content:flex-end">
+          <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; background:rgba(0,0,0,.25); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--bg,#F2F2F7); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:8px 16px 14px; display:flex; flex-direction:column; gap:14px">
+            <span style="align-self:center; width:36px; height:5px; border-radius:3px; background:var(--ink4,rgba(60,60,67,.3))"></span>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <button onClick="{{ closeSheet }}" aria-label="Close" style="width:44px; height:44px; border:0; border-radius:22px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink,#000); stroke-width:2.6; stroke-linecap:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+              <span style="font-size:calc(17px * var(--ts,1)); font-weight:600">{{ sheetTitle }}</span>
+              <button onClick="{{ saveClose }}" aria-label="Save" style="width:44px; height:44px; border:0; border-radius:22px; background:{{ saveBg }}; display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></button>
+            </div>
+            <input ref="{{ capRef }}" value="{{ capText }}" onChange="{{ onCapChange }}" onKeyDown="{{ onCapKey }}" placeholder="What's on your mind?" enterKeyHint="next" style="width:100%; border:0; border-radius:20px; background:var(--card,#fff); padding:16px; font-size:calc(22px * var(--ts,1)); font-weight:600; color:var(--ink,#000)">
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); padding:2px; border-radius:10px; background:var(--fill,rgba(120,120,128,.12))">
+              <sc-for list="{{ destOpts }}" as="d" hint-placeholder-count="4">
+                <button onClick="{{ d.onPick }}" style="padding:7px 0; border:0; border-radius:8px; background:{{ d.bg }}; box-shadow:{{ d.sh }}; font-size:calc(14px * var(--ts,1)); font-weight:600; cursor:pointer; opacity:{{ d.op }}">{{ d.label }}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ capIsLater }}">
+              <div style="display:flex; gap:8px">
+                <sc-for list="{{ capTimes }}" as="t" hint-placeholder-count="3">
+                  <button onClick="{{ t.onPick }}" style="padding:7px 12px; border:0; border-radius:12px; background:{{ t.bg }}; color:{{ t.fg }}; font-size:calc(14px * var(--ts,1)); font-weight:600; cursor:pointer">{{ t.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); padding:0 4px">{{ capHint }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ npOn }}">
+        <div style="position:absolute; inset:0; z-index:21; display:flex; flex-direction:column; justify-content:flex-end">
+          <div onClick="{{ npClose }}" style="position:absolute; inset:0; background:rgba(0,0,0,.25); animation:fadeIn .25s"></div>
+          <div style="position:relative; max-height:calc(100% - 64px); overflow-y:auto; scrollbar-width:none; background:var(--bg,#F2F2F7); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:8px 16px 40px; display:flex; flex-direction:column; gap:14px">
+            <span style="align-self:center; flex:none; width:36px; height:5px; border-radius:3px; background:var(--ink4,rgba(60,60,67,.3))"></span>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <button onClick="{{ npClose }}" aria-label="Close" style="width:44px; height:44px; border:0; border-radius:22px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink,#000); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+              <span style="font-size:calc(17px * var(--ts,1)); font-weight:600">New Project</span>
+              <button onClick="{{ npSave }}" aria-label="Create" style="width:44px; height:44px; border:0; border-radius:22px; background:{{ npSaveBg }}; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></button>
+            </div>
+            <input ref="{{ npRef }}" value="{{ npName }}" onChange="{{ onNpName }}" placeholder="Project name" aria-label="Project name" style="width:100%; border:0; border-radius:20px; background:var(--card,#fff); padding:16px; font-size:calc(22px * var(--ts,1)); font-weight:600; color:var(--ink,#000)">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; padding:4px 20px 0"><span style="font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">Steps</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ npCount }}</span></div>
+            <div style="background:var(--card,#fff); border-radius:20px; padding-left:16px">
+              <sc-for list="{{ npRows }}" as="x">
+                <sc-if value="{{ x.isPhase }}">
+                  <div style="display:flex; align-items:center; gap:8px; padding:12px 12px 4px 0">
+                    <input value="{{ x.name }}" onChange="{{ x.onName }}" aria-label="Phase name" style="flex:1; min-width:0; border:0; background:transparent; padding:2px 0; font-size:calc(13px * var(--ts,1)); font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--blue,#007AFF)">
+                    <button onClick="{{ x.onRemove }}" aria-label="Remove" style="width:28px; height:28px; flex:none; border:0; border-radius:14px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="11" height="11" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink2,rgba(60,60,67,.6)); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ x.isStep }}">
+                  <div style="display:flex; align-items:center; gap:12px; padding:10px 12px 10px 0; border-bottom:1px solid var(--sep,rgba(60,60,67,.12))">
+                    <span style="width:22px; height:22px; flex:none; border-radius:11px; border:1.5px solid {{ x.ring }}"></span>
+                    <span style="flex:1; min-width:0; display:flex; flex-direction:column"><span style="font-size:calc(16px * var(--ts,1)); font-weight:{{ x.weight }}">{{ x.text }}</span><sc-if value="{{ x.fromInbox }}"><span style="font-size:calc(12px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">From Inbox</span></sc-if></span>
+                    <sc-if value="{{ x.isFirst }}"><span style="padding:2px 8px; border-radius:8px; background:rgba(0,122,255,.12); color:var(--blue,#007AFF); font-size:calc(12px * var(--ts,1)); font-weight:600">Next</span></sc-if>
+                    <button onClick="{{ x.onRemove }}" aria-label="Remove" style="width:28px; height:28px; flex:none; border:0; border-radius:14px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="11" height="11" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink2,rgba(60,60,67,.6)); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+                  </div>
+                </sc-if>
+              </sc-for>
+              <div style="display:flex; align-items:center; gap:12px; padding:4px 12px 4px 0">
+                <span style="width:22px; flex:none; display:flex; justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></span>
+                <input value="{{ npStep }}" onChange="{{ onNpStep }}" onKeyDown="{{ onNpStepKey }}" placeholder="Add a step" enterKeyHint="next" style="flex:1; min-width:0; border:0; background:transparent; padding:10px 0; font-size:calc(16px * var(--ts,1)); color:var(--ink,#000)">
+              </div>
+            </div>
+            <button onClick="{{ npAddPhase }}" style="align-self:flex-start; display:flex; align-items:center; gap:6px; border:0; background:transparent; padding:0 8px; font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--blue,#007AFF); cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a Phase</button>
+            <span style="padding:0 8px; font-size:calc(13px * var(--ts,1)); line-height:1.4; color:var(--ink2,rgba(60,60,67,.6))">Phases are optional. Use them when steps happen in stages, like Plan, Choose, Build.</span>
+            <sc-if value="{{ npHasInbox }}">
+              <div style="display:flex; flex-direction:column; gap:8px; padding:4px 4px 0">
+                <span style="padding:0 4px; font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">Add from your Inbox</span>
+                <div style="display:flex; flex-wrap:wrap; gap:8px">
+                  <sc-for list="{{ npInbox }}" as="c"><button onClick="{{ c.onAdd }}" style="max-width:100%; display:flex; align-items:center; gap:6px; padding:8px 12px; border:0; border-radius:16px; background:var(--card,#fff); font-size:calc(14px * var(--ts,1)); color:var(--ink,#000); cursor:pointer; text-align:left"><svg width="13" height="13" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ c.text }}</span></button></sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ editOn }}">
+        <div style="position:absolute; inset:0; z-index:21; display:flex; flex-direction:column; justify-content:flex-end">
+          <div onClick="{{ editClose }}" style="position:absolute; inset:0; background:rgba(0,0,0,.25); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--bg,#F2F2F7); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:8px 16px 40px; display:flex; flex-direction:column; gap:14px">
+            <span style="align-self:center; width:36px; height:5px; border-radius:3px; background:var(--ink4,rgba(60,60,67,.3))"></span>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <button onClick="{{ editClose }}" aria-label="Close" style="width:44px; height:44px; border:0; border-radius:22px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink,#000); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+              <span style="font-size:calc(17px * var(--ts,1)); font-weight:600">Edit</span>
+              <button onClick="{{ editSave }}" aria-label="Save" style="width:44px; height:44px; border:0; border-radius:22px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center; cursor:pointer" style-active="transform:scale(.94)"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></button>
+            </div>
+            <div style="background:var(--card,#fff); border-radius:20px; padding:14px 16px; display:flex; flex-direction:column; gap:8px">
+              <input value="{{ editText }}" onChange="{{ onEditText }}" onKeyDown="{{ onEditKey }}" aria-label="Title" style="width:100%; border:0; background:transparent; padding:0; font-size:calc(22px * var(--ts,1)); font-weight:600; color:var(--ink,#000)">
+              <textarea value="{{ editNote }}" onChange="{{ onEditNote }}" placeholder="Add a note" rows="3" style="width:100%; border:0; background:transparent; padding:0; resize:none; font-size:calc(16px * var(--ts,1)); line-height:1.4; color:var(--ink,#000)"></textarea>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); padding:2px; border-radius:10px; background:var(--fill,rgba(120,120,128,.12))">
+              <sc-for list="{{ editLists }}" as="d" hint-placeholder-count="4">
+                <button onClick="{{ d.onPick }}" style="padding:7px 0; border:0; border-radius:8px; background:{{ d.bg }}; box-shadow:{{ d.sh }}; font-size:calc(14px * var(--ts,1)); font-weight:600; color:var(--ink,#000); cursor:pointer; opacity:{{ d.op }}; transition:background .15s">{{ d.label }}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ editIsLater }}">
+              <button onClick="{{ editPickTime }}" style="display:flex; align-items:center; gap:12px; padding:11px 16px; border:0; border-radius:20px; background:var(--card,#fff); text-align:left; cursor:pointer; font-size:calc(17px * var(--ts,1)); color:var(--ink,#000)"><span style="width:28px; height:28px; flex:none; border-radius:7px; background:var(--orange,#FF9500); display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><span style="flex:1">Remind me</span><span style="padding:4px 10px; border-radius:8px; background:rgba(255,149,0,.14); color:var(--orangeInk,#C93400); font-size:calc(15px * var(--ts,1)); font-weight:500">{{ editWhen }}</span><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" style="stroke:var(--ink4,rgba(60,60,67,.3))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+            </sc-if>
+            <span style="padding:0 6px; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ editSince }}</span>
+            <button onClick="{{ editDelete }}" style="min-height:50px; border:0; border-radius:20px; background:var(--card,#fff); color:var(--red,#FF3B30); font-size:calc(17px * var(--ts,1)); cursor:pointer">Delete Item</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ remOn }}">
+        <div style="position:absolute; inset:0; z-index:22; display:flex; flex-direction:column; justify-content:flex-end">
+          <div onClick="{{ remClose }}" style="position:absolute; inset:0; background:rgba(0,0,0,.25); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--bg,#F2F2F7); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:8px 16px 40px; display:flex; flex-direction:column; gap:14px">
+            <span style="align-self:center; width:36px; height:5px; border-radius:3px; background:var(--ink4,rgba(60,60,67,.3))"></span>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+              <button onClick="{{ remClose }}" aria-label="Close" style="width:44px; height:44px; flex:none; border:0; border-radius:22px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink,#000); stroke-width:2.6; stroke-linecap:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center"><span style="font-size:calc(17px * var(--ts,1)); font-weight:600">Remind Me</span><span style="max-width:100%; font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ remItem }}</span></div>
+              <button onClick="{{ remSave }}" aria-label="Save" style="width:44px; height:44px; flex:none; border:0; border-radius:22px; background:var(--blue,#007AFF); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></button>
+            </div>
+            <sc-if value="{{ remList }}" hint-placeholder-val="{{ true }}">
+            <div style="background:var(--card,#fff); border-radius:20px; padding-left:16px">
+              <sc-for list="{{ remOpts }}" as="o" hint-placeholder-count="6">
+                <button onClick="{{ o.onPick }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 0; border:0; border-bottom:{{ o.bb }}; background:transparent; text-align:left; cursor:pointer">
+                  <span style="width:28px; height:28px; flex:none; border-radius:7px; background:{{ o.tint }}; display:flex; align-items:center; justify-content:center">
+                    <sc-if value="{{ o.isSun }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M2 12h2"></path><path d="M20 12h2"></path></svg></sc-if>
+                    <sc-if value="{{ o.isClock }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></sc-if>
+                    <sc-if value="{{ o.isMoon }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"></path></svg></sc-if>
+                    <sc-if value="{{ o.isPin }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></sc-if>
+                    <sc-if value="{{ o.isCal }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18"></path><path d="M8 3v4"></path><path d="M16 3v4"></path></svg></sc-if>
+                  </span>
+                  <span style="flex:1; display:flex; flex-direction:column"><span style="font-size:calc(17px * var(--ts,1))">{{ o.label }}</span><sc-if value="{{ o.hasSub }}"><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ o.sub }}</span></sc-if></span>
+                  <sc-if value="{{ o.sel }}"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none; stroke:var(--blue,#007AFF); stroke-width:3; stroke-linecap:round; stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+                </button>
+              </sc-for>
+            </div>
+            <button onClick="{{ remToggleNudge }}" style="border:0; background:var(--card,#fff); border-radius:20px; padding:11px 16px; display:flex; align-items:center; gap:12px; text-align:left; cursor:pointer"><span style="flex:1; display:flex; flex-direction:column"><span style="font-size:calc(17px * var(--ts,1))">Nudge again if I miss it</span><span style="font-size:calc(13px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">Once, 30 min later</span></span><span style="width:51px; height:31px; flex:none; border-radius:16px; background:{{ nudgeTrack }}; position:relative; transition:background .2s"><span style="position:absolute; left:{{ nudgeKnob }}px; top:2px; width:27px; height:27px; border-radius:14px; background:#FFFFFF; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s"></span></span></button>
+            </sc-if>
+            <sc-if value="{{ remPicking }}">
+              <div style="display:flex; flex-direction:column; gap:12px">
+                <button onClick="{{ pickBack }}" style="align-self:flex-start; display:flex; align-items:center; gap:4px; border:0; background:transparent; padding:2px 4px; color:var(--blue,#007AFF); font-size:calc(15px * var(--ts,1)); font-weight:600; cursor:pointer"><svg width="9" height="15" viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" style="stroke:var(--blue,#007AFF)" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Suggestions</button>
+                <div style="background:var(--card,#fff); border-radius:20px; padding:12px; display:flex; flex-direction:column; gap:10px">
+                  <div style="display:flex; gap:4px; overflow-x:auto; scrollbar-width:none">
+                    <sc-for list="{{ dayChips }}" as="d" hint-placeholder-count="7"><button onClick="{{ d.onPick }}" style="flex:none; width:48px; padding:7px 0; border:0; border-radius:14px; background:{{ d.bg }}; color:{{ d.fg }}; display:flex; flex-direction:column; align-items:center; gap:1px; cursor:pointer; transition:background .15s"><span style="font-size:calc(12px * var(--ts,1)); font-weight:600">{{ d.dow }}</span><span style="font-size:calc(20px * var(--ts,1)); font-weight:600">{{ d.num }}</span></button></sc-for>
+                  </div>
+                  <div style="position:relative; height:180px; display:grid; grid-template-columns:repeat(3,1fr)">
+                    <div style="position:absolute; left:0; right:0; top:72px; height:36px; border-radius:10px; background:var(--fill,rgba(120,120,128,.12)); pointer-events:none"></div>
+                    <div ref="{{ hRef }}" onScroll="{{ onHScroll }}" style="position:relative; height:180px; overflow-y:auto; scroll-snap-type:y mandatory; scrollbar-width:none; padding:72px 0; -webkit-mask-image:linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image:linear-gradient(transparent, #000 30%, #000 70%, transparent)"><sc-for list="{{ hours }}" as="x"><div style="min-height:36px; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; font-size:calc(22px * var(--ts,1)); font-variant-numeric:tabular-nums; color:{{ x.c }}; transition:color .15s">{{ x.t }}</div></sc-for></div>
+                    <div ref="{{ mRef }}" onScroll="{{ onMScroll }}" style="position:relative; height:180px; overflow-y:auto; scroll-snap-type:y mandatory; scrollbar-width:none; padding:72px 0; -webkit-mask-image:linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image:linear-gradient(transparent, #000 30%, #000 70%, transparent)"><sc-for list="{{ mins }}" as="x"><div style="min-height:36px; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; font-size:calc(22px * var(--ts,1)); font-variant-numeric:tabular-nums; color:{{ x.c }}; transition:color .15s">{{ x.t }}</div></sc-for></div>
+                    <div ref="{{ aRef }}" onScroll="{{ onAScroll }}" style="position:relative; height:180px; overflow-y:auto; scroll-snap-type:y mandatory; scrollbar-width:none; padding:72px 0; -webkit-mask-image:linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image:linear-gradient(transparent, #000 30%, #000 70%, transparent)"><sc-for list="{{ aps }}" as="x"><div style="min-height:36px; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; font-size:calc(22px * var(--ts,1)); font-variant-numeric:tabular-nums; color:{{ x.c }}; transition:color .15s">{{ x.t }}</div></sc-for></div>
+                  </div>
+                </div>
+                <span style="text-align:center; font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--orangeInk,#C93400)">{{ pickSummary }}</span>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ voiceOn }}">
+        <div style="position:absolute; inset:0; z-index:25; display:flex; flex-direction:column; justify-content:flex-end; pointer-events:none">
+          <div style="position:absolute; inset:0; background:rgba(0,0,0,.25); animation:fadeIn .25s"></div>
+          <div style="position:relative; background:var(--card,#fff); border-radius:38px 38px 0 0; animation:sheetUp .34s cubic-bezier(.2,.8,.2,1); padding:24px 24px 120px; display:flex; flex-direction:column; gap:18px; min-height:460px">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <span style="display:flex; align-items:center; gap:8px; font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--red,#FF3B30)"><span style="width:8px; height:8px; border-radius:4px; background:var(--red,#FF3B30)"></span>Listening</span>
+              <span style="font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6)); font-variant-numeric:tabular-nums">{{ voiceTime }}</span>
+            </div>
+            <div style="font-size:calc(28px * var(--ts,1)); font-weight:600; line-height:1.4; letter-spacing:-.01em; min-height:118px"><sc-for list="{{ vChunks }}" as="c"><span style="background:{{ c.bg }}; color:{{ c.fg }}; padding:{{ c.pad }}; border-radius:6px; margin-right:.25em; -webkit-box-decoration-break:clone; box-decoration-break:clone">{{ c.text }}</span></sc-for></div>
+            <div style="display:flex; flex-direction:column; gap:8px; padding:14px; border-radius:18px; background:var(--bg,#F2F2F7)">
+              <span style="font-size:calc(13px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">Will save as</span>
+              <span style="font-size:calc(17px * var(--ts,1)); font-weight:600">{{ vTitle }}</span>
+              <div style="display:flex; flex-wrap:wrap; gap:6px">
+                <sc-if value="{{ vHasWhen }}"><span style="display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:9px; background:rgba(255,149,0,.14); color:var(--orangeInk,#C93400); font-size:calc(14px * var(--ts,1)); font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>{{ vWhenLabel }}</span></sc-if>
+                <sc-if value="{{ vHasProj }}"><span style="display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:9px; background:rgba(88,86,214,.12); color:var(--purple,#5856D6); font-size:calc(14px * var(--ts,1)); font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>{{ vProjName }}</span></sc-if>
+                <sc-if value="{{ vPlain }}"><span style="display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:9px; background:var(--fill,rgba(120,120,128,.14)); color:var(--ink2,rgba(60,60,67,.85)); font-size:calc(14px * var(--ts,1)); font-weight:600">Inbox</span></sc-if>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:4px; height:44px">
+              <sc-for list="{{ bars }}" as="b" hint-placeholder-count="16">
+                <span style="width:4px; height:{{ b.h }}%; border-radius:2px; background:var(--blue,#007AFF); transition:height .15s"></span>
+              </sc-for>
+            </div>
+            <span style="text-align:center; font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--ink2,rgba(60,60,67,.6))">Let go to save</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ focusOn }}">
+        <div style="position:absolute; inset:0; z-index:30; background:var(--card,#fff); animation:fadeIn .25s; display:flex; flex-direction:column; padding:66px 24px 48px">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <span style="font-size:calc(15px * var(--ts,1)); font-weight:600; color:var(--blue,#007AFF)">Focus</span>
+            <button onClick="{{ focusClose }}" aria-label="Close" style="width:44px; height:44px; border:0; border-radius:22px; background:var(--fill,rgba(120,120,128,.14)); display:flex; align-items:center; justify-content:center; cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none; stroke:var(--ink,#000); stroke-width:2.6; stroke-linecap:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:14px">
+            <span style="font-size:calc(15px * var(--ts,1)); color:var(--ink2,rgba(60,60,67,.6))">{{ focusSub }}</span>
+            <span style="font-size:calc(36px * var(--ts,1)); font-weight:700; line-height:1.12; letter-spacing:-.02em; text-wrap:pretty">{{ focusText }}</span>
+            <span style="font-size:calc(64px * var(--ts,1)); font-weight:300; letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--blue,#007AFF); margin-top:18px">{{ focusTime }}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px">
+            <button onClick="{{ focusDone }}" style="min-height:54px; border:0; border-radius:27px; background:var(--blue,#007AFF); color:#fff; font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer" style-hover="background:var(--blueH,#0062cc)">Mark Done</button>
+            <button onClick="{{ focusNotNow }}" style="min-height:54px; border:0; border-radius:27px; background:var(--fill,rgba(120,120,128,.14)); color:var(--blue,#007AFF); font-size:calc(17px * var(--ts,1)); font-weight:600; cursor:pointer">Not Now</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const KEY = 'catch-proto-v2';
+const seed = () => ({
+  items: [
+    { id: 'n1', text: 'Send Q3 invoice to Halden', list: 'now', reason: 'In Now since Tuesday · about 10 min' },
+    { id: 'n2', text: 'Call Dana about the lease', list: 'now', reason: 'Added to Now this morning' },
+    { id: 'l1', text: 'Pick up dry cleaning', list: 'later', when: '5:30 PM' },
+    { id: 'l2', text: 'Book dentist for Mia', list: 'later', when: 'Mon 9 AM' },
+    { id: 'b1', text: 'Renew passport before the Lisbon trip', list: 'inbox', since: '8:14 AM' },
+    { id: 'b2', text: 'Cancel the unused gym plan', list: 'inbox', since: '10:05 AM' },
+    { id: 'b3', text: 'Newsletter: write about pricing', list: 'inbox', since: '11:42 AM' },
+    { id: 'b4', text: 'Gift idea for Sam: film camera', list: 'inbox', since: '2:10 PM' },
+    { id: 's1', text: 'Learn to make fresh pasta', list: 'someday' },
+    { id: 's2', text: 'Repaint the hallway', list: 'someday' },
+    { id: 's3', text: 'Start a herb garden', list: 'someday' },
+  ],
+  projects: [
+    { id: 'p1', name: 'Kitchen Reno', open: true, steps: [
+      { id: 'k1', text: 'Measure the wall', done: true, phase: 'Plan' }, { id: 'k2', text: 'Set a budget', done: true, phase: 'Plan' },
+      { id: 'k3', text: 'Order cabinet samples', phase: 'Choose' }, { id: 'k5', text: 'Pick countertop', phase: 'Choose' },
+      { id: 'k4', text: 'Get 3 contractor quotes', phase: 'Build' }, { id: 'k6', text: 'Book electrician', phase: 'Build' } ] },
+    { id: 'p2', name: 'Lisbon Trip', open: false, steps: [
+      { id: 't1', text: 'Book flights', done: true, phase: 'Book' }, { id: 't2', text: 'Book hotel', done: true, phase: 'Book' },
+      { id: 't3', text: 'Plan day trips', done: true, phase: 'Prepare' }, { id: 't4', text: 'Renew passport', phase: 'Prepare' } ] },
+  ],
+});
+const PHRASES = [
+  [['Remind','d'],['me','d'],['to','d'],['call','n'],['Dana','n'],['tomorrow','t'],['at','t'],['10','t'],['about','n'],['the','n'],['lease','n']],
+  [['Add','d'],['get','n'],['a','n'],['tile','n'],['quote','n'],['to','d'],['the','p'],['kitchen','p'],['reno','p']],
+  [['Look','n'],['into','n'],['a','n'],['standing','n'],['desk','n'],['for','n'],['the','n'],['office','n']],
+];
+const PHRASE_META = [{ when: 'Sat 10 AM', whenLabel: 'Later · Sat 10:00 AM' }, { proj: 'p1', projName: 'Kitchen Reno' }, {}];
+const CHUNK = { n: ['transparent', 'var(--ink,#000)', '0'], d: ['transparent', 'var(--ink4,rgba(60,60,67,.3))', '0'], t: ['rgba(255,149,0,.18)', 'var(--orangeInk,#C93400)', '0 4px'], p: ['rgba(88,86,214,.12)', 'var(--purple,#5856D6)', '0 4px'] };
+const DARK = { '--bg': '#000', '--card': '#1C1C1E', '--ink': '#fff', '--ink2': 'rgba(235,235,245,.6)', '--ink3': 'rgba(235,235,245,.42)', '--ink4': 'rgba(235,235,245,.28)', '--sep': 'rgba(84,84,88,.6)', '--fill': 'rgba(120,120,128,.3)', '--fillH': 'rgba(120,120,128,.42)', '--bar': 'rgba(30,30,32,.86)', '--barEdge': 'rgba(255,255,255,.08)', '--blue': '#0A84FF', '--blueH': '#409CFF', '--orange': '#FF9F0A', '--orangeInk': '#FFB340', '--orangeInk2': '#FFB340', '--orangeText': '#FF9F0A', '--ts': '1', '--red': '#FF453A', '--green': '#30D158', '--purple': '#5E5CE6', '--seg': '#636366' };
+const LIGHT = { '--bg': '#F2F2F7', '--card': '#fff', '--ink': '#000', '--ink2': 'rgba(60,60,67,.6)', '--ink3': 'rgba(60,60,67,.45)', '--ink4': 'rgba(60,60,67,.3)', '--sep': 'rgba(60,60,67,.12)', '--fill': 'rgba(120,120,128,.14)', '--fillH': 'rgba(120,120,128,.22)', '--bar': 'rgba(255,255,255,.84)', '--barEdge': 'rgba(255,255,255,.6)', '--blue': '#007AFF', '--blueH': '#0062cc', '--orange': '#FF9500', '--orangeInk': '#C93400', '--orangeInk2': '#8a3a00', '--orangeText': '#C93400', '--ts': '1', '--red': '#FF3B30', '--green': '#34C759', '--purple': '#5856D6', '--seg': '#fff' };
+const DAYS = [['Today', '9'], ['Sat', '10'], ['Sun', '11'], ['Mon', '12'], ['Tue', '13'], ['Wed', '14'], ['Thu', '15']];
+const DAY_LONG = ['Today', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+const MINS = ['00', '15', '30', '45'];
+const REM_OPTS = [
+  { k: 'aft', label: 'This afternoon', sub: '3:00 PM', when: '3:00 PM', icon: 'sun', tint: 'var(--orange,#FF9500)' },
+  { k: 'work', label: 'After work', sub: '5:30 PM · when you usually leave', when: '5:30 PM', icon: 'clock', tint: 'var(--orange,#FF9500)' },
+  { k: 'tonight', label: 'Tonight', sub: '8:00 PM', when: '8:00 PM', icon: 'moon', tint: 'var(--purple,#5856D6)' },
+  { k: 'leave', label: 'When I leave the office', sub: 'Halden Studio, Mill St', when: 'Leaving office', icon: 'pin', tint: 'var(--green,#34C759)' },
+  { k: 'tmrw', label: 'Tomorrow morning', sub: 'Sat 9:00 AM', when: 'Sat 9 AM', icon: 'sun', tint: 'var(--orange,#FF9500)' },
+  { k: 'pick', label: 'Pick date and time', sub: '', when: null, icon: 'cal', tint: 'var(--red,#FF3B30)' },
+];
+const TIMES = [['Tonight', '7 PM'], ['Tomorrow', '9 AM'], ['This weekend', 'Sat 10 AM']];
+const now = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+class Component extends DCLogic {
+  state = Object.assign(this.load(), {
+    tab: 'today', scrolled: false, skipped: [], sheet: false, capText: '', capDest: 'inbox', capTime: 0,
+    voice: false, voiceWords: 0, voiceStart: 0, voicePhrase: 0, focus: null, focusStart: 0,
+    toast: null, prev: null, pickingLater: false, evening: false, eveDone: false, proj: null, rem: null, stepText: '', onb: null, setOn: false, demo: { mic: false, garble: false }, micErr: false, garble: null, swap: null,
+    edit: null, np: null, ts: 1, appearance: 'System', sysDark: false, showHap: true, hap: null, drag: null,
+    set: { notif: true, nudge: true, afterWork: '5:30 PM', eveTime: '9:00 PM', eveStyle: 'On Today', maxNow: 3, upSteps: true, haptics: true },
+  });
+  scrollRef = React.createRef();
+  capRef = React.createRef();
+  garbleRef = React.createRef();
+  npRef = React.createRef();
+  themeRef = React.createRef(); hRef = React.createRef(); mRef = React.createRef(); aRef = React.createRef();
+
+  load() {
+    try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.items && s.projects) { s.items = s.items.map(i => i.tomorrow ? { ...i, tomorrow: false } : i); return s; } } catch (e) {}
+    return seed();
+  }
+  componentDidMount() {
+    try {
+      this.mq = window.matchMedia('(prefers-color-scheme: dark)');
+      this.onMq = () => this.setState({ sysDark: this.mq.matches });
+      this.onMq();
+      this.mq.addEventListener('change', this.onMq);
+    } catch (_) {}
+  }
+  componentDidUpdate(_, ps) {
+    ps = ps || {};
+    const r = this.state.rem, pr = ps.rem;
+    if (r && r.picking && !(pr && pr.picking)) setTimeout(() => {
+      if (this.hRef.current) this.hRef.current.scrollTop = (r.h - 1) * 36;
+      if (this.mRef.current) this.mRef.current.scrollTop = r.m * 36;
+      if (this.aRef.current) this.aRef.current.scrollTop = r.ap * 36;
+    }, 30);
+    if (ps.items !== this.state.items || ps.projects !== this.state.projects)
+      localStorage.setItem(KEY, JSON.stringify({ items: this.state.items, projects: this.state.projects }));
+    if (this.state.sheet && !ps.sheet) setTimeout(() => this.capRef.current && this.capRef.current.focus(), 30);
+  }
+  componentWillUnmount() { try { this.mq && this.mq.removeEventListener('change', this.onMq); } catch (_) {} clearInterval(this.tick); clearInterval(this.vt); clearTimeout(this.tt); clearTimeout(this.holdT); }
+
+  snap() { return { items: this.state.items, projects: this.state.projects }; }
+  flash(msg, undo) {
+    clearTimeout(this.tt);
+    this.setState({ toast: msg, prev: undo || null });
+    this.tt = setTimeout(() => this.setState({ toast: null, prev: null }), 3200);
+  }
+  setItems(fn) { this.setState(s => ({ items: fn(s.items) })); }
+  patchItem(id, patch) { this.setItems(items => items.map(i => i.id === id ? { ...i, ...patch } : i)); }
+  toggleStep(pid, sid) {
+    this.setState(s => ({ projects: s.projects.map(p => p.id !== pid ? p : { ...p, steps: p.steps.map(st => st.id === sid ? { ...st, done: !st.done } : st) }) }));
+  }
+  nowOpen() { return this.state.items.filter(i => i.list === 'now' && !i.done && !i.tomorrow); }
+  addStep(pid, text) {
+    const t = (text || '').trim(); const pj = this.state.projects.find(p => p.id === pid);
+    if (!t || !pj) return false;
+    const prev = this.snap();
+    const nx = pj.steps.find(x => !x.done) || pj.steps[pj.steps.length - 1] || {};
+    const steps = [...pj.steps]; let at = steps.length;
+    for (let i = steps.length - 1; i >= 0; i--) if (steps[i].phase === nx.phase) { at = i + 1; break; }
+    steps.splice(at, 0, { id: 'st' + Date.now(), text: t, phase: nx.phase });
+    this.setState(s => ({ projects: s.projects.map(p => p.id === pid ? { ...p, steps } : p) }));
+    this.flash(`Added to ${pj.name}`, prev);
+    return true;
+  }
+  openProject(pid) {
+    if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0;
+    this.setState({ proj: pid, stepText: '', scrolled: false });
+  }
+  projectVals() {
+    const s = this.state, pj = s.proj && s.projects.find(p => p.id === s.proj);
+    if (!pj) return { isProject: false, pdPhases: [] };
+    const names = [...new Set(pj.steps.map(x => x.phase || 'Steps'))];
+    const phases = names.map(n => { const st = pj.steps.filter(x => (x.phase || 'Steps') === n); return { name: n, steps: st, done: st.every(x => x.done) }; });
+    const cur = phases.findIndex(p => !p.done);
+    const next = pj.steps.find(x => !x.done);
+    const dn = pj.steps.filter(x => x.done).length, pct = Math.round(dn / pj.steps.length * 100);
+    return {
+      isProject: true, pdName: pj.name,
+      pdSub: cur >= 0 ? `${dn} of ${pj.steps.length} steps · Phase ${cur + 1} of ${phases.length}` : `All ${pj.steps.length} steps done`,
+      pdRing: `conic-gradient(${pct === 100 ? 'var(--green,#34C759)' : 'var(--blue,#007AFF)'} 0 ${pct}%, var(--fill,rgba(120,120,128,.16)) ${pct}% 100%)`,
+      closeProject: () => this.setState({ proj: null }),
+      pdPhases: phases.map((ph, i) => {
+        const isCur = i === cur, isDone = ph.done && !isCur, isUp = !ph.done && !isCur;
+        const pdn = ph.steps.filter(x => x.done).length;
+        return {
+          name: ph.name, isDone, isCur, isUp, collapsed: !isCur, mb: isCur ? 10 : 0,
+          line: i === phases.length - 1 ? 'transparent' : isDone ? 'var(--blue,#007AFF)' : 'var(--sep,rgba(60,60,67,.16))',
+          color: isCur ? 'var(--blue,#007AFF)' : isUp ? 'var(--ink3,rgba(60,60,67,.5))' : 'var(--ink,#000)',
+          subColor: isUp ? 'var(--ink3,rgba(60,60,67,.5))' : 'var(--ink2,rgba(60,60,67,.6))',
+          stat: isDone ? 'Done' : isCur ? `${pdn} of ${ph.steps.length}` : `After ${phases[i - 1] ? phases[i - 1].name : ''}`,
+          summary: ph.steps.map(x => x.text).join(' · '),
+          steps: ph.steps.map(st => ({
+            text: st.text, done: !!st.done, open: !st.done, isNext: !!next && next.id === st.id,
+            ring: next && next.id === st.id ? 'var(--blue,#007AFF)' : 'var(--ink4,rgba(60,60,67,.3))', weight: next && next.id === st.id ? 600 : 400,
+            color: st.done ? 'var(--ink3,rgba(60,60,67,.45))' : 'var(--ink,#000)', deco: st.done ? 'line-through' : 'none',
+            onToggle: () => this.toggleStep(pj.id, st.id),
+          })),
+        };
+      }),
+      stepText: s.stepText,
+      onStepChange: e => this.setState({ stepText: e.target.value }),
+      onStepKey: e => { if (e.key === 'Enter') { e.preventDefault(); if (this.addStep(pj.id, s.stepText)) this.setState({ stepText: '' }); } },
+    };
+  }
+  settingsVals() {
+    const st = this.state.set;
+    const upd = patch => this.setState(s => ({ set: { ...s.set, ...patch } }));
+    const cyc = (k, opts) => () => upd({ [k]: opts[(opts.indexOf(st[k]) + 1) % opts.length] });
+    const tg = k => ({ [k + 'Track']: st[k] ? 'var(--green,#34C759)' : 'var(--fill,rgba(120,120,128,.16))', [k + 'Knob']: st[k] ? 22 : 2, [k + 'Toggle']: () => upd({ [k]: !st[k] }) });
+    return {
+      setOn: this.state.setOn, setOpen: () => this.setState({ setOn: true }), setClose: () => this.setState({ setOn: false }),
+      ...tg('notif'), ...tg('nudge'), ...tg('upSteps'), ...tg('haptics'),
+      setAfterWork: st.afterWork, cycleAfterWork: cyc('afterWork', ['5:00 PM', '5:30 PM', '6:00 PM']),
+      setEveTime: st.eveTime, cycleEveTime: cyc('eveTime', ['8:30 PM', '9:00 PM', '9:30 PM']),
+      setEveStyle: st.eveStyle, cycleEveStyle: cyc('eveStyle', ['On Today', 'Off']),
+      setMaxNow: String(st.maxNow),
+      maxDown: () => upd({ maxNow: Math.max(1, st.maxNow - 1) }), maxUp: () => upd({ maxNow: Math.min(5, st.maxNow + 1) }),
+      setHome: 'Rowan Ave', setOffice: 'Halden Studio', setLang: 'English (UK)', setAction: 'Hold to talk',
+      notInDemo: () => this.flash('Not in this demo'),
+      setReplay: () => { this.setState({ setOn: false }); this.replay(); },
+    };
+  }
+  npVals() {
+    const s = this.state, n = s.np;
+    const inbox = s.items.filter(i => i.list === 'inbox');
+    const base = {
+      projSection: !s.onb, noProjects: s.projects.length === 0 && !s.onb,
+      npOpen: () => { this.setState({ np: { name: '', rows: [], step: '' } }); setTimeout(() => this.npRef.current && this.npRef.current.focus(), 60); },
+    };
+    if (!n) return { ...base, npOn: false, npRows: [], npInbox: [] };
+    const upd = p => this.setState(st => ({ np: { ...st.np, ...p } }));
+    const setRows = fn => this.setState(st => ({ np: { ...st.np, rows: fn(st.np.rows) } }));
+    const firstStep = n.rows.findIndex(r => r.type === 'step');
+    const stepCount = n.rows.filter(r => r.type === 'step').length;
+    const usedIds = n.rows.filter(r => r.fromId).map(r => r.fromId);
+    const addStep = () => { const t = n.step.trim(); if (!t) return; setRows(rows => [...rows, { type: 'step', text: t, key: 'r' + Date.now() }]); upd({ step: '' }); };
+    const save = () => {
+      const name = n.name.trim();
+      if (!name) { this.haptic('Warning'); this.flash('Give the project a name'); return; }
+      let phase = n.rows.some(r => r.type === 'phase') ? null : 'Steps';
+      const steps = [];
+      n.rows.forEach((r, i) => {
+        if (r.type === 'phase') phase = r.name.trim() || 'Phase ' + (i + 1);
+        else steps.push({ id: 'ps' + Date.now() + i, text: r.text, phase: phase || 'Steps' });
+      });
+      const pid = 'p' + Date.now(), prev = this.snap();
+      this.setState(st => ({ np: null, projects: [...st.projects, { id: pid, name, open: true, steps: steps.length ? steps : [{ id: 'ps' + Date.now(), text: 'Decide the first step', phase: 'Steps' }] }], items: st.items.filter(i => !usedIds.includes(i.id)) }));
+      this.haptic('Success');
+      this.flash(`Created ${name}`, prev);
+      setTimeout(() => this.openProject(pid), 50);
+    };
+    return {
+      ...base, npOn: true, npRef: this.npRef, npName: n.name, onNpName: e => upd({ name: e.target.value }),
+      npSaveBg: n.name.trim() ? 'var(--blue,#007AFF)' : 'rgba(0,122,255,.35)', npSave: save,
+      npClose: () => this.setState({ np: null }),
+      npCount: stepCount ? String(stepCount) : '',
+      npRows: n.rows.map((r, i) => ({
+        isPhase: r.type === 'phase', isStep: r.type === 'step', name: r.name || '', text: r.text || '',
+        fromInbox: !!r.fromId, isFirst: i === firstStep,
+        ring: i === firstStep ? 'var(--blue,#007AFF)' : 'var(--ink4,rgba(60,60,67,.3))', weight: i === firstStep ? 600 : 400,
+        onName: e => { const v = e.target.value; setRows(rows => rows.map((x, j) => j === i ? { ...x, name: v } : x)); },
+        onRemove: () => setRows(rows => rows.filter((_, j) => j !== i)),
+      })),
+      npStep: n.step, onNpStep: e => upd({ step: e.target.value }),
+      onNpStepKey: e => { if (e.key === 'Enter') { e.preventDefault(); addStep(); } },
+      npAddPhase: () => { const k = n.rows.filter(r => r.type === 'phase').length; this.haptic('Light'); setRows(rows => [...rows, { type: 'phase', name: ['Plan', 'Do', 'Finish'][k] || 'Phase ' + (k + 1), key: 'h' + Date.now() }]); },
+      npHasInbox: inbox.some(i => !usedIds.includes(i.id)),
+      npInbox: inbox.filter(i => !usedIds.includes(i.id)).slice(0, 4).map(i => ({ text: i.text, onAdd: () => { this.haptic('Light'); setRows(rows => [...rows, { type: 'step', text: i.text, fromId: i.id, key: i.id }]); } })),
+    };
+  }
+  openEdit(id) {
+    const it = this.state.items.find(i => i.id === id); if (!it) return;
+    this.setState({ edit: { id, text: it.text, note: it.note || '', list: it.list } });
+  }
+  editVals() {
+    const s = this.state, e = s.edit, it = e && s.items.find(i => i.id === e.id);
+    if (!it) return { editOn: false, editLists: [] };
+    const full = this.nowOpen().length >= s.set.maxNow && it.list !== 'now';
+    const save = () => {
+      const prev = this.snap(), list = e.list;
+      this.patchItem(it.id, { text: e.text.trim() || it.text, note: e.note.trim() || undefined, list,
+        when: list === 'later' ? (it.when || s.set.afterWork) : it.when,
+        reason: list === 'now' && it.list !== 'now' ? 'Moved to Now' : it.reason, tomorrow: list === it.list ? it.tomorrow : false });
+      this.setState({ edit: null }); this.haptic('Light'); this.flash('Saved', prev);
+    };
+    return {
+      editOn: true, editText: e.text, editNote: e.note,
+      onEditText: ev => this.setState({ edit: { ...e, text: ev.target.value } }),
+      onEditNote: ev => this.setState({ edit: { ...e, note: ev.target.value } }),
+      onEditKey: ev => { if (ev.key === 'Enter') { ev.preventDefault(); save(); } },
+      editLists: [['inbox', 'Inbox'], ['now', 'Now'], ['later', 'Later'], ['someday', 'Someday']].map(([k, l]) => ({
+        label: l, bg: e.list === k ? 'var(--seg,#fff)' : 'transparent', sh: e.list === k ? '0 2px 6px rgba(0,0,0,.12)' : 'none', op: k === 'now' && full ? 0.4 : 1,
+        onPick: () => { if (k === 'now' && full) { this.haptic('Warning'); this.flash(`Now is full (${s.set.maxNow}). Move something out first`); return; } this.haptic('Selection'); this.setState({ edit: { ...e, list: k } }); },
+      })),
+      editIsLater: e.list === 'later', editWhen: it.list === 'later' && it.when ? it.when : s.set.afterWork,
+      editPickTime: () => this.openRemind(it.id),
+      editSince: it.since ? `Caught today at ${it.since}` : 'Caught earlier this week',
+      editSave: save, editClose: () => this.setState({ edit: null }),
+      editDelete: () => { const prev = this.snap(); this.setItems(items => items.filter(i => i.id !== it.id)); this.setState({ edit: null }); this.haptic('Warning'); this.flash('Deleted', prev); },
+    };
+  }
+  openSwap(id, from) {
+    const open = this.nowOpen();
+    this.haptic('Warning');
+    this.setState({ swap: { id, from, sel: open.length ? open[open.length - 1].id : null } });
+  }
+  errorVals(later, someday) {
+    const s = this.state, sep = '1px solid var(--sep,rgba(60,60,67,.12))';
+    const dm = k => ({ [k + 'Track']: s.demo[k] ? 'var(--green,#34C759)' : 'var(--fill,rgba(120,120,128,.16))', [k + 'Knob']: s.demo[k] ? 22 : 2 });
+    const sw = s.swap, inc = sw && s.items.find(i => i.id === sw.id), open = this.nowOpen();
+    const doneN = s.items.filter(i => (i.list === 'now' || i.list === 'later') && i.done).length;
+    const g = s.garble, fill = g ? g.fill : '';
+    const saveGarble = () => { const t = fill.trim() ? `Send the ${fill.trim()} to Priya` : 'Send the … to Priya'; this.setState({ garble: null }); this.addItem(t, 'inbox', 0); };
+    return {
+      ...dm('mic'), ...dm('garble'),
+      toggleMicDemo: () => this.setState(st => ({ demo: { ...st.demo, mic: !st.demo.mic } })),
+      toggleGarbleDemo: () => this.setState(st => ({ demo: { ...st.demo, garble: !st.demo.garble } })),
+      micErr: s.micErr, micClose: () => this.setState({ micErr: false }),
+      micSettings: () => { this.setState({ micErr: false }); this.flash('This would open iOS Settings'); },
+      micType: () => this.setState({ micErr: false, sheet: true, capText: '', capDest: 'inbox', capTime: 0 }),
+      garbleOn: !!g, garbleRef: this.garbleRef, garbleFill: fill, garbleW: Math.max(80, fill.length * 15 + 24),
+      onGarbleChange: e => this.setState({ garble: { fill: e.target.value } }),
+      onGarbleKey: e => { if (e.key === 'Enter') { e.preventDefault(); saveGarble(); } },
+      garbleSaveLabel: fill.trim() ? 'Save' : 'Save as Is', garbleSave: saveGarble,
+      garbleRetry: () => { this.setState({ garble: null }); this.flash('Hold + to try again'); },
+      garbleDiscard: () => this.setState({ garble: null }),
+      notifBanner: !s.set.notif && later.length > 0,
+      notifOn: () => { this.setState(st => ({ set: { ...st.set, notif: true } })); this.flash('Reminders are on'); },
+      hasSomeday: someday.length > 0,
+      clearSub: doneN ? `${doneN} done. Nothing left in Now and no project steps waiting.` : 'Nothing in Now and no project steps waiting.',
+      swapOn: !!inc, swapTitle: `Now holds ${s.set.maxNow} thing${s.set.maxNow === 1 ? '' : 's'}`,
+      swapSub: inc ? `To add “${inc.text}”, move one out. It goes back to Inbox.` : '',
+      swapAlt: sw ? `Keep It in ${{ someday: 'Someday', later: 'Later', inbox: 'Inbox' }[sw.from]}` : '',
+      swapClose: () => this.setState({ swap: null }),
+      swapRows: open.map((o, i) => ({ text: o.text, sub: o.reason || '', sel: !!sw && sw.sel === o.id, unsel: !sw || sw.sel !== o.id, bb: i < open.length - 1 ? sep : '0', onPick: () => this.setState(st => ({ swap: { ...st.swap, sel: o.id } })) })),
+      swapGo: () => {
+        if (!inc || !sw.sel) return;
+        const out = s.items.find(i => i.id === sw.sel), prev = this.snap();
+        this.setItems(items => items.map(i => i.id === sw.sel ? { ...i, list: 'inbox', since: now(), reason: undefined } : i.id === inc.id ? { ...i, list: 'now', reason: 'Swapped into Now' } : i));
+        this.setState({ swap: null });
+        this.flash(`Swapped. “${out.text}” went to Inbox`, prev);
+      },
+    };
+  }
+  replay() {
+    if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0;
+    this.setState({ items: [], projects: [], skipped: [], tab: 'today', scrolled: false, focus: null, sheet: false, toast: null, prev: null, evening: false, eveDone: false, proj: null, rem: null, stepText: '', voicePhrase: 0, onb: 'welcome', setOn: false });
+  }
+  openRemind(id) {
+    const it = this.state.items.find(i => i.id === id); if (!it) return;
+    const m = this.remOpts().find(o => o.when && o.when === it.when);
+    this.setState({ rem: { id, sel: m ? m.k : 'work', nudge: it.nudge !== undefined ? it.nudge : this.state.set.nudge } });
+  }
+  pickLabel(r) { const t = `${r.h}:${MINS[r.m]} ${r.ap ? 'PM' : 'AM'}`; return r.day ? `${DAYS[r.day][0]} ${t}` : t; }
+  wheel(e, key, n, map) {
+    const idx = Math.max(0, Math.min(n - 1, Math.round(e.currentTarget.scrollTop / 36))), v = map(idx);
+    if (this.state.rem && this.state.rem[key] !== v) { this.haptic('Selection'); this.setState(st => ({ rem: { ...st.rem, [key]: v } })); }
+  }
+  haptic(kind) {
+    if (!this.state.set.haptics) return;
+    try { navigator.vibrate && navigator.vibrate(kind === 'Success' ? [12, 60, 12] : kind === 'Warning' ? [20, 40, 20] : 8); } catch (_) {}
+    if (!this.state.showHap) return;
+    clearTimeout(this.hapT);
+    this.setState({ hap: kind });
+    this.hapT = setTimeout(() => this.setState({ hap: null }), 900);
+  }
+  swDown(e, id) { this.sw = { id, x: e.clientX, y: e.clientY, moved: false, armed: 0 }; }
+  swMove(e, id) {
+    const w = this.sw; if (!w || w.id !== id) return;
+    if (e.pointerType === 'mouse' && !e.buttons) { this.sw = null; if (this.state.drag) this.setState({ drag: null }); return; }
+    const dx = e.clientX - w.x, dy = e.clientY - w.y;
+    if (!w.moved) {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) { w.moved = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} }
+      else { if (Math.abs(dy) > 10) this.sw = null; return; }
+    }
+    const d = Math.max(-200, Math.min(200, dx)), armed = d > 90 ? 1 : d < -90 ? -1 : 0;
+    if (armed !== w.armed) { w.armed = armed; if (armed) this.haptic('Light'); }
+    this.setState({ drag: { id, dx: d } });
+  }
+  swUp(id, onR, onL) {
+    const w = this.sw; this.sw = null;
+    if (!w || w.id !== id || !w.moved) return;
+    this.setState({ drag: null });
+    if (w.armed === 1) onR(); else if (w.armed === -1) onL();
+  }
+  remOpts() {
+    const aw = this.state.set.afterWork;
+    return REM_OPTS.map(o => o.k === 'work' ? { ...o, when: aw, sub: `${aw} · when you usually leave` } : o);
+  }
+  remindVals() {
+    const r = this.state.rem, sep = '1px solid var(--sep,rgba(60,60,67,.12))';
+    const it = r && this.state.items.find(i => i.id === r.id);
+    return {
+      remOn: !!it, remItem: it ? it.text : '',
+      remClose: () => this.setState({ rem: null }),
+      remOpts: this.remOpts().map((o, i) => ({
+        label: o.label, sub: o.sub, hasSub: !!o.sub, tint: o.tint, sel: !!r && r.sel === o.k,
+        isSun: o.icon === 'sun', isClock: o.icon === 'clock', isMoon: o.icon === 'moon', isPin: o.icon === 'pin', isCal: o.icon === 'cal',
+        bb: i < REM_OPTS.length - 1 ? sep : '0',
+        onPick: () => { if (!o.when) { this.setState(s => ({ rem: { ...s.rem, sel: 'pick', picking: true, day: 1, h: 9, m: 0, ap: 0 } })); return; } this.haptic('Selection'); this.setState(s => ({ rem: { ...s.rem, sel: o.k } })); },
+      })),
+      nudgeTrack: r && r.nudge ? 'var(--green,#34C759)' : 'var(--fill,rgba(120,120,128,.16))', nudgeKnob: r && r.nudge ? 22 : 2,
+      remList: !!r && !r.picking, remPicking: !!r && !!r.picking,
+      pickBack: () => this.setState(st => ({ rem: { ...st.rem, picking: false, sel: 'work' } })),
+      dayChips: DAYS.map((d, i) => ({ dow: d[0], num: d[1], bg: r && r.day === i ? 'var(--blue,#007AFF)' : 'transparent', fg: r && r.day === i ? '#fff' : 'var(--ink,#000)', onPick: () => { this.haptic('Selection'); this.setState(st => ({ rem: { ...st.rem, day: i } })); } })),
+      hours: Array.from({ length: 12 }, (_, i) => ({ t: String(i + 1), c: r && r.h === i + 1 ? 'var(--ink,#000)' : 'var(--ink4,rgba(60,60,67,.3))' })),
+      mins: MINS.map((m, i) => ({ t: m, c: r && r.m === i ? 'var(--ink,#000)' : 'var(--ink4,rgba(60,60,67,.3))' })),
+      aps: ['AM', 'PM'].map((a, i) => ({ t: a, c: r && r.ap === i ? 'var(--ink,#000)' : 'var(--ink4,rgba(60,60,67,.3))' })),
+      hRef: this.hRef, mRef: this.mRef, aRef: this.aRef,
+      onHScroll: e => this.wheel(e, 'h', 12, i => i + 1), onMScroll: e => this.wheel(e, 'm', 4, i => i), onAScroll: e => this.wheel(e, 'ap', 2, i => i),
+      pickSummary: r && r.picking ? `${DAY_LONG[r.day]}, October ${DAYS[r.day][1]} at ${r.h}:${MINS[r.m]} ${r.ap ? 'PM' : 'AM'}` : '',
+      remToggleNudge: () => this.setState(s => ({ rem: { ...s.rem, nudge: !s.rem.nudge } })),
+      remSave: () => {
+        if (!it) return;
+        const o = this.remOpts().find(x => x.k === r.sel), prev = this.snap();
+        const when = r.picking ? this.pickLabel(r) : o.when;
+        this.patchItem(it.id, { list: 'later', when, nudge: r.nudge, tomorrow: false, reason: undefined });
+        this.setState({ rem: null });
+        this.haptic('Light');
+        this.flash(`Reminder set: ${r.picking ? when : o.label}`, prev);
+      },
+    };
+  }
+  eveVals(nowItems) {
+    const s = this.state;
+    const left = nowItems.filter(i => !i.done);
+    const doneN = s.items.filter(i => (i.list === 'now' || i.list === 'later') && i.done).length;
+    const moved = s.items.filter(i => i.tomorrow).length;
+    const inboxN = s.items.filter(i => i.list === 'inbox').length;
+    const moveAll = () => { const prev = this.snap(); const ids = left.map(i => i.id); this.setItems(items => items.map(i => ids.includes(i.id) ? { ...i, tomorrow: true } : i)); return prev; };
+    return {
+      eveOn: s.evening,
+      eveTitle: left.length ? `${left.length} left for today` : s.eveDone ? 'Day finished' : 'Nothing left for today',
+      eveSub: left.length ? 'Move them on, then finish the day' : s.eveDone ? 'Good night. Up first is ready in the morning.' : moved ? `${moved} moved to tomorrow` : 'Finish when you’re ready',
+      eveCanFinish: !s.eveDone,
+      eveFinish: () => { const prev = moveAll(); this.setState({ eveDone: true }); this.flash(left.length ? `Day finished. ${left.length} moved to tomorrow` : 'Day finished', prev); },
+      eveHasLeft: s.evening && left.length > 0, nowLabelOn: !(s.evening && left.length > 0),
+      allToTomorrow: () => { if (!left.length) return; const n = left.length, prev = moveAll(); this.flash(`Moved ${n} to tomorrow`, prev); },
+      eveDoneRow: s.evening && doneN > 0, eveDoneLabel: `${doneN} done today`,
+      eveInbox: s.evening && inboxN > 0, eveInboxLabel: `${inboxN} new idea${inboxN === 1 ? '' : 's'}`,
+      eveTrack: s.evening ? 'var(--green,#34C759)' : 'var(--fill,rgba(120,120,128,.16))', eveKnob: s.evening ? 22 : 2,
+      dateLabel: s.evening ? 'Friday evening' : 'Friday, October 9', dateColor: s.evening ? 'var(--orangeText,#C93400)' : 'var(--ink2,rgba(60,60,67,.6))',
+      toggleEvening: () => {
+        if (!s.evening && s.set.eveStyle === 'Off') { this.flash('Evening wrap-up is off in Settings'); return; }
+        if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0;
+        if (s.evening) this.setState(st => ({ evening: false, eveDone: false, items: st.items.map(i => i.tomorrow ? { ...i, tomorrow: false, reason: 'Carried over from last night' } : i) }));
+        else this.setState({ evening: true, eveDone: false, tab: 'today', proj: null, scrolled: false, rem: null });
+      },
+    };
+  }
+  candidates() {
+    const c = this.nowOpen().map(i => ({ key: i.id, kind: 'item', id: i.id, text: i.text, reason: i.reason || 'First open item in Now' }));
+    if (this.state.set.upSteps) this.state.projects.forEach(p => {
+      const st = p.steps.find(x => !x.done);
+      if (st) c.push({ key: st.id, kind: 'step', pid: p.id, id: st.id, text: st.text, reason: `Next step in ${p.name}` });
+    });
+    return c;
+  }
+  up() {
+    const c = this.candidates();
+    return c.find(x => !this.state.skipped.includes(x.key)) || c[0] || null;
+  }
+  completeUp(u) {
+    if (!u) return;
+    const prev = this.snap();
+    if (u.kind === 'item') this.patchItem(u.id, { done: true }); else this.toggleStep(u.pid, u.id);
+    this.haptic('Success');
+    this.flash(`Done: ${u.text}`, prev);
+  }
+  skipUp() {
+    const u = this.up(); if (!u) return;
+    const c = this.candidates();
+    this.setState(s => {
+      let sk = [...s.skipped, u.key];
+      if (c.every(x => sk.includes(x.key))) sk = [];
+      return { skipped: sk };
+    });
+  }
+  addItem(text, dest, timeIdx, whenOverride) {
+    const t = text.trim(); if (!t) return null;
+    let list = dest;
+    if (list === 'now' && this.nowOpen().length >= this.state.set.maxNow) list = 'inbox';
+    const it = { id: 'x' + Date.now() + Math.random().toString(36).slice(2, 5), text: t, list, since: now() };
+    if (list === 'later') it.when = whenOverride || TIMES[timeIdx][1];
+    if (list === 'now') it.reason = 'You just added it to Now';
+    const prev = this.snap();
+    this.setItems(items => [...items, it]);
+    const name = { inbox: 'Inbox', now: 'Now', later: 'Later', someday: 'Someday' }[list];
+    this.flash(dest === 'now' && list === 'inbox' ? 'Now is full. Saved to Inbox' : `Saved to ${name}`, prev);
+    return it;
+  }
+  go(tab) {
+    if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0;
+    this.setState({ tab, scrolled: false, pickingLater: false, proj: null });
+  }
+
+  startVoice() {
+    if (this.state.onb === 'hold') this.setState({ onb: 'talk', voicePhrase: 0 });
+    this.haptic('Medium');
+    this.setState({ voice: true, voiceWords: 0, voiceStart: Date.now() });
+    this.vt = setInterval(() => this.setState(s => ({ voiceWords: s.voiceWords + 1 })), 230);
+  }
+  voiceParse() {
+    const k = this.state.voicePhrase % PHRASES.length, ph = PHRASES[k], meta = PHRASE_META[k];
+    const vis = ph.slice(0, Math.min(this.state.voiceWords, ph.length));
+    const chunks = [];
+    vis.forEach(([w, t]) => { const last = chunks[chunks.length - 1]; if (last && last.t === t) last.text += ' ' + w; else chunks.push({ t, text: w }); });
+    const words = vis.filter(x => x[1] === 'n').map(x => x[0]).join(' ');
+    return {
+      chunks: chunks.map(c => ({ text: c.text, bg: CHUNK[c.t][0], fg: CHUNK[c.t][1], pad: CHUNK[c.t][2] })),
+      title: words ? words[0].toUpperCase() + words.slice(1) : '',
+      hasWhen: vis.some(x => x[1] === 't'), hasProj: vis.some(x => x[1] === 'p'), meta,
+    };
+  }
+  endVoice(save) {
+    clearInterval(this.vt);
+    const v = this.voiceParse();
+    const inOnb = this.state.onb === 'talk', ok = save && v.hasWhen && !!v.title;
+    this.setState(s => ({ voice: false, voicePhrase: s.voicePhrase + 1 }));
+    if (inOnb) {
+      if (!ok) { this.setState({ onb: 'hold', voicePhrase: 0 }); if (save) this.flash('Keep holding until you’ve said the time'); return; }
+      this.setState({ onb: 'perm' });
+    }
+    if (save && !inOnb && this.state.demo.garble) { this.setState({ garble: { fill: '' } }); setTimeout(() => this.garbleRef.current && this.garbleRef.current.focus(), 60); return; }
+    if (!save || !v.title) return;
+    if (v.hasProj && !v.hasWhen) this.addStep(v.meta.proj, v.title);
+    else this.addItem(v.title, v.hasWhen ? 'later' : 'inbox', 0, v.hasWhen ? v.meta.when : null);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const u = this.up();
+    const inbox = s.items.filter(i => i.list === 'inbox');
+    const nowItems = s.items.filter(i => i.list === 'now' && !i.tomorrow);
+    const later = s.items.filter(i => i.list === 'later');
+    const someday = s.items.filter(i => i.list === 'someday');
+    const nowFull = this.nowOpen().length >= s.set.maxNow;
+    const sep = '1px solid var(--sep,rgba(60,60,67,.12))';
+    const row = (i, idx, arr) => {
+      const toggle = () => { const prev = this.snap(); this.patchItem(i.id, { done: !i.done }); if (!i.done) { this.haptic('Success'); this.flash(`Done: ${i.text}`, prev); } };
+      const isNow = i.list === 'now', fill = isNow ? 'var(--blue,#007AFF)' : 'var(--orange,#FF9500)';
+      const left = isNow ? () => this.openRemind(i.id) : () => {
+        if (this.nowOpen().length >= s.set.maxNow) { this.openSwap(i.id, 'later'); return; }
+        const prev = this.snap(); this.patchItem(i.id, { list: 'now', reason: 'Moved up from Later' }); this.flash('Moved to Now', prev);
+      };
+      const dr = s.drag && s.drag.id === i.id ? s.drag.dx : 0;
+      const swipe = {
+        dx: dr, tr: dr ? 'none' : 'transform .3s cubic-bezier(.2,.8,.2,1)',
+        swBg: dr > 0 ? 'var(--green,#34C759)' : dr < 0 ? (isNow ? 'var(--orangeText,#C93400)' : 'var(--blue,#007AFF)') : 'transparent',
+        rOp: dr > 0 ? 1 : 0, lOp: dr < 0 ? 1 : 0, rSc: dr > 90 ? 1.12 : 0.88, lSc: dr < -90 ? 1.12 : 0.88,
+        rLabel: i.done ? 'Undo' : 'Done', lLabel: isNow ? 'Later' : 'Now',
+        ringC: i.done ? fill : 'var(--ink4,rgba(60,60,67,.3))', fillC: i.done ? fill : 'transparent', chkOp: i.done ? 1 : 0, chkSc: i.done ? 1 : 0.4,
+        onPD: e => this.swDown(e, i.id), onPM: e => this.swMove(e, i.id),
+        onPU: () => this.swUp(i.id, toggle, left), onPC: () => { this.sw = null; this.setState({ drag: null }); },
+      };
+      return {
+      text: i.text, when: i.when, done: !!i.done, open: !i.done,
+      color: i.done ? 'var(--ink3,rgba(60,60,67,.45))' : 'var(--ink,#000)', deco: i.done ? 'line-through' : 'none',
+      bb: idx < arr.length - 1 ? sep : '0',
+      onToggle: toggle,
+      ...swipe,
+      eve: s.evening && !i.done,
+      onTomorrow: () => { const prev = this.snap(); this.patchItem(i.id, { tomorrow: true }); this.flash('Moved to tomorrow', prev); },
+      onSomeday: () => { const prev = this.snap(); this.patchItem(i.id, { list: 'someday' }); this.flash('Moved to Someday', prev); },
+      onWhen: () => this.openRemind(i.id),
+      onEdit: () => this.openEdit(i.id), hasNote: !!i.note, note: i.note || '',
+      ariaToggle: `${i.done ? 'Mark not done' : 'Mark done'}: ${i.text}`,
+      ariaEdit: `${i.text}${i.when ? ', ' + i.when : ''}${i.done ? ', done' : ''}. Double-tap to edit. Swipe actions: Done, ${isNow ? 'Later' : 'Move to Now'}.`,
+      muted: !s.set.notif, whenColor: s.set.notif ? 'var(--orangeText,#C93400)' : 'var(--ink2,rgba(60,60,67,.6))',
+    };
+    };
+    const miniShow = !!u && !s.evening && !s.onb && (s.tab !== 'today' || s.scrolled || !!s.proj) && !s.sheet && !s.focus && !s.voice && !s.rem && !s.setOn && !s.swap && !s.garble && !s.micErr && !s.edit && !s.np;
+    const tabSt = t => s.tab === t ? ['rgba(0,122,255,.12)', 'var(--blue,#007AFF)'] : ['transparent', 'var(--ink,#000)'];
+    const [tTodayBg, tTodayC] = tabSt('today'), [tInboxBg, tInboxC] = tabSt('inbox'), [tSomeBg, tSomeC] = tabSt('someday');
+    const cur = inbox[0];
+    const vp = this.voiceParse();
+    const isDark = s.appearance === 'Dark' || (s.appearance === 'System' && s.sysDark);
+    const elapsed = s.focus ? Math.floor((Date.now() - s.focusStart) / 1000) : 0;
+    const startFocus = () => {
+      const f = this.up(); if (!f) return;
+      clearInterval(this.tick);
+      this.tick = setInterval(() => this.forceUpdate(), 1000);
+      this.setState({ focus: f, focusStart: Date.now() });
+    };
+    const endFocus = () => { clearInterval(this.tick); this.setState({ focus: null }); };
+    const sortTo = (list, when) => {
+      if (!cur) return;
+      if (list === 'now' && nowFull) { this.openSwap(cur.id, 'inbox'); return; }
+      const prev = this.snap();
+      this.patchItem(cur.id, { list, when, reason: list === 'now' ? 'Sorted into Now from Inbox' : undefined });
+      this.setState({ pickingLater: false });
+      this.flash(`Moved to ${{ now: 'Now', later: 'Later', someday: 'Someday' }[list]}`, prev);
+    };
+
+    return {
+      kbOn: s.sheet,
+      isToday: s.tab === 'today' && !s.proj, isInbox: s.tab === 'inbox', isSomeday: s.tab === 'someday',
+      tTodayBg, tTodayC, tInboxBg, tInboxC, tSomeBg, tSomeC,
+      goToday: () => this.go('today'), goInbox: () => this.go('inbox'), goSomeday: () => this.go('someday'),
+      scrollRef: this.scrollRef,
+      onScroll: e => { const sc = e.currentTarget.scrollTop > 150; if (sc !== s.scrolled) this.setState({ scrolled: sc }); },
+      upHas: !!u, upNone: !u, upCard: !!u && !s.evening, upNoneCard: !u && !s.evening && !s.onb, upText: u ? u.text : '', upReason: u ? u.reason : '',
+      upStart: startFocus,
+      upSkip: e => { e && e.stopPropagation(); this.skipUp(); },
+      upDone: e => { e && e.stopPropagation(); this.completeUp(this.up()); },
+      miniY: miniShow ? 0 : 24, miniOp: miniShow ? 1 : 0, miniPE: miniShow ? 'auto' : 'none',
+      nowRows: (s.evening ? nowItems.filter(i => !i.done) : nowItems).map(row),
+      nowEmpty: (s.evening ? nowItems.filter(i => !i.done) : nowItems).length === 0,
+      nowEmptyMsg: s.evening ? 'Nothing left in Now.' : 'Nothing in Now. Sort your Inbox to add some.',
+      nowLabel: `${this.nowOpen().length} of ${s.set.maxNow} open`,
+      laterRows: later.map(row), laterEmpty: later.length === 0, laterCount: String(later.filter(i => !i.done).length),
+      projCount: String(s.projects.length),
+      projRows: s.projects.map((p, pi) => {
+        const done = p.steps.filter(x => x.done).length, pct = Math.round(done / p.steps.length * 100);
+        const next = p.steps.find(x => !x.done);
+        return {
+          name: p.name, stat: `${done} of ${p.steps.length}`, open: p.open, chev: p.open ? 180 : 0,
+          onOpen: () => this.openProject(p.id),
+          ring: `conic-gradient(${pct === 100 ? 'var(--green,#34C759)' : 'var(--blue,#007AFF)'} 0 ${pct}%, var(--fill,rgba(120,120,128,.16)) ${pct}% 100%)`,
+          bb: p.open || pi < s.projects.length - 1 ? sep : '0',
+          onToggleOpen: () => this.setState(st => ({ projects: st.projects.map(x => x.id === p.id ? { ...x, open: !x.open } : x) })),
+          steps: p.steps.map(st => ({
+            text: st.text, done: !!st.done, open: !st.done, isNext: next && next.id === st.id,
+            ring: next && next.id === st.id ? 'var(--blue,#007AFF)' : 'var(--ink4,rgba(60,60,67,.3))',
+            weight: next && next.id === st.id ? 600 : 400,
+            color: st.done ? 'var(--ink3,rgba(60,60,67,.45))' : 'var(--ink,#000)',
+            onToggle: () => this.toggleStep(p.id, st.id),
+          })),
+        };
+      }),
+      hasInbox: inbox.length > 0, inboxEmpty: inbox.length === 0, inboxCount: String(inbox.length),
+      inboxSub: inbox.length ? `${inbox.length} to sort` : 'All sorted',
+      inboxCurText: cur ? cur.text : '', inboxCurSince: cur ? cur.since || 'today' : '',
+      notPickingLater: !s.pickingLater, pickingLater: s.pickingLater,
+      sortNow: () => sortTo('now'), sortSomeday: () => sortTo('someday'),
+      sortLater: () => { if (cur) this.openRemind(cur.id); }, cancelLater: () => this.setState({ pickingLater: false }),
+      sortDrop: () => { if (!cur) return; const prev = this.snap(); this.setItems(items => items.filter(i => i.id !== cur.id)); this.flash('Deleted', prev); },
+      nowBtnOp: 1, nowBtnLabel: 'Now',
+      laterOpts: TIMES.map((t, i) => ({ label: t[0], sub: t[1], bb: i < TIMES.length - 1 ? sep : '0', onPick: () => sortTo('later', t[1]) })),
+      hasQueue: inbox.length > 1,
+      inboxQueue: inbox.slice(1, 5).map((q, i, a) => ({ text: q.text, since: q.since || '', bb: i < a.length - 1 ? sep : '0' })),
+      somedayRows: someday.map((r, i) => ({
+        onEdit: () => this.openEdit(r.id),
+        text: r.text, bb: i < someday.length - 1 ? sep : '0', op: 1, label: 'Move to Now',
+        onPromote: () => { if (nowFull) { this.openSwap(r.id, 'someday'); return; } const prev = this.snap(); this.patchItem(r.id, { list: 'now', reason: 'Pulled in from Someday' }); this.flash('Moved to Now', prev); },
+      })),
+      somedayEmpty: someday.length === 0,
+      fabDown: e => {
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+        this.held = false;
+        this.holdT = setTimeout(() => { this.held = true; if (this.state.demo.mic) { this.blocked = true; this.setState({ micErr: true }); } else this.startVoice(); }, 380);
+      },
+      fabUp: () => {
+        clearTimeout(this.holdT);
+        if (this.held) { this.held = false; if (this.blocked) { this.blocked = false; return; } this.endVoice(true); }
+        else if (this.state.onb === 'hold') this.flash('Hold it down to talk');
+        else this.setState({ sheet: true, capText: '', capDest: 'inbox', capTime: 0 });
+      },
+      fabCancel: () => { clearTimeout(this.holdT); if (this.held) { this.held = false; if (this.blocked) { this.blocked = false; return; } this.endVoice(false); } },
+      noMenu: e => e.preventDefault(),
+      sheetOpen: s.sheet, closeSheet: () => this.setState({ sheet: false }),
+      sheetTitle: { inbox: 'New Idea', now: 'Add to Now', later: 'Remind Me Later', someday: 'Someday' }[s.capDest],
+      capRef: this.capRef, capText: s.capText,
+      onCapChange: e => this.setState({ capText: e.target.value }),
+      onCapKey: e => { if (e.key === 'Enter') { e.preventDefault(); if (this.addItem(s.capText, s.capDest, s.capTime)) this.setState({ capText: '' }); } },
+      saveClose: () => { this.addItem(s.capText, s.capDest, s.capTime); this.setState({ sheet: false }); },
+      saveBg: s.capText.trim() ? 'var(--blue,#007AFF)' : 'rgba(0,122,255,.35)',
+      destOpts: [['inbox', 'Inbox'], ['now', 'Now'], ['later', 'Later'], ['someday', 'Someday']].map(([k, l]) => ({
+        label: l, bg: s.capDest === k ? 'var(--seg,#fff)' : 'transparent', sh: s.capDest === k ? '0 2px 6px rgba(0,0,0,.12)' : 'none',
+        op: k === 'now' && nowFull ? 0.4 : 1,
+        onPick: () => { if (k === 'now' && nowFull) return; this.setState({ capDest: k }); this.capRef.current && this.capRef.current.focus(); },
+      })),
+      capIsLater: s.capDest === 'later',
+      capTimes: TIMES.map((t, i) => ({ label: `${t[0]} ${t[1]}`, bg: s.capTime === i ? 'rgba(255,149,0,.18)' : 'var(--fill,rgba(120,120,128,.12))', fg: s.capTime === i ? 'var(--orangeInk,#C93400)' : 'var(--ink,#000)', onPick: () => this.setState({ capTime: i }) })),
+      capHint: nowFull && s.capDest !== 'now' ? `Return saves and clears for the next idea. Now is full (${s.set.maxNow} of ${s.set.maxNow}).` : 'Return saves and clears for the next idea.',
+      voiceOn: s.voice, vChunks: vp.chunks, vTitle: vp.title || '…',
+      vHasWhen: vp.hasWhen, vWhenLabel: vp.meta.whenLabel || '', vHasProj: vp.hasProj, vProjName: vp.meta.projName || '', vPlain: !vp.hasWhen && !vp.hasProj,
+      voiceTime: fmt(s.voice ? Math.floor((Date.now() - s.voiceStart) / 1000) : 0),
+      bars: Array.from({ length: 16 }, (_, i) => ({ h: s.voice ? 15 + Math.abs(Math.sin((s.voiceWords + 1) * 1.7 + i * 0.9)) * 85 : 15 })),
+      focusOn: !!s.focus, focusText: s.focus ? s.focus.text : '', focusSub: s.focus ? s.focus.reason : '',
+      focusTime: fmt(elapsed),
+      focusDone: () => { const f = s.focus; endFocus(); this.completeUp(f); },
+      focusNotNow: () => { endFocus(); this.skipUp(); },
+      focusClose: endFocus,
+      toastOn: !!s.toast, toastMsg: s.toast || '', canUndo: !!s.prev,
+      undo: () => { if (s.prev) this.setState({ items: s.prev.items, projects: s.prev.projects, toast: null, prev: null }); },
+      resetDemo: () => { this.setState({ ...seed(), skipped: [], tab: 'today', scrolled: false, focus: null, sheet: false, toast: null, prev: null, evening: false, eveDone: false, proj: null, rem: null, stepText: '', onb: null, setOn: false, micErr: false, garble: null, swap: null }); },
+      ...this.projectVals(), ...this.remindVals(), ...this.eveVals(nowItems),
+      hasProjects: s.projects.length > 0,
+      ...this.settingsVals(), ...this.errorVals(later, someday), ...this.editVals(), ...this.npVals(),
+      inboxEdit: () => { if (cur) this.openEdit(cur.id); },
+      ...Object.fromEntries(Object.entries(isDark ? DARK : LIGHT).map(([k, v]) => ['t' + k[2].toUpperCase() + k.slice(3), k === '--ts' ? String(s.ts) : v])),
+      tsOpts: [['Default', 1], ['Larger', 1.15], ['Largest', 1.3]].map(([l, v]) => ({ label: l, bg: s.ts === v ? '#fff' : 'transparent', sh: s.ts === v ? '0 2px 6px rgba(0,0,0,.12)' : 'none', onPick: () => this.setState({ ts: v }) })), dark: isDark,
+      appOpts: ['System', 'Light', 'Dark'].map(a => ({ label: a, bg: s.appearance === a ? 'var(--seg,#fff)' : 'transparent', sh: s.appearance === a ? '0 2px 6px rgba(0,0,0,.12)' : 'none', onPick: () => { this.haptic('Selection'); this.setState({ appearance: a }); } })),
+      toggleDark: () => this.setState({ appearance: isDark ? 'Light' : 'Dark' }),
+      darkTrack: isDark ? '#34C759' : 'rgba(120,120,128,.16)', darkKnob: isDark ? 22 : 2,
+      toggleHap: () => this.setState(st => ({ showHap: !st.showHap, hap: null })),
+      hapTrack: s.showHap ? 'var(--green,#34C759)' : 'var(--fill,rgba(120,120,128,.16))', hapKnob: s.showHap ? 22 : 2,
+      hapOn: !!s.hap, hapKind: s.hap || '',
+      onbWelcome: s.onb === 'welcome', onbHold: s.onb === 'hold', onbTalk: s.onb === 'talk' && s.voice, onbPerm: s.onb === 'perm',
+      onbTalkTitle: vp.hasWhen ? 'Orange means a time' : 'Keep holding and talk',
+      onbTalkSub: vp.hasWhen ? 'Catch heard “tomorrow at 10” and will remind you then. Let go to save.' : 'Catch listens for times, like “tomorrow at 10”.',
+      onbStart: () => this.setState({ onb: 'hold' }),
+      onbSkip: () => this.setState({ onb: null }),
+      onbAllow: () => { this.setState(st => ({ onb: null, set: { ...st.set, notif: true } })); this.flash('Reminders are on'); },
+      onbNotNow: () => { this.setState(st => ({ onb: null, set: { ...st.set, notif: false } })); this.flash('You can turn reminders on later'); },
+      replayOnboarding: () => this.replay(),
+    };
+  }
+}
+</script>
+</body>
+</html>

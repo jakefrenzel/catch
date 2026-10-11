@@ -1,0 +1,42 @@
+name: Catch
+options:
+  bundleIdPrefix: com.jakefrenzel
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Catch:
+    type: application
+    platform: iOS
+    sources: [Catch]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jakefrenzel.catch
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Catch
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+  CatchTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [CatchTests]
+    dependencies:
+      - target: Catch
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Catch:
+    build:
+      targets:
+        Catch: all
+        CatchTests: [test]
+    test:
+      targets: [CatchTests]
