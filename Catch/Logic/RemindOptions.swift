@@ -5,6 +5,7 @@ struct RemindOption: Identifiable, Equatable {
     enum Kind: Hashable {
         case afternoon, afterWork, tonight, tomorrowMorning
         case leave(UUID)
+        case arrive(UUID)
     }
 
     let kind: Kind
@@ -22,7 +23,8 @@ struct RemindOption: Identifiable, Equatable {
 enum RemindOptions {
     /// The suggestions, in the prototype's order. "This afternoon" and "Tonight"
     /// only appear while they're still ahead; "After work" is always the next one.
-    static func options(now: Date, calendar: Calendar, afterWork: TimeOfDay, places: [Place]) -> [RemindOption] {
+    static func options(now: Date, calendar: Calendar, afterWork: TimeOfDay, places: [Place],
+                        offerLeave: Bool = true, offerArrive: Bool = true) -> [RemindOption] {
         var result: [RemindOption] = []
 
         func today(_ hour: Int) -> Date? {
@@ -41,8 +43,14 @@ enum RemindOptions {
             result.append(RemindOption(kind: .tonight, title: "Tonight", reminder: .date(tonight)))
         }
         for place in places {
-            result.append(RemindOption(kind: .leave(place.id), title: "When I leave \(place.name)",
-                                       reminder: .place(.leave, place)))
+            if offerLeave {
+                result.append(RemindOption(kind: .leave(place.id), title: "When I leave \(place.name)",
+                                           reminder: .place(.leave, place)))
+            }
+            if offerArrive {
+                result.append(RemindOption(kind: .arrive(place.id), title: "When I get to \(place.name)",
+                                           reminder: .place(.arrive, place)))
+            }
         }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)),
            let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) {

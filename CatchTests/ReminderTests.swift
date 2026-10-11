@@ -49,18 +49,29 @@ final class ReminderPlannerTests: XCTestCase {
         XCTAssertEqual(plan.map(\.kind), [.nudge])
     }
 
-    func testSkipsDoneOtherListsAndPlaces() throws {
+    func testSkipsDoneAndOtherLists() throws {
         let env = try TestEnvironment()
         let done = try XCTUnwrap(env.store.capture("Done", to: .later, remindAt: env.clock.at(day: 10, hour: 9))).item
         env.store.setDone(done, true)
         env.add("Inbox", to: .inbox)
-        let office = Place(name: "Office", address: "", latitude: 0, longitude: 0)
-        env.store.context.insert(office)
-        let placed = env.add("Keys", to: .inbox)
-        env.store.setReminder(placed, .place(.leave, office))
 
         XCTAssertTrue(ReminderPlanner.plan(items: env.store.allItems(), now: env.clock.at(day: 9, hour: 12),
                                            nudgeDefault: true).isEmpty)
+    }
+
+    func testPlaceReminderWatchesTheRegion() throws {
+        let env = try TestEnvironment()
+        let office = env.store.savePlace(nil, name: "Office", address: "Mill St",
+                                         latitude: 51.5, longitude: -0.08, radius: 150)
+        let keys = env.add("Return the keys", to: .inbox)
+        env.store.setReminder(keys, .place(.leave, office))
+
+        let plan = ReminderPlanner.plan(items: env.store.allItems(), now: env.clock.at(day: 9, hour: 12),
+                                        nudgeDefault: true)
+
+        XCTAssertEqual(plan.map(\.kind), [.place])
+        XCTAssertEqual(plan.first?.body, "You’re leaving Office")
+        XCTAssertEqual(plan.first?.region, PlaceRegion(latitude: 51.5, longitude: -0.08, radius: 150, onArrive: false))
     }
 }
 

@@ -39,6 +39,11 @@ enum SampleData {
         item("Repaint the hallway", .someday, minutesAgo: 8000)
         item("Start a herb garden", .someday, minutesAgo: 7000)
 
+        context.insert(Place(name: "Home", address: "Rowan Ave", latitude: 51.5416, longitude: -0.1430,
+                             radiusMeters: 100))
+        context.insert(Place(name: "Office", address: "Halden Studio, 14 Mill St", latitude: 51.5246,
+                             longitude: -0.0786, radiusMeters: 150))
+
         func project(_ name: String, order: Int, expanded: Bool, steps: [(String, String, Bool)]) {
             let project = Project(name: name, sortOrder: order, createdAt: now)
             project.isExpanded = expanded

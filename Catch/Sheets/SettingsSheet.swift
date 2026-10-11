@@ -13,9 +13,29 @@ struct SettingsSheet: View {
     ]
 
     var body: some View {
+        @Bindable var model = model
+        NavigationStack(path: $model.settingsPath) {
+            content
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationTitle("Settings")
+                .navigationDestination(for: PlaceRoute.self) { route in
+                    switch route {
+                    case .list: PlacesListView()
+                    case .edit(let place): PlaceEditorView(place: place)
+                    case .new(let name): PlaceEditorView(place: nil, suggestedName: name)
+                    }
+                }
+        }
+        .presentationCornerRadius(14)
+        .presentationBackground(Theme.bg)
+        .onChange(of: model.settings.appearance) { model.haptic(.selection) }
+        .onDisappear { model.settingsPath = [] }
+    }
+
+    private var content: some View {
         @Bindable var settingsStore = model.settingsStore
 
-        VStack(alignment: .leading, spacing: 0) {
+        return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Spacer()
                 Button { dismiss() } label: {
@@ -104,8 +124,15 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    placeRow("Home", icon: "house.fill")
-                    placeRow("Office", icon: "briefcase.fill")
+                    NavigationLink(value: PlaceRoute.list) {
+                        HStack {
+                            SettingLabel("Places", icon: "mappin.and.ellipse", tint: Theme.green)
+                            Spacer(minLength: 12)
+                            Text(places.isEmpty ? "None yet" : places.map(\.name).joined(separator: ", "))
+                                .foregroundStyle(Theme.ink2)
+                                .lineLimit(1)
+                        }
+                    }
                 } header: {
                     Text("Places")
                 } footer: {
@@ -132,19 +159,9 @@ struct SettingsSheet: View {
             .scrollContentBackground(.hidden)
         }
         .background(Theme.bg)
-        .presentationCornerRadius(14)
-        .presentationBackground(Theme.bg)
-        .onChange(of: model.settings.appearance) { model.haptic(.selection) }
     }
 
     // MARK: - Rows
-
-    private func placeRow(_ name: String, icon: String) -> some View {
-        let place = places.first { $0.name == name }
-        return valueRow(name, icon: icon, tint: Theme.green, value: place?.address ?? "Not set") {
-            model.notBuiltYet("Places")
-        }
-    }
 
     private func valueRow(_ title: String, icon: String, tint: Color = Theme.gray,
                           value: String?, action: @escaping () -> Void) -> some View {

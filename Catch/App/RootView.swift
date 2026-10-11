@@ -161,6 +161,13 @@ struct RootView: View {
             }
             if arguments.contains("-openNewProject") { model.sheet = .newProject }
             if arguments.contains("-openSettings") { model.sheet = .settings }
+            if arguments.contains("-openPlaces") {
+                model.sheet = .settings
+                model.settingsPath = [.list]
+                if arguments.contains("-openPlaceEditor"), let place = model.store.places().first {
+                    model.settingsPath = [.list, .edit(place)]
+                }
+            }
             if arguments.contains("-onboardingWelcome") { model.onboarding = .welcome }
             if arguments.contains("-onboardingHold") { model.onboarding = .hold }
             if arguments.contains("-onboardingPermission"), let date = items.first(where: { $0.list == .later })?.remindAt {

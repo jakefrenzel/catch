@@ -166,6 +166,32 @@ final class ListRulesTests: XCTestCase {
         XCTAssertNil(item.remindAt)
     }
 
+    // MARK: Places
+
+    func testSavePlaceClampsRadiusAndUpdates() throws {
+        let env = try TestEnvironment()
+        let place = env.store.savePlace(nil, name: " Gym ", address: "Elm Park", latitude: 1, longitude: 2, radius: 900)
+        XCTAssertEqual(place.name, "Gym")
+        XCTAssertEqual(place.radiusMeters, 300)
+
+        env.store.savePlace(place, name: "Gym", address: "Elm Park", latitude: 1, longitude: 2, radius: 50)
+        XCTAssertEqual(place.radiusMeters, 100)
+        XCTAssertEqual(env.store.places().count, 1)
+    }
+
+    func testDeletingAPlaceKeepsItsRemindersAsTimes() throws {
+        let env = try TestEnvironment()
+        let office = env.store.savePlace(nil, name: "Office", address: "", latitude: 0, longitude: 0, radius: 150)
+        let item = env.add("Return the keys", to: .inbox)
+        env.store.setReminder(item, .place(.leave, office))
+
+        env.store.deletePlace(office)
+
+        XCTAssertTrue(env.store.places().isEmpty)
+        XCTAssertEqual(item.list, .later)
+        guard case .date? = item.reminder else { return XCTFail("Expected a time reminder") }
+    }
+
     // MARK: Editing
 
     func testUpdateKeepsTitleWhenEmptyAndDropsEmptyNote() throws {

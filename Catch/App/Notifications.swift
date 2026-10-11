@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import UIKit
 import UserNotifications
@@ -62,9 +63,19 @@ final class SystemNotificationScheduler: NotificationScheduling {
             content.userInfo = [NotificationAction.itemIDKey: reminder.itemID.uuidString]
             content.threadIdentifier = reminder.itemID.uuidString
 
-            let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second],
-                                                        from: reminder.fireDate)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+            let trigger: UNNotificationTrigger
+            if let place = reminder.region {
+                let region = CLCircularRegion(
+                    center: CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude),
+                    radius: place.radius, identifier: reminder.id)
+                region.notifyOnEntry = place.onArrive
+                region.notifyOnExit = !place.onArrive
+                trigger = UNLocationNotificationTrigger(region: region, repeats: false)
+            } else {
+                let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second],
+                                                            from: reminder.fireDate)
+                trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+            }
             try? await center.add(UNNotificationRequest(identifier: reminder.id, content: content, trigger: trigger))
         }
     }

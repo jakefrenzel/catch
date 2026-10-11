@@ -31,8 +31,8 @@ struct RemindSheet: View {
         var time = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) ?? tomorrow
         var hasPicked = false
         switch item.reminder {
-        case .place(_, let place):
-            selection = .leave(place.id)
+        case .place(let trigger, let place):
+            selection = trigger == .leave ? .leave(place.id) : .arrive(place.id)
         case .date(let date):
             if let match = options.first(where: { $0.date == date }) {
                 selection = match.kind
@@ -57,7 +57,9 @@ struct RemindSheet: View {
     var body: some View {
         let now = Date.now
         let options = RemindOptions.options(now: now, calendar: .current,
-                                            afterWork: model.settings.afterWork, places: places)
+                                            afterWork: model.settings.afterWork, places: places,
+                                            offerLeave: model.settings.offerLeave,
+                                            offerArrive: model.settings.offerArrive)
 
         VStack(spacing: 14) {
             header
@@ -278,6 +280,7 @@ struct RemindSheet: View {
         case .afterWork: return "clock.fill"
         case .tonight: return "moon.fill"
         case .leave: return "location.fill"
+        case .arrive: return "mappin.and.ellipse"
         }
     }
 
@@ -285,7 +288,7 @@ struct RemindSheet: View {
         switch kind {
         case .afternoon, .afterWork, .tomorrowMorning: return Theme.orange
         case .tonight: return Theme.purple
-        case .leave: return Theme.green
+        case .leave, .arrive: return Theme.green
         }
     }
 
@@ -301,7 +304,9 @@ struct RemindSheet: View {
             model.setReminder(item, .date(date), nudge: nudge, label: formatter.label(for: date, now: now))
         } else {
             let options = RemindOptions.options(now: now, calendar: .current,
-                                                afterWork: model.settings.afterWork, places: places)
+                                                afterWork: model.settings.afterWork, places: places,
+                                                offerLeave: model.settings.offerLeave,
+                                                offerArrive: model.settings.offerArrive)
             guard let option = options.first(where: { $0.kind == selection }) ?? options.first(where: { $0.kind == .afterWork }) else {
                 return
             }

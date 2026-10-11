@@ -82,6 +82,9 @@ final class AppModel {
 
     let notifications: NotificationScheduling
     let voice: VoiceInput
+    let location: LocationService
+    /// Settings' navigation stack (Places and its editor).
+    var settingsPath: [PlaceRoute] = []
     /// + is held and Catch is listening.
     var isListening = false
     private(set) var listeningStartedAt = Date.now
@@ -93,6 +96,7 @@ final class AppModel {
         self.settingsStore = settingsStore
         self.notifications = notifications
         self.voice = voice ?? SpeechVoiceInput()
+        self.location = LocationService()
         store.onChange = { [weak self] in self?.scheduleReminderSync() }
     }
 
@@ -416,7 +420,12 @@ final class AppModel {
         sheet = nil
         haptic(.light)
         flash("Reminder set: \(label)", undo: true)
-        Task { await ensureNotificationPermission() }
+        Task {
+            await ensureNotificationPermission()
+            if case .place = reminder, !(await location.requestAccess()) {
+                flash("Place reminders need Location. Turn it on in iOS Settings.", undo: false)
+            }
+        }
     }
 
     func swap(incoming: Item, outgoing: Item) {
@@ -433,6 +442,24 @@ final class AppModel {
 
     func setExpanded(_ project: Project, _ expanded: Bool) {
         store.setExpanded(project, expanded)
+    }
+
+    // MARK: - Places
+
+    func savePlace(_ place: Place?, name: String, address: String,
+                   latitude: Double, longitude: Double, radius: Double) {
+        store.savePlace(place, name: name, address: address,
+                        latitude: latitude, longitude: longitude, radius: radius)
+        haptic(.light)
+        // Place reminders need location access; ask while the user is setting places up.
+        Task { _ = await location.requestAccess() }
+    }
+
+    func removePlace(_ place: Place) {
+        let name = place.name
+        store.deletePlace(place)
+        haptic(.warning)
+        flash("Removed \(name)", undo: false)
     }
 
     // MARK: - Projects

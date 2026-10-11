@@ -36,8 +36,22 @@ final class RemindOptionsTests: XCTestCase {
 
         let result = options(day: 9, hour: 21, places: [office])
 
-        XCTAssertEqual(result.map(\.title), ["After work", "When I leave Office", "Tomorrow morning"])
+        XCTAssertEqual(result.map(\.title),
+                       ["After work", "When I leave Office", "When I get to Office", "Tomorrow morning"])
         XCTAssertEqual(result[1].reminder, .place(.leave, office))
+        XCTAssertEqual(result[2].reminder, .place(.arrive, office))
+    }
+
+    @MainActor
+    func testSettingsChooseWhichPlaceOptionsShow() throws {
+        let env = try TestEnvironment()
+        let office = Place(name: "Office", address: "", latitude: 0, longitude: 0)
+        env.store.context.insert(office)
+
+        let leaveOnly = RemindOptions.options(now: clock.at(day: 9, hour: 21), calendar: clock.calendar,
+                                              afterWork: afterWork, places: [office],
+                                              offerLeave: true, offerArrive: false)
+        XCTAssertEqual(leaveOnly.map(\.title), ["After work", "When I leave Office", "Tomorrow morning"])
     }
 
     func testPickerDaysStartToday() {

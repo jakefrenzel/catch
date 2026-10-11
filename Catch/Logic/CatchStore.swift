@@ -62,6 +62,10 @@ final class CatchStore {
         fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\Project.sortOrder)]))
     }
 
+    func places() -> [Place] {
+        fetch(FetchDescriptor<Place>(sortBy: [SortDescriptor(\Place.name)]))
+    }
+
     var openNowItems: [Item] { allItems().filter(\.isOpenInNow) }
 
     var isNowFull: Bool { openNowItems.count >= settings.maxNow }
@@ -311,6 +315,38 @@ final class CatchStore {
         }
         save()
         return step
+    }
+
+    // MARK: - Places
+
+    /// Creates a place (when `place` is nil) or updates one. Radius is kept to 100–300 m.
+    @discardableResult
+    func savePlace(_ place: Place?, name: String, address: String,
+                   latitude: Double, longitude: Double, radius: Double) -> Place {
+        let target: Place
+        if let place {
+            target = place
+        } else {
+            target = Place(name: "", address: "", latitude: latitude, longitude: longitude)
+            context.insert(target)
+        }
+        target.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        target.address = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        target.latitude = latitude
+        target.longitude = longitude
+        target.radiusMeters = min(max(radius, 100), 300)
+        save()
+        return target
+    }
+
+    /// Removes a place. Later items that were waiting on it fall back to the
+    /// "After work" time rather than losing their reminder.
+    func deletePlace(_ place: Place) {
+        for item in allItems() where item.place?.id == place.id {
+            item.reminder = item.list == .later ? .date(defaultLaterTime()) : nil
+        }
+        context.delete(place)
+        save()
     }
 
     /// Shows or hides a project's steps on Today. Not an undoable action.

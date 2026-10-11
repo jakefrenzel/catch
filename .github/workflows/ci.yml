@@ -90,6 +90,8 @@ jobs:
           shot onboarding-hold light -onboardingHold
           shot onboarding-talk dark -onboardingHold -voiceDemo -startVoice
           shot onboarding-permission light -onboardingPermission
+          shot places-light light -openPlaces
+          shot place-editor-light light -openPlaces -openPlaceEditor
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
