@@ -85,7 +85,7 @@ struct TodayView: View {
             }
             Spacer()
             Button {
-                model.notBuiltYet("Settings")
+                model.openSettings()
             } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 20))

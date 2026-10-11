@@ -17,6 +17,7 @@ final class AppModel {
         case remind(Item)
         case swap(incoming: Item)
         case newProject
+        case settings
 
         var id: String {
             switch self {
@@ -24,6 +25,7 @@ final class AppModel {
             case .remind(let item): return "remind-\(item.id)"
             case .swap(let item): return "swap-\(item.id)"
             case .newProject: return "new-project"
+            case .settings: return "settings"
             }
         }
     }
@@ -187,6 +189,10 @@ final class AppModel {
 
     func openNewProject() {
         sheet = .newProject
+    }
+
+    func openSettings() {
+        sheet = .settings
     }
 
     /// Creates the project and opens it. Returns false (with a nudge) without a name.

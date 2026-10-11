@@ -20,6 +20,8 @@ enum Theme {
     static let red = Color(.systemRed)
     static let green = Color(.systemGreen)
     static let purple = Color(.systemIndigo)
+    /// #8E8E93, for neutral settings icons.
+    static let gray = Color(.systemGray)
 
     static let blueTint = blue.opacity(0.12)
     static let orangeTint = orange.opacity(0.15)

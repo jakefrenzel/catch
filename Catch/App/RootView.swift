@@ -58,6 +58,7 @@ struct RootView: View {
             case .remind(let item): RemindSheet(item: item, settings: model.settings)
             case .swap(let item): SwapSheet(incoming: item)
             case .newProject: NewProjectSheet()
+            case .settings: SettingsSheet()
             }
         }
         .fullScreenCover(item: $model.focus) { candidate in
@@ -85,6 +86,7 @@ struct RootView: View {
                 model.openProject(project)
             }
             if arguments.contains("-openNewProject") { model.sheet = .newProject }
+            if arguments.contains("-openSettings") { model.sheet = .settings }
             if arguments.contains("-openSwap"), let item = items.first(where: { $0.list == .inbox }) {
                 model.sheet = .swap(incoming: item)
             }
