@@ -48,8 +48,7 @@ struct ItemRow: View {
                     }
                     .font(.subheadline)
                     .foregroundStyle(notificationsOn ? Theme.orangeText : Theme.ink2)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+                    .contentShape(Rectangle().inset(by: -12))
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Reminder time")

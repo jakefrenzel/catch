@@ -61,6 +61,11 @@ jobs:
             sleep 6
             xcrun simctl io "$UDID" screenshot "screenshots/today-$mode.png"
           done
+          xcrun simctl ui "$UDID" appearance light
+          xcrun simctl terminate "$UDID" com.jakefrenzel.catch 2>/dev/null || true
+          xcrun simctl launch "$UDID" com.jakefrenzel.catch -seedSampleData -scrollToProjects
+          sleep 6
+          xcrun simctl io "$UDID" screenshot "screenshots/today-projects.png"
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4

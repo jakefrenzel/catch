@@ -13,37 +13,50 @@ struct TodayView: View {
         let candidates = UpFirst.candidates(items: items, projects: projects,
                                             includeSteps: settings.upFirstIncludesSteps)
 
-        List {
-            header
-                .plainListRow(EdgeInsets(top: 8, leading: 20, bottom: 12, trailing: 16))
+        ScrollViewReader { proxy in
+            List {
+                header
+                    .plainListRow(EdgeInsets(top: 8, leading: 20, bottom: 12, trailing: 16))
 
-            if let upFirst = model.upFirst.current(in: candidates) {
-                UpFirstCard(candidate: upFirst,
-                            onStart: { model.startFocus(on: upFirst) },
-                            onSkip: { model.skipUpFirst(in: candidates) })
-                    .onGeometryChange(for: Bool.self) { proxy in
-                        proxy.frame(in: .global).maxY < 100
-                    } action: { scrolledAway in
-                        model.upFirstCardScrolledAway = scrolledAway
-                    }
-                    .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
-            } else {
-                AllClearCard(doneToday: doneTodayCount,
-                             inboxCount: items.filter { $0.list == .inbox }.count,
-                             hasSomeday: items.contains { $0.list == .someday })
-                    .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
+                if let upFirst = model.upFirst.current(in: candidates) {
+                    UpFirstCard(candidate: upFirst,
+                                onStart: { model.startFocus(on: upFirst) },
+                                onSkip: { model.skipUpFirst(in: candidates) })
+                        .onGeometryChange(for: Bool.self) { proxy in
+                            proxy.frame(in: .global).maxY < 100
+                        } action: { scrolledAway in
+                            model.upFirstCardScrolledAway = scrolledAway
+                        }
+                        .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
+                } else {
+                    AllClearCard(doneToday: doneTodayCount,
+                                 inboxCount: items.filter { $0.list == .inbox }.count,
+                                 hasSomeday: items.contains { $0.list == .someday })
+                        .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
+                }
+
+                nowSection(nowItems)
+                laterSection(laterItems)
+                projectsSection
             }
-
-            nowSection(nowItems)
-            laterSection(laterItems)
-            projectsSection
+            .listStyle(.insetGrouped)
+            .listSectionSpacing(20)
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .contentMargins(.top, 0, for: .scrollContent)
+            .contentMargins(.bottom, 120, for: .scrollContent)
+            .environment(\.defaultMinListHeaderHeight, 0)
+            .onDisappear { model.upFirstCardScrolledAway = false }
+            #if DEBUG
+            .task {
+                // Used by CI to screenshot the lower half of Today.
+                guard ProcessInfo.processInfo.arguments.contains("-scrollToProjects"),
+                      let first = projects.first else { return }
+                try? await Task.sleep(for: .milliseconds(600))
+                proxy.scrollTo(first.id, anchor: .top)
+            }
+            #endif
         }
-        .listStyle(.insetGrouped)
-        .listSectionSpacing(20)
-        .scrollContentBackground(.hidden)
-        .background(Theme.bg)
-        .contentMargins(.bottom, 120, for: .scrollContent)
-        .onDisappear { model.upFirstCardScrolledAway = false }
     }
 
     // MARK: - Header
