@@ -27,6 +27,14 @@ struct TodayView: View {
                         } action: { scrolledAway in
                             model.upFirstCardScrolledAway = scrolledAway
                         }
+                        // A fast scroll can recycle the row before its last geometry
+                        // update, so treat leaving the screen as scrolled away too.
+                        .onDisappear {
+                            // Ignore tab switches and Focus covering the screen.
+                            if model.tab == .today && model.focus == nil {
+                                model.upFirstCardScrolledAway = true
+                            }
+                        }
                         .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
                 } else {
                     AllClearCard(doneToday: doneTodayCount,
@@ -283,7 +291,7 @@ private struct StartProjectRow: View {
                     .frame(width: 26)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Start a project")
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.primary)
                     Text("For anything with more than one step")
                         .font(.footnote)
                         .foregroundStyle(Theme.ink2)

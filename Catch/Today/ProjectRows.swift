@@ -17,7 +17,7 @@ struct ProjectRow: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(project.name)
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.primary)
                         Text("\(project.doneCount) of \(steps.count)")
                             .font(.footnote)
                             .foregroundStyle(Theme.ink2)

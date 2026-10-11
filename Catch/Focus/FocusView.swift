@@ -20,7 +20,7 @@ struct FocusView: View {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.primary)
                         .frame(width: 44, height: 44)
                         .background(Theme.fill, in: Circle())
                 }
