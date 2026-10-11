@@ -42,6 +42,9 @@ final class CatchStore {
 
     var settings: CatchSettings { settingsStore.settings }
 
+    /// The store's clock, so screens and rules agree on the time (and tests can fake it).
+    func currentDate() -> Date { now() }
+
     // MARK: - Queries
 
     /// All items, oldest capture first.

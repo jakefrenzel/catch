@@ -80,6 +80,8 @@ jobs:
           shot new-project-light light -openNewProject
           shot settings-light light -openSettings
           shot settings-dark dark -openSettings
+          shot evening-light light -evening
+          shot evening-dark dark -evening
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4

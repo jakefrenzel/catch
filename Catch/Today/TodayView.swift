@@ -8,17 +8,23 @@ struct TodayView: View {
 
     var body: some View {
         let settings = model.settings
-        let nowItems = items.filter { $0.list == .now && !$0.movedToTomorrow }
-        let laterItems = items.filter { $0.list == .later }
+        let isEvening = model.isEvening
+        let visible = items.filter { WrapUp.isVisibleToday($0, now: model.now, calendar: .current) }
+        // In the evening, done items step aside so only what's left shows.
+        let nowItems = visible.filter { $0.list == .now && !$0.movedToTomorrow && !(isEvening && $0.isDone) }
+        let laterItems = visible.filter { $0.list == .later }
         let candidates = UpFirst.candidates(items: items, projects: projects,
                                             includeSteps: settings.upFirstIncludesSteps)
 
         ScrollViewReader { proxy in
             List {
-                header
+                header(isEvening: isEvening)
                     .plainListRow(EdgeInsets(top: 8, leading: 20, bottom: 12, trailing: 16))
 
-                if let upFirst = model.upFirst.current(in: candidates) {
+                if isEvening {
+                    EveningCard(card: eveningCard) { model.finishDay() }
+                        .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
+                } else if let upFirst = model.upFirst.current(in: candidates) {
                     UpFirstCard(candidate: upFirst,
                                 onStart: { model.startFocus(on: upFirst) },
                                 onSkip: { model.skipUpFirst(in: candidates) })
@@ -43,7 +49,10 @@ struct TodayView: View {
                         .plainListRow(EdgeInsets(top: 0, leading: 16, bottom: 14, trailing: 16))
                 }
 
-                nowSection(nowItems)
+                nowSection(nowItems, isEvening: isEvening)
+                if isEvening {
+                    eveningExtras
+                }
                 laterSection(laterItems)
                 projectsSection
             }
@@ -55,10 +64,10 @@ struct TodayView: View {
             .contentMargins(.bottom, 120, for: .scrollContent)
             .environment(\.defaultMinListHeaderHeight, 0)
             .navigationTitle("Today")
-        .toolbar(.hidden, for: .navigationBar)
-        .onDisappear {
-            if model.projectPath.isEmpty { model.upFirstCardScrolledAway = false }
-        }
+            .toolbar(.hidden, for: .navigationBar)
+            .onDisappear {
+                if model.projectPath.isEmpty { model.upFirstCardScrolledAway = false }
+            }
             #if DEBUG
             .task {
                 // Used by CI to screenshot the lower half of Today.
@@ -73,12 +82,14 @@ struct TodayView: View {
 
     // MARK: - Header
 
-    private var header: some View {
+    private func header(isEvening: Bool) -> some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+                Text(isEvening
+                     ? "\(model.now.formatted(.dateTime.weekday(.wide))) evening"
+                     : model.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.ink2)
+                    .foregroundStyle(isEvening ? Theme.orangeText : Theme.ink2)
                 Text("Today")
                     .font(.largeTitle.bold())
                     .accessibilityAddTraits(.isHeader)
@@ -102,16 +113,20 @@ struct TodayView: View {
 
     // MARK: - Now
 
-    private func nowSection(_ nowItems: [Item]) -> some View {
+    private func nowSection(_ nowItems: [Item], isEvening: Bool) -> some View {
         let openCount = nowItems.filter { !$0.isDone }.count
+        let showsAllToTomorrow = isEvening && openCount > 0
         return Section {
             if nowItems.isEmpty {
-                EmptyRow(text: "Nothing in Now. Sort your Inbox to add some.")
+                EmptyRow(text: isEvening ? "Nothing left in Now." : "Nothing in Now. Sort your Inbox to add some.")
             }
             ForEach(nowItems) { item in
+                let showsEveningActions = isEvening && !item.isDone
                 ItemRow(item: item, accent: Theme.blue,
                         onToggle: { model.toggleDone(item) },
-                        onEdit: { model.openEditor(for: item) })
+                        onEdit: { model.openEditor(for: item) },
+                        onTomorrow: showsEveningActions ? { model.moveToTomorrow(item) } : nil,
+                        onSomeday: showsEveningActions ? { model.move(item, to: .someday) } : nil)
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         doneSwipe(for: item)
                     }
@@ -124,7 +139,46 @@ struct TodayView: View {
             }
         } header: {
             SectionHeader(title: "Now", color: Theme.blue,
-                          detail: "\(openCount) of \(model.settings.maxNow) open")
+                          detail: showsAllToTomorrow ? "" : "\(openCount) of \(model.settings.maxNow) open") {
+                if showsAllToTomorrow {
+                    Button("All to Tomorrow") { model.moveAllToTomorrow() }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.blue)
+                        .buttonStyle(.borderless)
+                }
+            }
+        }
+    }
+
+    // MARK: - Evening
+
+    private var eveningCard: WrapUp.Card {
+        WrapUp.card(left: items.filter(\.isOpenInNow).count,
+                    movedToTomorrow: items.filter(\.movedToTomorrow).count,
+                    isFinished: model.isDayFinished)
+    }
+
+    /// Under Now in the evening: what got done, and what's waiting in Inbox.
+    @ViewBuilder
+    private var eveningExtras: some View {
+        let done = doneTodayCount
+        let inboxCount = items.filter { $0.list == .inbox }.count
+        if done > 0 {
+            Section {
+                DoneTodayRow(count: done)
+            }
+        }
+        if inboxCount > 0 {
+            Section {
+                EveningInboxRow(count: inboxCount) { model.tab = .inbox }
+            } header: {
+                SectionHeader(title: "Inbox", color: .primary, detail: "") {
+                    Button("Sort") { model.tab = .inbox }
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.blue)
+                        .buttonStyle(.borderless)
+                }
+            }
         }
     }
 
@@ -231,10 +285,12 @@ private struct SectionHeader<Accessory: View>: View {
                 .foregroundStyle(color)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
-            Text(detail)
-                .font(.footnote)
-                .foregroundStyle(Theme.ink2)
-                .lineLimit(1)
+            if !detail.isEmpty {
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.ink2)
+                    .lineLimit(1)
+            }
             accessory
         }
         .textCase(nil)

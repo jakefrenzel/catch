@@ -9,6 +9,9 @@ struct ItemRow: View {
     let onToggle: () -> Void
     let onEdit: () -> Void
     var onTime: () -> Void = {}
+    /// Set in the evening to show the Tomorrow | Someday control.
+    var onTomorrow: (() -> Void)?
+    var onSomeday: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -35,6 +38,11 @@ struct ItemRow: View {
             .accessibilityHint("Double-tap to edit.")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(.default, onEdit)
+
+            if let onTomorrow, let onSomeday {
+                EveningRowActions(onTomorrow: onTomorrow, onSomeday: onSomeday)
+                    .padding(.trailing, -6)
+            }
 
             if showsTime, let reminder = item.reminder {
                 Button(action: onTime) {

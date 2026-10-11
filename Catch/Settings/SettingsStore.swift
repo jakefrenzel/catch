@@ -8,8 +8,20 @@ final class SettingsStore {
         didSet { save() }
     }
 
+    /// The day the user tapped Finish in the evening wrap-up (start of day).
+    var dayFinishedOn: Date? {
+        didSet { defaults.set(dayFinishedOn, forKey: Self.dayFinishedKey) }
+    }
+
+    /// The last day the app was open (start of day), to notice a new day.
+    var lastActiveDay: Date? {
+        didSet { defaults.set(lastActiveDay, forKey: Self.lastActiveDayKey) }
+    }
+
     private let defaults: UserDefaults
     private static let key = "settings.v1"
+    private static let dayFinishedKey = "dayFinishedOn"
+    private static let lastActiveDayKey = "lastActiveDay"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -19,6 +31,8 @@ final class SettingsStore {
         } else {
             settings = CatchSettings()
         }
+        dayFinishedOn = defaults.object(forKey: Self.dayFinishedKey) as? Date
+        lastActiveDay = defaults.object(forKey: Self.lastActiveDayKey) as? Date
     }
 
     private func save() {

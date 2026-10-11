@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// 9a: grouped settings, presented as a page sheet with a round check to close.
 struct SettingsSheet: View {
@@ -84,7 +85,10 @@ struct SettingsSheet: View {
                 Section("Display") {
                     HStack {
                         SettingLabel("Appearance", icon: "circle.lefthalf.filled",
-                                     tint: Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255))
+                                     tint: Color(light: UIColor(red: 28 / 255, green: 28 / 255, blue: 30 / 255, alpha: 1),
+                                                 dark: UIColor(red: 72 / 255, green: 72 / 255, blue: 74 / 255, alpha: 1)))
+                            .fixedSize()
+                            .layoutPriority(1)
                         Spacer(minLength: 12)
                         Picker("Appearance", selection: $settingsStore.settings.appearance) {
                             Text("System").tag(CatchSettings.Appearance.system)
@@ -93,7 +97,6 @@ struct SettingsSheet: View {
                         }
                         .pickerStyle(.segmented)
                         .labelsHidden()
-                        .fixedSize()
                     }
                     Toggle(isOn: $settingsStore.settings.haptics) {
                         SettingLabel("Haptics", icon: "iphone.radiowaves.left.and.right", tint: Theme.purple)

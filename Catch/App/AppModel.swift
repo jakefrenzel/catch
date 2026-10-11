@@ -50,6 +50,10 @@ final class AppModel {
     var toast: Toast?
     /// The Up first card on Today has scrolled out of view.
     var upFirstCardScrolledAway = false
+    /// The time the screens show. Refreshed every 30 s and when the app comes forward.
+    var now = Date.now
+    /// Debug and screenshots: show the evening wrap-up regardless of the time.
+    var forceEvening = false
 
     private var toastTask: Task<Void, Never>?
     /// Set while "Created X" can be undone, so Undo can close its detail screen first.
@@ -64,8 +68,52 @@ final class AppModel {
 
     /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        focus == nil && !isCaptureOpen && sheet == nil
+        focus == nil && !isCaptureOpen && sheet == nil && !isEvening
             && (tab != .today || upFirstCardScrolledAway || !projectPath.isEmpty)
+    }
+
+    // MARK: - Day
+
+    var isEvening: Bool {
+        forceEvening || WrapUp.isEvening(now: now, settings: settings, calendar: store.calendar)
+    }
+
+    var isDayFinished: Bool {
+        guard let finished = settingsStore.dayFinishedOn else { return false }
+        return store.calendar.isDate(finished, inSameDayAs: now)
+    }
+
+    /// Updates the clock. The first time it sees a new day, items moved to
+    /// tomorrow come back with "Carried over from last night".
+    func refreshClock() {
+        now = store.currentDate()
+        let today = store.calendar.startOfDay(for: now)
+        if let last = settingsStore.lastActiveDay, last < today {
+            store.carryOverFromLastNight()
+        }
+        if settingsStore.lastActiveDay != today {
+            settingsStore.lastActiveDay = today
+        }
+    }
+
+    /// The evening card's Finish: moves what's left to tomorrow and closes the day.
+    func finishDay() {
+        now = store.currentDate()
+        let moved = store.moveAllToTomorrow()
+        settingsStore.dayFinishedOn = store.calendar.startOfDay(for: now)
+        haptic(.success)
+        flash(moved > 0 ? "Day finished. \(moved) moved to tomorrow" : "Day finished", undo: moved > 0)
+    }
+
+    func moveAllToTomorrow() {
+        let moved = store.moveAllToTomorrow()
+        guard moved > 0 else { return }
+        flash("Moved \(moved) to tomorrow", undo: true)
+    }
+
+    func moveToTomorrow(_ item: Item) {
+        store.moveToTomorrow(item)
+        flash("Moved to tomorrow", undo: true)
     }
 
     // MARK: - Capture

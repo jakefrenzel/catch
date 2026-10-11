@@ -5,6 +5,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Item.capturedAt) private var items: [Item]
     @Query(sort: \Project.sortOrder) private var projects: [Project]
 
@@ -68,11 +69,21 @@ struct RootView: View {
                       onClose: { model.focus = nil })
         }
         .preferredColorScheme(colorScheme)
+        .task {
+            while !Task.isCancelled {
+                model.refreshClock()
+                try? await Task.sleep(for: .seconds(30))
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { model.refreshClock() }
+        }
         #if DEBUG
         .task {
             // Used by CI to screenshot the capture sheet and a toast.
             let arguments = ProcessInfo.processInfo.arguments
             try? await Task.sleep(for: .milliseconds(500))
+            if arguments.contains("-evening") { model.forceEvening = true }
             if arguments.contains("-showInbox") { model.tab = .inbox }
             if arguments.contains("-showSomeday") { model.tab = .someday }
             if arguments.contains("-openCapture") { model.isCaptureOpen = true }
