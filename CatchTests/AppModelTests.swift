@@ -140,4 +140,23 @@ final class AppModelTests: XCTestCase {
         model.openReminder(for: env.add("A", to: .inbox))
         XCTAssertFalse(model.showsPinnedUpFirst)
     }
+
+    func testSwipingThePinnedBarHidesItUntilTheAppReopens() throws {
+        let (model, _) = try makeModel()
+        model.tab = .inbox
+        model.hidePinnedUpFirst()
+        XCTAssertFalse(model.showsPinnedUpFirst)
+        model.tab = .someday
+        XCTAssertFalse(model.showsPinnedUpFirst, "Stays hidden on other tabs")
+
+        model.appMovedToBackground()
+        XCTAssertTrue(model.showsPinnedUpFirst)
+    }
+
+    func testPinnedBarSettingTurnsItOff() throws {
+        let (model, env) = try makeModel()
+        model.tab = .inbox
+        env.settingsStore.settings.pinnedUpFirst = false
+        XCTAssertFalse(model.showsPinnedUpFirst)
+    }
 }

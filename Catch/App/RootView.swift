@@ -52,7 +52,8 @@ struct RootView: View {
                 if let upFirst, model.showsPinnedUpFirst {
                     PinnedUpFirstBar(candidate: upFirst,
                                      onDone: { model.complete(upFirst) },
-                                     onSkip: { model.skipUpFirst(in: candidates) })
+                                     onSkip: { model.skipUpFirst(in: candidates) },
+                                     onHide: { model.hidePinnedUpFirst() })
                         .padding(.horizontal, 16)
                         .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                 }

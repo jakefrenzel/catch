@@ -72,7 +72,8 @@ struct TodayView: View {
                 .allowsHitTesting(false)
             }
             .contentMargins(.top, 0, for: .scrollContent)
-            .contentMargins(.bottom, 120, for: .scrollContent)
+            // Room for the tab bar and the pinned Up first bar, so the last row can scroll clear.
+            .contentMargins(.bottom, 180, for: .scrollContent)
             .environment(\.defaultMinListHeaderHeight, 0)
             .navigationTitle("Today")
             .toolbar(.hidden, for: .navigationBar)

@@ -32,6 +32,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(settings.notifications)
         XCTAssertTrue(settings.nudgeDefault)
         XCTAssertTrue(settings.upFirstIncludesSteps)
+        XCTAssertTrue(settings.pinnedUpFirst)
         XCTAssertTrue(settings.haptics)
     }
 

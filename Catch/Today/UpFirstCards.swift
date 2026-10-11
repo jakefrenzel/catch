@@ -112,10 +112,13 @@ struct AllClearCard: View {
 }
 
 /// The compact Up first bar that floats above the tab bar when the card is off screen.
+/// Swipe it down to hide it.
 struct PinnedUpFirstBar: View {
     let candidate: UpFirstCandidate
     let onDone: () -> Void
     let onSkip: () -> Void
+    let onHide: () -> Void
+    @State private var drag: CGFloat = 0
 
     var body: some View {
         HStack(spacing: 12) {
@@ -153,5 +156,18 @@ struct PinnedUpFirstBar: View {
         .padding(.vertical, 8)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .floatingShadow()
+        .offset(y: drag)
+        .gesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { drag = max(0, $0.translation.height) }
+                .onEnded { value in
+                    if value.translation.height > 40 || value.predictedEndTranslation.height > 90 {
+                        onHide()
+                    }
+                    withAnimation(.catchEaseOut(0.25)) { drag = 0 }
+                }
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Hide until you reopen Catch", onHide)
     }
 }

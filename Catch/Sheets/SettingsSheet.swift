@@ -89,7 +89,7 @@ struct SettingsSheet: View {
                     }
                 }
 
-                Section("Today") {
+                Section {
                     Stepper(value: $settingsStore.settings.maxNow, in: CatchSettings.maxNowRange) {
                         HStack {
                             SettingLabel("Max in Now", icon: "sun.max.fill", tint: Theme.blue)
@@ -102,6 +102,13 @@ struct SettingsSheet: View {
                     Toggle(isOn: $settingsStore.settings.upFirstIncludesSteps) {
                         SettingLabel("Up first includes project steps", icon: "arrow.right", tint: Theme.blue)
                     }
+                    Toggle(isOn: $settingsStore.settings.pinnedUpFirst) {
+                        SettingLabel("Pin Up first above the tabs", icon: "pin.fill", tint: Theme.blue)
+                    }
+                } header: {
+                    Text("Today")
+                } footer: {
+                    Text("The pinned bar shows when the Up first card is off screen. Swipe it down to hide it until you reopen Catch.")
                 }
 
                 Section("Display") {

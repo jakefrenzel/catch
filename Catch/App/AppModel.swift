@@ -75,6 +75,8 @@ final class AppModel {
     var toast: Toast?
     /// The Up first card on Today has scrolled out of view.
     var upFirstCardScrolledAway = false
+    /// Swiped away; back the next time the app opens.
+    var pinnedUpFirstHidden = false
     /// The time the screens show. Refreshed every 30 s and when the app comes forward.
     var now = Date.now
     /// Debug and screenshots: show the evening wrap-up regardless of the time.
@@ -122,7 +124,8 @@ final class AppModel {
 
     /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        focus == nil && !isCaptureOpen && sheet == nil && !isEvening && !isListening && onboarding == nil
+        settings.pinnedUpFirst && !pinnedUpFirstHidden
+            && focus == nil && !isCaptureOpen && sheet == nil && !isEvening && !isListening && onboarding == nil
             && (tab != .today || upFirstCardScrolledAway || !projectPath.isEmpty)
     }
 
@@ -554,6 +557,12 @@ final class AppModel {
 
     // MARK: - Up first
 
+    /// Swiping the pinned bar down.
+    func hidePinnedUpFirst() {
+        pinnedUpFirstHidden = true
+        flash("Up first hidden until you reopen Catch", undo: false)
+    }
+
     func skipUpFirst(in candidates: [UpFirstCandidate]) {
         upFirst.skip(in: candidates)
     }
@@ -698,6 +707,7 @@ final class AppModel {
     /// The app went to the background mid-listen (a call, switching apps):
     /// drop the half-finished capture rather than leave the sheet stuck.
     func appMovedToBackground() {
+        pinnedUpFirstHidden = false
         guard isListening else { return }
         Task { await stopListening(save: false) }
     }

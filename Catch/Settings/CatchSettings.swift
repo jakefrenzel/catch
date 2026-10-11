@@ -32,6 +32,8 @@ struct CatchSettings: Codable, Equatable {
         didSet { maxNow = Self.clampMaxNow(maxNow) }
     }
     var upFirstIncludesSteps = true
+    /// The Up first bar above the tabs when the card is off screen.
+    var pinnedUpFirst = true
 
     // Display
     var appearance = Appearance.system
@@ -51,7 +53,7 @@ struct CatchSettings: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case notifications, nudgeDefault, afterWork, wrapUpTime, wrapUpStyle, maxNow,
-             upFirstIncludesSteps, appearance, haptics, suggestPlaces, offerLeave, offerArrive, voiceLanguage
+             upFirstIncludesSteps, pinnedUpFirst, appearance, haptics, suggestPlaces, offerLeave, offerArrive, voiceLanguage
     }
 }
 
@@ -71,6 +73,7 @@ extension CatchSettings {
         wrapUpStyle = value(.wrapUpStyle, wrapUpStyle)
         maxNow = Self.clampMaxNow(value(.maxNow, maxNow))
         upFirstIncludesSteps = value(.upFirstIncludesSteps, upFirstIncludesSteps)
+        pinnedUpFirst = value(.pinnedUpFirst, pinnedUpFirst)
         appearance = value(.appearance, appearance)
         haptics = value(.haptics, haptics)
         suggestPlaces = value(.suggestPlaces, suggestPlaces)
