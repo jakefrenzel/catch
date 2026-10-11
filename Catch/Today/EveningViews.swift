@@ -55,6 +55,8 @@ struct EveningRowActions: View {
         }
         .padding(2)
         .background(Theme.fill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        // Keep both words whole; the item title wraps instead.
+        .fixedSize()
     }
 
     private func button(_ title: String, action: @escaping () -> Void) -> some View {
@@ -62,6 +64,7 @@ struct EveningRowActions: View {
             Text(title)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.primary)
+                .lineLimit(1)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 5)
                 .contentShape(Rectangle().inset(by: -8))
