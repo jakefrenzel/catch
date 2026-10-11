@@ -174,6 +174,7 @@ private struct PhaseNode: View {
                         .accessibilityLabel(step.isDone ? "Mark not done: \(step.text)" : "Mark done: \(step.text)")
                     Text(step.text)
                         .font(.callout.weight(isNext ? .semibold : .regular))
+                        .lineLimit(3)
                         .foregroundStyle(step.isDone ? Theme.ink3 : Color.primary)
                         .strikethrough(step.isDone, color: Theme.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)

@@ -71,6 +71,7 @@ struct InboxView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         Text(item.text)
                             .font(.callout)
+                            .lineLimit(2)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Text(ReminderFormatter().caughtLabel(for: item.capturedAt, now: .now))
                             .font(.subheadline)
@@ -114,6 +115,7 @@ private struct CurrentItemCard: View {
             Text(item.text)
                 .font(.system(size: textSize, weight: .semibold))
                 .lineSpacing(2)
+                .lineLimit(6)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onEdit)

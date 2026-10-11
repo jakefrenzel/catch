@@ -60,6 +60,7 @@ struct StepRow: View {
                 .accessibilityLabel(step.isDone ? "Mark not done: \(step.text)" : "Mark done: \(step.text)")
             Text(step.text)
                 .font(.subheadline.weight(isNext ? .semibold : .regular))
+                .lineLimit(2)
                 .foregroundStyle(step.isDone ? Theme.ink3 : .primary)
                 .strikethrough(step.isDone, color: Theme.ink3)
                 .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }

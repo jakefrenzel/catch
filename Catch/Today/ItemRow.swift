@@ -24,7 +24,9 @@ struct ItemRow: View {
                 .accessibilityLabel(item.isDone ? "Mark not done: \(item.text)" : "Mark done: \(item.text)")
 
             VStack(alignment: .leading, spacing: 2) {
+                // Long captures are cut short here; the edit sheet shows all of it.
                 Text(item.text)
+                    .lineLimit(3)
                     .foregroundStyle(item.isDone ? Theme.ink3 : .primary)
                     .strikethrough(item.isDone, color: Theme.ink3)
                 if let note = item.note {

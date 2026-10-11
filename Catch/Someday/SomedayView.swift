@@ -47,6 +47,7 @@ private struct SomedayRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(item.text)
+                .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onEdit)
