@@ -47,7 +47,7 @@ struct VoiceSheet: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
 
-            if voiceOver {
+            if voiceOver || model.isTapToTalk {
                 Button {
                     Task { await model.stopListening(save: true) }
                 } label: {

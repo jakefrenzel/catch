@@ -91,8 +91,8 @@ struct RootView: View {
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
-                // The finger is still on +; only VoiceOver needs to touch the sheet.
-                .allowsHitTesting(voiceOverEnabled)
+                // The finger is still on +; only VoiceOver and tap-to-talk need to touch the sheet.
+                .allowsHitTesting(voiceOverEnabled || model.isTapToTalk)
             }
         }
         .animation(reduceMotion ? nil : .catchEaseOut(0.34), value: model.isListening)
@@ -141,6 +141,15 @@ struct RootView: View {
         .onChange(of: model.settings) { old, new in
             model.settingsChanged(from: old, to: new)
         }
+        .onOpenURL { model.handle($0) }
+        #if DEBUG
+        .overlay {
+            let arguments = ProcessInfo.processInfo.arguments
+            if arguments.contains("-widgetGallery") {
+                WidgetGallery(store: model.store, page: arguments.contains("-medium") ? .medium : .small)
+            }
+        }
+        #endif
         #if DEBUG
         .task {
             // Used by CI to screenshot the capture sheet and a toast.

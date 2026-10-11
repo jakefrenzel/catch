@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import WidgetKit
 
 /// UI state shared across screens (tab, toast, Up first skips, Focus) and the
 /// user-facing versions of store actions: each one plays its haptic and shows
@@ -87,6 +88,9 @@ final class AppModel {
     var settingsPath: [PlaceRoute] = []
     /// + is held and Catch is listening.
     var isListening = false
+    /// Listening was started by a tap (Lock Screen mic, control), so there's no
+    /// finger to lift: the voice sheet shows a Save button instead.
+    var isTapToTalk = false
     private(set) var listeningStartedAt = Date.now
     private var syncTask: Task<Void, Never>?
 
@@ -243,7 +247,7 @@ final class AppModel {
     // MARK: - Voice
 
     /// Hold +: start listening, or explain why not.
-    func startListening() {
+    func startListening(tapToTalk: Bool = false) {
         switch voice.permission() {
         case .denied:
             haptic(.warning)
@@ -261,6 +265,7 @@ final class AppModel {
                 try voice.start(language: settings.voiceLanguage)
                 listeningStartedAt = .now
                 isListening = true
+                isTapToTalk = tapToTalk
                 if onboarding == .hold { onboarding = .talk }
                 haptic(.medium)
             } catch {
@@ -272,6 +277,7 @@ final class AppModel {
     /// Let go of +. Dragging away first cancels without saving.
     func stopListening(save: Bool) async {
         guard isListening else { return }
+        isTapToTalk = false
         guard save else {
             voice.cancel()
             isListening = false
@@ -590,6 +596,25 @@ final class AppModel {
             ? ReminderPlanner.plan(items: store.allItems(), now: store.currentDate(), nudgeDefault: settings.nudgeDefault)
             : []
         await notifications.replacePending(with: planned)
+        // The same changes can change what the widgets show.
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// catch://today, catch://inbox, catch://voice, catch://capture from widgets.
+    func handle(_ url: URL) {
+        guard url.scheme == "catch" else { return }
+        switch url.host() {
+        case "inbox":
+            projectPath = []
+            tab = .inbox
+        case "voice":
+            tab = .today
+            startListening(tapToTalk: true)
+        case "capture":
+            isCaptureOpen = true
+        default:
+            tab = .today
+        }
     }
 
     /// Done or In 1 Hour on an alert, or a tap on it.

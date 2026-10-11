@@ -22,7 +22,8 @@ final class AppServices {
             fatalError("Couldn't open the Catch database: \(error)")
         }
 
-        settingsStore = SettingsStore()
+        // Shared with the widget extension through the App Group.
+        settingsStore = SettingsStore(defaults: SharedStore.defaults)
         store = CatchStore(context: container.mainContext, settingsStore: settingsStore)
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-seedSampleData") {

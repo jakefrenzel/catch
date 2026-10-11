@@ -9,11 +9,27 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+    # Set your Apple Developer team here (or in Xcode) to run on a device;
+    # the App Group below needs it.
+    DEVELOPMENT_TEAM: ""
 targets:
   Catch:
     type: application
     platform: iOS
     sources: [Catch]
+    info:
+      path: Catch/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: com.jakefrenzel.catch
+            CFBundleURLSchemes: [catch]
+    entitlements:
+      path: Catch/Catch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jakefrenzel.catch
+    dependencies:
+      - target: CatchWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jakefrenzel.catch
@@ -26,6 +42,35 @@ targets:
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Catch listens while you hold + so you can say what's on your mind."
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Catch uses your location only to remind you when you leave or reach a place you've saved."
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Catch turns what you say into text, on your iPhone when it can."
+  CatchWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - CatchWidgets
+      - Catch/Models
+      - Catch/Logic
+      - Catch/Settings
+      - Catch/Shared
+      - Catch/Design/Theme.swift
+    info:
+      path: CatchWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Catch
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: CatchWidgets/CatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jakefrenzel.catch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jakefrenzel.catch.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+        # Widget buttons' intents run in the app; this keeps their app-only code out.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) WIDGET_EXTENSION"
   CatchTests:
     type: bundle.unit-test
     platform: iOS

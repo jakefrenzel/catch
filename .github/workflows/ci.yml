@@ -92,6 +92,9 @@ jobs:
           shot onboarding-permission light -onboardingPermission
           shot places-light light -openPlaces
           shot place-editor-light light -openPlaces -openPlaceEditor
+          shot widgets-light light -widgetGallery
+          shot widgets-dark dark -widgetGallery
+          shot widgets-medium-light light -widgetGallery -medium
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
