@@ -307,7 +307,8 @@ final class AppModel {
             return
         }
         isStoppingListening = true
-        let result = await voice.stop()
+        let shown = voice.transcript
+        let result = keepingWhatWasShown(await voice.stop(), shown: shown)
         isStoppingListening = false
         isListening = false
         if discardPendingStop {
@@ -320,6 +321,17 @@ final class AppModel {
             return
         }
         saveVoice(result)
+    }
+
+    /// The sheet showed what was heard and said "Let go to save"; if the final
+    /// transcript lost all of it, or the time, save what was shown instead.
+    func keepingWhatWasShown(_ result: VoiceResult, shown: String) -> VoiceResult {
+        let final = result.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let shown = shown.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lostEverything = final.isEmpty && !shown.isEmpty
+        let lostTheTime = !shown.isEmpty && parseVoice(final).date == nil && parseVoice(shown).date != nil
+        guard lostEverything || lostTheTime else { return result }
+        return VoiceResult(transcript: shown, isUncertain: lostEverything ? false : result.isUncertain)
     }
 
     func saveVoice(_ result: VoiceResult) {

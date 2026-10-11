@@ -41,6 +41,7 @@ final class SpeechVoiceInput: VoiceInput {
     @ObservationIgnored private let engine = AVAudioEngine()
     @ObservationIgnored private var request: SFSpeechAudioBufferRecognitionRequest?
     @ObservationIgnored private var task: SFSpeechRecognitionTask?
+    @ObservationIgnored private var heard = TranscriptAccumulator()
     @ObservationIgnored private var lastConfidence: Float = 1
     @ObservationIgnored private var failed = false
     @ObservationIgnored private var finalResult: CheckedContinuation<Void, Never>?
@@ -68,6 +69,7 @@ final class SpeechVoiceInput: VoiceInput {
         session += 1
         let current = session
         transcript = ""
+        heard = TranscriptAccumulator()
         failed = false
         lastConfidence = 1
 
@@ -115,10 +117,15 @@ final class SpeechVoiceInput: VoiceInput {
             let segments = result?.bestTranscription.segments ?? []
             let confidence = segments.isEmpty ? Float(1) : segments.map(\.confidence).reduce(0, +) / Float(segments.count)
             let isFinal = result?.isFinal ?? false
-            let failed = error != nil
+            // "No speech detected" after a pause isn't a failure of what was said before it.
+            let noSpeech = (error as NSError?).map { $0.domain == "kAFAssistantErrorDomain" && $0.code == 1110 } ?? false
+            let failed = error != nil && !noSpeech
             Task { @MainActor in
                 guard let self, self.session == current else { return }
-                if let text { self.transcript = text }
+                if let text {
+                    self.heard.add(text)
+                    self.transcript = self.heard.text
+                }
                 if isFinal { self.lastConfidence = confidence }
                 if failed { self.failed = true }
                 if isFinal || failed {

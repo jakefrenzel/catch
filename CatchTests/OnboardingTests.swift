@@ -74,6 +74,20 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue(env.store.allItems().isEmpty)
     }
 
+    func testTheTimeShownIsSavedEvenIfTheFinalTranscriptDropsIt() async throws {
+        let (model, env, voice, _) = try makeModel()
+        model.beginOnboarding()
+        model.startListening()
+        // The sheet showed the time; after a pause the recognizer's last result lost it.
+        voice.transcript = "Remind me to call Bob tomorrow at 10"
+        voice.result = VoiceResult(transcript: "", isUncertain: true)
+
+        await model.stopListening(save: true)
+
+        XCTAssertEqual(model.onboarding, .permission)
+        XCTAssertEqual(env.store.items(in: .later).map(\.text), ["Call Bob"])
+    }
+
     func testTurnOnReminders() async throws {
         let (model, env, _, notifications) = try makeModel()
         notifications.currentPermission = .notDetermined

@@ -144,6 +144,42 @@ final class VoiceFlowTests: XCTestCase {
         XCTAssertEqual(Calendar.current.component(.hour, from: try XCTUnwrap(item.remindAt)), 10)
     }
 
+    func testFinalTranscriptMissingTheTimeKeepsWhatWasShown() async throws {
+        let (model, env, voice) = try makeModel()
+        model.startListening()
+        voice.transcript = "Remind me to call Bob tomorrow at 10"
+        voice.result = VoiceResult(transcript: "Remind me to call Bob", isUncertain: false)
+
+        await model.stopListening(save: true)
+
+        let item = try XCTUnwrap(env.store.items(in: .later).first)
+        XCTAssertEqual(item.text, "Call Bob")
+        XCTAssertEqual(Calendar.current.component(.hour, from: try XCTUnwrap(item.remindAt)), 10)
+    }
+
+    func testEmptyFinalTranscriptKeepsWhatWasShown() async throws {
+        let (model, env, voice) = try makeModel()
+        model.startListening()
+        voice.transcript = "Buy milk"
+        voice.result = VoiceResult(transcript: "", isUncertain: true)
+
+        await model.stopListening(save: true)
+
+        XCTAssertEqual(env.store.items(in: .inbox).map(\.text), ["Buy milk"])
+        XCTAssertNil(model.sheet)
+    }
+
+    func testALongerFinalTranscriptWins() async throws {
+        let (model, env, voice) = try makeModel()
+        model.startListening()
+        voice.transcript = "Buy milk"
+        voice.result = VoiceResult(transcript: "Buy milk and eggs", isUncertain: false)
+
+        await model.stopListening(save: true)
+
+        XCTAssertEqual(env.store.items(in: .inbox).map(\.text), ["Buy milk and eggs"])
+    }
+
     func testDraggingAwayCancels() async throws {
         let (model, env, voice) = try makeModel()
         voice.result = VoiceResult(transcript: "Buy milk", isUncertain: false)

@@ -76,7 +76,8 @@ final class VoiceActivityController {
         // time to save, schedule the reminder and take the banner down.
         let background = UIApplication.shared.beginBackgroundTask(withName: "Catch save")
 
-        let result = await model.voice.stop()
+        let shown = model.voice.transcript
+        let result = model.keepingWhatWasShown(await model.voice.stop(), shown: shown)
         model.isBackgroundListening = false
         let saved = ShortcutActions.catchThought(result.transcript, store: model.store)
         let state: VoiceActivityAttributes.ContentState = saved.map {
