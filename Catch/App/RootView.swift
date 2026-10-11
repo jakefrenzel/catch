@@ -48,6 +48,7 @@ struct RootView: View {
         }
         .sheet(item: $model.sheet) { sheet in
             switch sheet {
+            case .edit(let item): EditSheet(item: item)
             case .remind(let item): RemindSheet(item: item, settings: model.settings)
             case .swap(let item): SwapSheet(incoming: item)
             }
@@ -69,6 +70,9 @@ struct RootView: View {
             if arguments.contains("-openCapture") { model.isCaptureOpen = true }
             if arguments.contains("-openRemind"), let item = items.first(where: { $0.list == .now }) {
                 model.sheet = .remind(item)
+            }
+            if arguments.contains("-openEdit"), let item = items.first(where: { $0.list == .later }) {
+                model.sheet = .edit(item)
             }
             if arguments.contains("-openSwap"), let item = items.first(where: { $0.list == .inbox }) {
                 model.sheet = .swap(incoming: item)

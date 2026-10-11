@@ -15,7 +15,7 @@ struct InboxView: View {
 
                 if let current = inbox.first {
                     CurrentItemCard(item: current,
-                                    onEdit: { model.notBuiltYet("Editing") },
+                                    onEdit: { model.openEditor(for: current) },
                                     onDelete: { model.delete(current) })
                         .id(current.id)
                         .transition(reduceMotion

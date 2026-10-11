@@ -13,11 +13,13 @@ final class AppModel {
 
     /// Sheets opened from list actions. Capture has its own flag because it opens from +.
     enum Sheet: Identifiable {
+        case edit(Item)
         case remind(Item)
         case swap(incoming: Item)
 
         var id: String {
             switch self {
+            case .edit(let item): return "edit-\(item.id)"
             case .remind(let item): return "remind-\(item.id)"
             case .swap(let item): return "swap-\(item.id)"
             }
@@ -106,6 +108,39 @@ final class AppModel {
             haptic(.warning)
             sheet = .swap(incoming: item)
         }
+    }
+
+    func openEditor(for item: Item) {
+        sheet = .edit(item)
+    }
+
+    /// Saves the Edit sheet. The list picker already blocks a full Now, so
+    /// `.nowIsFull` only happens if Now filled up while the sheet was open.
+    func saveEdit(_ item: Item, text: String, note: String?, list: ListKind) {
+        switch store.edit(item, text: text, note: note, list: list) {
+        case .moved:
+            sheet = nil
+            haptic(.light)
+            flash("Saved", undo: true)
+        case .nowIsFull:
+            warnNowIsFull()
+        }
+    }
+
+    /// Edit sheet's "Remind me" row: keep the edits, then pick the time.
+    func saveEditAndPickTime(_ item: Item, text: String, note: String?) {
+        store.edit(item, text: text, note: note, list: .later)
+        sheet = .remind(item)
+    }
+
+    func deleteFromEditor(_ item: Item) {
+        sheet = nil
+        delete(item)
+    }
+
+    func warnNowIsFull() {
+        haptic(.warning)
+        flash("Now is full (\(settings.maxNow)). Move something out first", undo: false)
     }
 
     func openReminder(for item: Item) {

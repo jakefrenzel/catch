@@ -205,6 +205,14 @@ struct RemindSheet: View {
                 TimeWheel(time: $pickedTime)
                     .frame(height: 180)
                     .clipped()
+                    .mask {
+                        // Fade the wheels out at the edges, like the prototype.
+                        LinearGradient(stops: [.init(color: .clear, location: 0),
+                                               .init(color: .black, location: 0.3),
+                                               .init(color: .black, location: 0.7),
+                                               .init(color: .clear, location: 1)],
+                                       startPoint: .top, endPoint: .bottom)
+                    }
             }
             .padding(12)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))

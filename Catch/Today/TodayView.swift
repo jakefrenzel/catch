@@ -107,7 +107,7 @@ struct TodayView: View {
             ForEach(nowItems) { item in
                 ItemRow(item: item, accent: Theme.blue,
                         onToggle: { model.toggleDone(item) },
-                        onEdit: { model.notBuiltYet("Editing") })
+                        onEdit: { model.openEditor(for: item) })
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         doneSwipe(for: item)
                     }
@@ -139,7 +139,7 @@ struct TodayView: View {
                 ItemRow(item: item, accent: Theme.orange,
                         showsTime: true, notificationsOn: notificationsOn,
                         onToggle: { model.toggleDone(item) },
-                        onEdit: { model.notBuiltYet("Editing") },
+                        onEdit: { model.openEditor(for: item) },
                         onTime: { model.openReminder(for: item) })
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         doneSwipe(for: item)

@@ -112,23 +112,7 @@ final class CatchStore {
         if list == .now && isNowFull { return .nowIsFull }
 
         recordUndo(restoring: [item])
-        item.list = list
-        item.movedToTomorrow = false
-        switch list {
-        case .now:
-            item.reason = Reason.intoNow(from: from)
-            item.reminder = nil
-        case .later:
-            item.reason = nil
-            if let remindAt {
-                item.reminder = .date(remindAt)
-            } else if item.reminder == nil {
-                item.reminder = .date(defaultLaterTime())
-            }
-        case .inbox, .someday:
-            item.reason = nil
-            item.reminder = nil
-        }
+        applyMove(item, to: list, remindAt: remindAt)
         save()
         return .moved
     }
@@ -163,11 +147,22 @@ final class CatchStore {
     /// Edits text and note. Empty text keeps the old title; an empty note is removed.
     func update(_ item: Item, text: String, note: String?) {
         recordUndo(restoring: [item])
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { item.text = trimmed }
-        let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        item.note = trimmedNote.isEmpty ? nil : trimmedNote
+        applyText(item, text: text, note: note)
         save()
+    }
+
+    /// The Edit sheet's save: text, note and list as one undoable change.
+    /// Moving into a full Now changes nothing and returns `.nowIsFull`.
+    @discardableResult
+    func edit(_ item: Item, text: String, note: String?, list: ListKind) -> MoveResult {
+        if list == .now && item.list != .now && isNowFull { return .nowIsFull }
+        recordUndo(restoring: [item])
+        applyText(item, text: text, note: note)
+        if list != item.list {
+            applyMove(item, to: list, remindAt: nil)
+        }
+        save()
+        return .moved
     }
 
     func setDone(_ item: Item, _ done: Bool) {
@@ -291,6 +286,34 @@ final class CatchStore {
     }
 
     // MARK: - Private
+
+    private func applyText(_ item: Item, text: String, note: String?) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { item.text = trimmed }
+        let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        item.note = trimmedNote.isEmpty ? nil : trimmedNote
+    }
+
+    private func applyMove(_ item: Item, to list: ListKind, remindAt: Date?) {
+        let from = item.list
+        item.list = list
+        item.movedToTomorrow = false
+        switch list {
+        case .now:
+            item.reason = Reason.intoNow(from: from)
+            item.reminder = nil
+        case .later:
+            item.reason = nil
+            if let remindAt {
+                item.reminder = .date(remindAt)
+            } else if item.reminder == nil {
+                item.reminder = .date(defaultLaterTime())
+            }
+        case .inbox, .someday:
+            item.reason = nil
+            item.reminder = nil
+        }
+    }
 
     private func recordUndo(restoring items: [Item]) {
         let snapshots = items.map { ($0, ItemSnapshot($0)) }

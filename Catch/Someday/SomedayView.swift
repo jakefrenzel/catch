@@ -19,7 +19,7 @@ struct SomedayView: View {
                     VStack(spacing: 0) {
                         ForEach(Array(someday.enumerated()), id: \.element.id) { index, item in
                             SomedayRow(item: item,
-                                       onEdit: { model.notBuiltYet("Editing") },
+                                       onEdit: { model.openEditor(for: item) },
                                        onMoveToNow: { model.move(item, to: .now) })
                                 .overlay(alignment: .bottom) {
                                     if index < someday.count - 1 {
