@@ -118,7 +118,9 @@ final class OverdueTests: XCTestCase {
 
 @MainActor
 final class NotificationFlowTests: XCTestCase {
-    private func makeModel(_ fake: FakeNotifications = FakeNotifications()) throws -> (AppModel, TestEnvironment, FakeNotifications) {
+    private func makeModel(_ fake: FakeNotifications? = nil) throws -> (AppModel, TestEnvironment, FakeNotifications) {
+        // Created here rather than as a default argument, which isn't on the main actor.
+        let fake = fake ?? FakeNotifications()
         let env = try TestEnvironment()
         env.settingsStore.settings.haptics = false
         return (AppModel(store: env.store, settingsStore: env.settingsStore, notifications: fake), env, fake)
