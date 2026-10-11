@@ -38,7 +38,35 @@ jobs:
             -scheme Catch \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath TestResults.xcresult \
+            -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO
+
+      # Launch the app with demo data and capture screens, since nobody on the
+      # team can run the simulator locally yet.
+      - name: Take screenshots
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          APP=DerivedData/Build/Products/Debug-iphonesimulator/Catch.app
+          mkdir -p screenshots
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryLevel 100 --cellularBars 4
+          xcrun simctl uninstall "$UDID" com.jakefrenzel.catch || true
+          xcrun simctl install "$UDID" "$APP"
+          for mode in light dark; do
+            xcrun simctl ui "$UDID" appearance "$mode"
+            xcrun simctl terminate "$UDID" com.jakefrenzel.catch 2>/dev/null || true
+            xcrun simctl launch "$UDID" com.jakefrenzel.catch -seedSampleData
+            sleep 6
+            xcrun simctl io "$UDID" screenshot "screenshots/today-$mode.png"
+          done
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: Screenshots
+          path: screenshots
 
       - name: Upload test results
         if: failure()
