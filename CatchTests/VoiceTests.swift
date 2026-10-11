@@ -68,6 +68,54 @@ final class VoiceParserTests: XCTestCase {
         XCTAssertEqual(date.timeIntervalSince1970, expected.timeIntervalSince1970, accuracy: 5)
     }
 
+    func testSpokenHourWithoutOClock() throws {
+        let result = parse("Set a reminder for five to call Bob")
+        XCTAssertEqual(result.title, "Call Bob")
+        let date = try XCTUnwrap(result.date)
+        XCTAssertEqual(calendar.component(.hour, from: date), 17)
+        XCTAssertEqual(calendar.component(.minute, from: date), 0)
+        XCTAssertGreaterThan(date, .now)
+    }
+
+    func testSpokenHourAndMinutes() throws {
+        let result = parse("Call mom at three thirty")
+        XCTAssertEqual(result.title, "Call mom")
+        let date = try XCTUnwrap(result.date)
+        XCTAssertEqual(calendar.component(.hour, from: date), 15)
+        XCTAssertEqual(calendar.component(.minute, from: date), 30)
+    }
+
+    func testSpokenHourWithADay() throws {
+        let result = parse("Remind me to call Bob tomorrow at five")
+        XCTAssertEqual(result.title, "Call Bob")
+        let date = try XCTUnwrap(result.date)
+        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: .now))
+        XCTAssertTrue(calendar.isDate(date, inSameDayAs: tomorrow))
+        XCTAssertEqual(calendar.component(.hour, from: date), 17)
+    }
+
+    func testSpokenMorningAndNight() throws {
+        let morning = parse("Remind me at seven in the morning to stretch")
+        XCTAssertEqual(morning.title, "Stretch")
+        XCTAssertEqual(calendar.component(.hour, from: try XCTUnwrap(morning.date)), 7)
+
+        let night = parse("Remind me tonight at eight to take the bins out")
+        XCTAssertEqual(night.title, "Take the bins out")
+        XCTAssertEqual(calendar.component(.hour, from: try XCTUnwrap(night.date)), 20)
+    }
+
+    func testDigitsAfterFor() throws {
+        let result = parse("Remind me to call Bob for 5")
+        XCTAssertEqual(result.title, "Call Bob")
+        XCTAssertEqual(calendar.component(.hour, from: try XCTUnwrap(result.date)), 17)
+    }
+
+    func testCountsAreNotTimes() {
+        XCTAssertNil(parse("Buy milk for five people").date)
+        XCTAssertNil(parse("Book dinner for two").date, "Only a reminder makes 'for two' a time")
+        XCTAssertEqual(parse("Book dinner for two").title, "Book dinner for two")
+    }
+
     func testCapitalizesAndDropsTrailingPunctuation() {
         XCTAssertEqual(parse("buy milk.").title, "Buy milk")
     }
