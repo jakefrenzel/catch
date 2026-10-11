@@ -14,6 +14,7 @@ struct SomedayView: View {
 
                 if someday.isEmpty {
                     EmptySomedayCard()
+                        .padding(.horizontal, 16)
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(someday.enumerated()), id: \.element.id) { index, item in
@@ -29,9 +30,9 @@ struct SomedayView: View {
                     }
                     .padding(.leading, 16)
                     .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .padding(.horizontal, 16)
                 }
             }
-            .padding(.horizontal, 16)
             .padding(.bottom, 180)
         }
         .scrollBounceBehavior(.basedOnSize)
