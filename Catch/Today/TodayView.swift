@@ -139,6 +139,7 @@ struct TodayView: View {
                         onEdit: { model.openEditor(for: item) },
                         onTomorrow: showsEveningActions ? { model.moveToTomorrow(item) } : nil,
                         onSomeday: showsEveningActions ? { model.move(item, to: .someday) } : nil)
+                    .focusMenu(item.isDone ? nil : { model.startChosenFocus(.item(item)) })
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         doneSwipe(for: item)
                     }
@@ -211,6 +212,7 @@ struct TodayView: View {
                         onToggle: { model.toggleDone(item) },
                         onEdit: { model.openEditor(for: item) },
                         onTime: { model.openReminder(for: item) })
+                    .focusMenu(item.isDone ? nil : { model.startChosenFocus(.item(item)) })
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         doneSwipe(for: item)
                     }
@@ -243,6 +245,7 @@ struct TodayView: View {
                         StepRow(step: step, isNext: step.id == project.nextStep?.id) {
                             model.toggleDone(step)
                         }
+                        .focusMenu(step.isDone ? nil : { model.startChosenFocus(.step(step, project: project)) })
                     }
                 }
             }

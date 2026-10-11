@@ -136,6 +136,7 @@ struct RootView: View {
         }
         .fullScreenCover(item: $model.focus) { candidate in
             FocusView(candidate: candidate,
+                      reason: model.focusReason(for: candidate),
                       onDone: { model.finishFocus() },
                       onNotNow: { model.skipFocus(in: candidates) },
                       onClose: { model.focus = nil })

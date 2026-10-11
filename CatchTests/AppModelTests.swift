@@ -153,6 +153,48 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(model.showsPinnedUpFirst)
     }
 
+    func testStartingFocusOutOfOrderSaysWhereItsFrom() throws {
+        let (model, env) = try makeModel()
+        let first = env.add("Call Bob", to: .now)
+        let chosen = env.add("Pay rent", to: .later)
+        let candidates: [UpFirstCandidate] = [.item(first), .item(chosen)]
+
+        model.startChosenFocus(.item(chosen))
+        XCTAssertEqual(model.focus, .item(chosen))
+        XCTAssertEqual(model.focusReason(for: .item(chosen)), "From Later")
+
+        model.skipFocus(in: candidates)
+        XCTAssertNil(model.focus)
+        XCTAssertTrue(model.upFirst.skipped.isEmpty, "Not Now on a chosen item leaves Up first alone")
+    }
+
+    func testUpFirstStartStillSkipsOnNotNow() throws {
+        let (model, env) = try makeModel()
+        let first = env.add("Call Bob", to: .now)
+        let second = env.add("Pay rent", to: .now)
+        let candidates: [UpFirstCandidate] = [.item(first), .item(second)]
+
+        model.startFocus(on: .item(first))
+        XCTAssertEqual(model.focusReason(for: .item(first)), UpFirstCandidate.item(first).reason)
+
+        model.skipFocus(in: candidates)
+        XCTAssertEqual(model.upFirst.skipped, [first.id])
+    }
+
+    func testStartFocusFromTheEditSheetKeepsTheEdits() async throws {
+        let (model, env) = try makeModel()
+        let item = env.add("Draft", to: .someday)
+        model.openEditor(for: item)
+
+        model.saveEditAndFocus(item, text: "Draft the intro", note: nil, list: .someday)
+
+        XCTAssertNil(model.sheet)
+        XCTAssertEqual(item.text, "Draft the intro")
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertEqual(model.focus, .item(item))
+        XCTAssertEqual(model.focusReason(for: .item(item)), "From Someday")
+    }
+
     func testPinnedBarSettingTurnsItOff() throws {
         let (model, env) = try makeModel()
         model.tab = .inbox

@@ -26,6 +26,7 @@ struct ProjectDetailView: View {
                               newStep: $newStep,
                               isAddingStep: $isAddingStep,
                               onToggle: { model.toggleDone($0) },
+                              onFocus: { model.startChosenFocus(.step($0, project: project)) },
                               onAddStep: addStep)
                 }
             }
@@ -88,6 +89,7 @@ private struct PhaseNode: View {
     @Binding var newStep: String
     var isAddingStep: FocusState<Bool>.Binding
     let onToggle: (Step) -> Void
+    let onFocus: (Step) -> Void
     let onAddStep: () -> Void
 
     var body: some View {
@@ -185,6 +187,7 @@ private struct PhaseNode: View {
                 .padding(.vertical, 11)
                 .padding(.trailing, 12)
                 .overlay(alignment: .bottom) { Theme.sep.frame(height: 1) }
+                .focusMenu(step.isDone ? nil : { onFocus(step) })
             }
 
             HStack(spacing: 10) {

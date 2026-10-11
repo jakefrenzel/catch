@@ -21,6 +21,7 @@ struct SomedayView: View {
                             SomedayRow(item: item,
                                        onEdit: { model.openEditor(for: item) },
                                        onMoveToNow: { model.move(item, to: .now) })
+                                .focusMenu { model.startChosenFocus(.item(item)) }
                                 .overlay(alignment: .bottom) {
                                     if index < someday.count - 1 {
                                         Theme.sep.frame(height: 1)

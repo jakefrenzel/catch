@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// Full-screen focus on the Up first suggestion, with an elapsed timer.
+/// Full-screen focus on one thing, with an elapsed timer: the Up first
+/// suggestion, or anything started from a row's menu or the edit sheet.
 struct FocusView: View {
     let candidate: UpFirstCandidate
+    let reason: String
     let onDone: () -> Void
     let onNotNow: () -> Void
     let onClose: () -> Void
@@ -45,7 +47,7 @@ struct FocusView: View {
             Spacer()
 
             VStack(alignment: .leading, spacing: 14) {
-                Text(candidate.reason)
+                Text(reason)
                     .font(.subheadline)
                     .foregroundStyle(Theme.ink2)
                 Text(candidate.title)
@@ -84,5 +86,21 @@ struct FocusView: View {
     private func elapsed(until date: Date) -> String {
         let seconds = max(0, Int(date.timeIntervalSince(startedAt)))
         return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+}
+
+extension View {
+    /// Long-press menu with Start Focus; none when `action` is nil (done items).
+    @ViewBuilder
+    func focusMenu(_ action: (() -> Void)?) -> some View {
+        if let action {
+            contextMenu {
+                Button(action: action) {
+                    Label("Start Focus", systemImage: "timer")
+                }
+            }
+        } else {
+            self
+        }
     }
 }

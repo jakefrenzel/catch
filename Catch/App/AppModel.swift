@@ -72,6 +72,8 @@ final class AppModel {
     var upFirst = UpFirst()
     /// The Up first suggestion open in Focus.
     var focus: UpFirstCandidate?
+    /// Focus opened from Up first's Start, not picked out of order.
+    private(set) var focusIsSuggestion = false
     var toast: Toast?
     /// The Up first card on Today has scrolled out of view.
     var upFirstCardScrolledAway = false
@@ -574,7 +576,40 @@ final class AppModel {
     }
 
     func startFocus(on candidate: UpFirstCandidate) {
+        focusIsSuggestion = true
         focus = candidate
+    }
+
+    /// "Start Focus" on any open item or step, out of Up first's order.
+    func startChosenFocus(_ candidate: UpFirstCandidate) {
+        focusIsSuggestion = false
+        guard sheet != nil else {
+            focus = candidate
+            return
+        }
+        sheet = nil
+        Task {
+            // Let the sheet finish closing before Focus covers the screen.
+            try? await Task.sleep(for: .milliseconds(450))
+            focus = candidate
+        }
+    }
+
+    /// Edit sheet's "Start Focus": keep the edits, then open Focus on the item.
+    func saveEditAndFocus(_ item: Item, text: String, note: String?, list: ListKind) {
+        switch store.edit(item, text: text, note: note, list: list) {
+        case .moved: startChosenFocus(.item(item))
+        case .nowIsFull: warnNowIsFull()
+        }
+    }
+
+    /// The line above the title in Focus: why it's suggested, or where it's from.
+    func focusReason(for candidate: UpFirstCandidate) -> String {
+        if focusIsSuggestion { return candidate.reason }
+        switch candidate {
+        case .item(let item): return "From \(item.list.title)"
+        case .step(_, let project): return "In \(project.name)"
+        }
     }
 
     func finishFocus() {
@@ -583,10 +618,10 @@ final class AppModel {
         complete(candidate)
     }
 
-    /// "Not Now" in Focus skips the suggestion.
+    /// "Not Now" in Focus skips the suggestion; on a chosen item it just closes.
     func skipFocus(in candidates: [UpFirstCandidate]) {
         focus = nil
-        upFirst.skip(in: candidates)
+        if focusIsSuggestion { upFirst.skip(in: candidates) }
     }
 
     // MARK: - Settings shortcuts

@@ -55,6 +55,10 @@ struct EditSheet: View {
                 remindRow
             }
 
+            if !item.isDone {
+                focusRow
+            }
+
             Text(caughtLabel)
                 .font(.footnote)
                 .foregroundStyle(Theme.ink2)
@@ -103,6 +107,32 @@ struct EditSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remind me, \(reminderLabel)")
+    }
+
+    /// Opens Focus, the timer view Up first's Start opens, on this item.
+    private var focusRow: some View {
+        Button {
+            model.saveEditAndFocus(item, text: text, note: note, list: list)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "timer")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(Theme.blue, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .accessibilityHidden(true)
+                Text("Start Focus")
+                    .foregroundStyle(Color.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.ink4)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - State
