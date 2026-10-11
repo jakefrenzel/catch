@@ -61,6 +61,9 @@ struct CaptureButton: View {
     @State private var isPressed = false
     @State private var isHolding = false
     @State private var holdTimer: Task<Void, Never>?
+    /// True while a finger is down. SwiftUI resets it even when the touch is
+    /// cancelled (a permission alert, a call), which onEnded never hears about.
+    @GestureState private var isTouching = false
 
     var body: some View {
         Image(systemName: "plus")
@@ -74,6 +77,7 @@ struct CaptureButton: View {
             .contentShape(Circle())
             .gesture(
                 DragGesture(minimumDistance: 0)
+                    .updating($isTouching) { _, touching, _ in touching = true }
                     .onChanged { _ in
                         guard !isPressed else { return }
                         isPressed = true
@@ -96,6 +100,14 @@ struct CaptureButton: View {
                         isHolding = false
                     }
             )
+            .onChange(of: isTouching) { _, touching in
+                // Ended normally: onEnded already reset everything.
+                guard !touching, isPressed else { return }
+                holdTimer?.cancel()
+                if isHolding { onHoldEnd(false) }
+                isPressed = false
+                isHolding = false
+            }
             .accessibilityElement()
             .accessibilityLabel("Capture")
             .accessibilityHint("Opens a new idea. Use the Talk action to speak instead.")

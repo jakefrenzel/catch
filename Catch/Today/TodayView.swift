@@ -86,7 +86,7 @@ struct TodayView: View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(isEvening
-                     ? "\(model.now.formatted(.dateTime.weekday(.wide))) evening"
+                     ? "\(DayClock.day(of: model.now, calendar: .current).formatted(.dateTime.weekday(.wide))) evening"
                      : model.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isEvening ? Theme.orangeText : Theme.ink2)

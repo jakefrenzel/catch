@@ -199,27 +199,32 @@ final class NotificationFlowTests: XCTestCase {
         XCTAssertEqual(model.toast?.message, "Reminders are on")
     }
 
-    func testDoneFromAlert() throws {
-        let (model, env, _) = try makeModel()
-        let item = env.add("A", to: .later)
-        model.handleNotificationAction(NotificationAction.done, itemID: item.id)
+    func testDoneFromAlert() async throws {
+        let (model, env, fake) = try makeModel()
+        let item = try XCTUnwrap(env.store.capture("A", to: .later, remindAt: env.clock.at(day: 10, hour: 9))).item
+        await model.syncReminders()
+        XCTAssertFalse(fake.pending.isEmpty)
+
+        await model.handleNotificationAction(NotificationAction.done, itemID: item.id)
+
         XCTAssertTrue(item.isDone)
+        XCTAssertTrue(fake.pending.isEmpty, "The nudge is gone before the action returns")
     }
 
-    func testSnoozeFromAlert() throws {
+    func testSnoozeFromAlert() async throws {
         let (model, env, _) = try makeModel()
         let item = env.add("A", to: .later)
         let before = item.remindAt
-        model.handleNotificationAction(NotificationAction.snooze, itemID: item.id)
+        await model.handleNotificationAction(NotificationAction.snooze, itemID: item.id)
         XCTAssertNotEqual(item.remindAt, before)
         XCTAssertEqual(item.list, .later)
     }
 
-    func testTappingAlertGoesToToday() throws {
+    func testTappingAlertGoesToToday() async throws {
         let (model, env, _) = try makeModel()
         let item = env.add("A", to: .later)
         model.tab = .someday
-        model.handleNotificationAction("com.apple.UNNotificationDefaultActionIdentifier", itemID: item.id)
+        await model.handleNotificationAction("com.apple.UNNotificationDefaultActionIdentifier", itemID: item.id)
         XCTAssertEqual(model.tab, .today)
     }
 }

@@ -1,13 +1,36 @@
 import Foundation
 
+/// Catch's day runs from 4 AM to 4 AM, so a wrap-up at 12:30 AM still belongs
+/// to the evening before, and things moved to tomorrow come back that morning.
+enum DayClock {
+    static let startHour = 4
+
+    /// The start of the Catch day `date` falls in.
+    static func day(of date: Date, calendar: Calendar) -> Date {
+        calendar.startOfDay(for: date.addingTimeInterval(-Double(startHour) * 3600))
+    }
+
+    /// Minutes since the Catch day started (0 at 4 AM).
+    static func minutesIntoDay(hour: Int, minute: Int) -> Int {
+        (hour * 60 + minute - startHour * 60 + 24 * 60) % (24 * 60)
+    }
+}
+
 /// 7a: the evening wrap-up on Today.
 enum WrapUp {
-    /// From the wrap-up time until midnight, when the style is On Today.
+    /// From the wrap-up time until the day turns over at 4 AM, when the style is On Today.
     static func isEvening(now: Date, settings: CatchSettings, calendar: Calendar) -> Bool {
         guard settings.wrapUpStyle == .onToday else { return false }
         let parts = calendar.dateComponents([.hour, .minute], from: now)
-        let minutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
-        return minutes >= settings.wrapUpTime.hour * 60 + settings.wrapUpTime.minute
+        let minutes = DayClock.minutesIntoDay(hour: parts.hour ?? 0, minute: parts.minute ?? 0)
+        return minutes >= DayClock.minutesIntoDay(hour: settings.wrapUpTime.hour, minute: settings.wrapUpTime.minute)
+    }
+
+    /// Moved to tomorrow, and tomorrow has come (even if the app hasn't run yet).
+    static func isBackFromTomorrow(_ item: Item, at date: Date, calendar: Calendar) -> Bool {
+        guard item.movedToTomorrow else { return false }
+        let movedDay = DayClock.day(of: item.movedToTomorrowAt ?? .distantPast, calendar: calendar)
+        return movedDay < DayClock.day(of: date, calendar: calendar)
     }
 
     /// What the evening card says.

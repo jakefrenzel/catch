@@ -118,9 +118,14 @@ struct UndoVoiceCatchIntent: AppIntent, LiveActivityIntent {
     static let title: LocalizedStringResource = "Undo"
     static let isDiscoverable = false
 
+    @Parameter(title: "Item") var itemID: String
+
+    init() {}
+    init(itemID: String) { self.itemID = itemID }
+
     func perform() async throws -> some IntentResult {
         #if !WIDGET_EXTENSION
-        await WidgetActions.undoVoiceCatch()
+        await WidgetActions.undoCapture(itemID: itemID)
         #endif
         return .result()
     }

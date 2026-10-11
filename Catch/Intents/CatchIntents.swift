@@ -17,6 +17,7 @@ struct CatchThoughtIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        AppServices.shared.model.refreshClock()
         guard let saved = ShortcutActions.catchThought(text, store: AppServices.shared.store) else {
             throw $text.needsValueError("What's on your mind?")
         }
@@ -37,6 +38,7 @@ struct AddToNowIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        AppServices.shared.model.refreshClock()
         guard let saved = ShortcutActions.addToNow(text, store: AppServices.shared.store) else {
             throw $text.needsValueError("What should go in Now?")
         }
@@ -50,7 +52,9 @@ struct UpFirstIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        .result(dialog: "\(ShortcutActions.upFirst(store: AppServices.shared.store))")
+        // A morning question should see what came back from last night.
+        AppServices.shared.model.refreshClock()
+        return .result(dialog: "\(ShortcutActions.upFirst(store: AppServices.shared.store))")
     }
 }
 
@@ -60,7 +64,8 @@ struct ReadNowListIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        .result(dialog: "\(ShortcutActions.nowList(store: AppServices.shared.store))")
+        AppServices.shared.model.refreshClock()
+        return .result(dialog: "\(ShortcutActions.nowList(store: AppServices.shared.store))")
     }
 }
 
@@ -71,6 +76,7 @@ struct WrapUpDayIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let services = AppServices.shared
+        services.model.refreshClock()
         return .result(dialog: "\(ShortcutActions.wrapUp(store: services.store, settingsStore: services.settingsStore))")
     }
 }
@@ -91,12 +97,22 @@ struct SortInboxIntent: AppIntent {
 
 /// The Siri card's Undo.
 struct UndoCatchIntent: AppIntent {
-    static let title: LocalizedStringResource = "Undo Last Catch"
+    static let title: LocalizedStringResource = "Undo Catch"
     static let isDiscoverable = false
 
+    @Parameter(title: "Item") var itemID: String
+
+    init() {}
+    init(itemID: UUID) { self.itemID = itemID.uuidString }
+
+    /// Removes exactly the item Siri saved, not whatever was done last in the app.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        AppServices.shared.store.undo()
+        let services = AppServices.shared
+        if let item = services.store.allItems().first(where: { $0.id.uuidString == itemID }) {
+            services.store.delete(item)
+            await services.model.syncReminders()
+        }
         return .result(dialog: "Undone.")
     }
 }
@@ -136,7 +152,7 @@ struct SavedSnippet: View {
                 .background(saved.destination.hasPrefix("Later") ? Theme.orangeTint : Theme.blueTint,
                             in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             HStack(spacing: 10) {
-                Button(intent: UndoCatchIntent()) {
+                Button(intent: UndoCatchIntent(itemID: saved.itemID)) {
                     Text("Undo").frame(maxWidth: .infinity)
                 }
                 Button(intent: OpenCatchIntent()) {

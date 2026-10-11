@@ -30,7 +30,7 @@ struct UpFirstCard: View {
                 }
                 Text(candidate.title)
                     .font(.headline)
-                    .lineLimit(2)
+                    .lineLimit(3)
                 Text(candidate.reason)
                     .font(.caption)
                     .foregroundStyle(Theme.ink2)

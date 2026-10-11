@@ -57,5 +57,6 @@ struct SheetSaveButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
+        .accessibilityValue(isEnabled ? "" : "Nothing to save yet")
     }
 }

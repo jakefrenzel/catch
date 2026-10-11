@@ -17,13 +17,16 @@ struct VoiceActivityAttributes: ActivityAttributes {
         var chunks: [Chunk]
         var savedTitle: String?
         var savedDestination: String?
+        /// What Undo removes.
+        var savedItemID: String?
 
         static func listening(_ parse: VoiceParse) -> ContentState {
             ContentState(phase: .listening, chunks: parse.chunks.map { Chunk(kind: kindName($0.kind), text: $0.text) })
         }
 
-        static func saved(title: String, destination: String) -> ContentState {
-            ContentState(phase: .saved, chunks: [], savedTitle: title, savedDestination: destination)
+        static func saved(title: String, destination: String, itemID: UUID? = nil) -> ContentState {
+            ContentState(phase: .saved, chunks: [], savedTitle: title, savedDestination: destination,
+                         savedItemID: itemID?.uuidString)
         }
 
         static let nothingHeard = ContentState(phase: .nothing, chunks: [])
@@ -69,7 +72,7 @@ struct VoiceActivityView: View {
                     .lineLimit(2)
                 HStack {
                     Spacer()
-                    Button(intent: UndoVoiceCatchIntent()) {
+                    Button(intent: UndoVoiceCatchIntent(itemID: state.savedItemID ?? "")) {
                         Text("Undo")
                             .font(.subheadline.weight(.semibold))
                             .padding(.horizontal, 14)

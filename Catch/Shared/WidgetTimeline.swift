@@ -28,8 +28,13 @@ struct WidgetSnapshot: Equatable {
 enum WidgetTimeline {
     static func snapshot(at date: Date, items: [Item], projects: [Project], settings: CatchSettings,
                          skipped: Set<UUID>, calendar: Calendar, formatter: ReminderFormatter) -> WidgetSnapshot {
+        // Items moved to tomorrow count again once tomorrow arrives, even before
+        // the app has run and brought them back.
         let open = items
-            .filter { $0.list == .now && !$0.isDone && !$0.movedToTomorrow }
+            .filter { item in
+                item.list == .now && !item.isDone
+                    && (!item.movedToTomorrow || WrapUp.isBackFromTomorrow(item, at: date, calendar: calendar))
+            }
             .sorted { $0.capturedAt < $1.capturedAt }
         let doneToday = items.filter { item in
             guard let completedAt = item.completedAt else { return false }
@@ -63,7 +68,12 @@ enum WidgetTimeline {
                                   inboxCount: inboxCount)
         }
 
-        let candidates = UpFirst.candidates(items: open, projects: projects, includeSteps: settings.upFirstIncludesSteps)
+        // UpFirst skips anything flagged as moved to tomorrow, so offer the open list's projects' steps
+        // alongside items still flagged but already back.
+        var candidates = open.map(UpFirstCandidate.item)
+        if settings.upFirstIncludesSteps {
+            candidates += UpFirst.candidates(items: [], projects: projects, includeSteps: true)
+        }
         if let first = UpFirst(skipped: skipped).current(in: candidates) {
             let mode: WidgetSnapshot.Mode
             switch first {

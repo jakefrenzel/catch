@@ -24,6 +24,8 @@ final class Item {
     var reason: String?
     /// Pushed to tomorrow during the evening wrap-up.
     var movedToTomorrow: Bool = false
+    /// When it was pushed, so it comes back on the right morning.
+    var movedToTomorrowAt: Date?
 
     init(text: String, list: ListKind = .inbox, capturedAt: Date = .now) {
         self.text = text

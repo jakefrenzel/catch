@@ -80,6 +80,20 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertEqual(result.list, ["A", "B"])
     }
 
+    func testWidgetShowsItemsBackFromTomorrowBeforeTheAppRuns() throws {
+        let env = try TestEnvironment()
+        env.add("Leftover", to: .now)
+        env.store.moveAllToTomorrow()
+
+        let tonight = snapshot(env, at: env.clock.at(day: 9, hour: 22))
+        let morning = snapshot(env, at: env.clock.at(day: 10, hour: 8))
+
+        guard case .evening(let left, _, _) = tonight.mode else { return XCTFail("Expected evening") }
+        XCTAssertEqual(left, 0)
+        guard case .upFirst(_, _, let title, _) = morning.mode else { return XCTFail("Expected Up first") }
+        XCTAssertEqual(title, "Leftover")
+    }
+
     func testClearDay() throws {
         let env = try TestEnvironment()
         guard case .clear = snapshot(env, at: env.clock.at(day: 9, hour: 13)).mode else {

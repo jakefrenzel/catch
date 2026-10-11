@@ -8,7 +8,7 @@ final class SettingsStore {
         didSet { save() }
     }
 
-    /// The day the user tapped Finish in the evening wrap-up (start of day).
+    /// When the user tapped Finish in the evening wrap-up.
     var dayFinishedOn: Date? {
         didSet { defaults.set(dayFinishedOn, forKey: Self.dayFinishedKey) }
     }

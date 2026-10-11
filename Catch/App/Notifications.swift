@@ -101,8 +101,7 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         guard let idString = userInfo[NotificationAction.itemIDKey] as? String,
               let itemID = UUID(uuidString: idString) else { return }
         let action = response.actionIdentifier
-        await MainActor.run { [weak self] in
-            self?.model?.handleNotificationAction(action, itemID: itemID)
-        }
+        let model = await MainActor.run { [weak self] in self?.model }
+        await model?.handleNotificationAction(action, itemID: itemID)
     }
 }

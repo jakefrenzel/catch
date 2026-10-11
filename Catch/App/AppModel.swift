@@ -55,6 +55,8 @@ final class AppModel {
         let id = UUID()
         let message: String
         let canUndo: Bool
+        /// The store's undo version when shown; Undo only runs if it still matches.
+        var undoVersion: Int?
     }
 
     let store: CatchStore
@@ -88,6 +90,10 @@ final class AppModel {
     var settingsPath: [SettingsRoute] = []
     /// + is held and Catch is listening.
     var isListening = false
+    /// Waiting for the final transcript after letting go.
+    private var isStoppingListening = false
+    /// The Action button session is using the microphone.
+    var isBackgroundListening = false
     /// Listening was started by a tap (Lock Screen mic, control), so there's no
     /// finger to lift: the voice sheet shows a Save button instead.
     var isTapToTalk = false
@@ -120,20 +126,14 @@ final class AppModel {
 
     var isDayFinished: Bool {
         guard let finished = settingsStore.dayFinishedOn else { return false }
-        return store.calendar.isDate(finished, inSameDayAs: now)
+        return DayClock.day(of: finished, calendar: store.calendar) == DayClock.day(of: now, calendar: store.calendar)
     }
 
     /// Updates the clock. The first time it sees a new day, items moved to
     /// tomorrow come back with "Carried over from last night".
     func refreshClock() {
         now = store.currentDate()
-        let today = store.calendar.startOfDay(for: now)
-        if let last = settingsStore.lastActiveDay, last < today {
-            store.carryOverFromLastNight()
-        }
-        if settingsStore.lastActiveDay != today {
-            settingsStore.lastActiveDay = today
-        }
+        store.carryOverIfNewDay()
         store.promoteOverdueLaterItems()
     }
 
@@ -141,7 +141,7 @@ final class AppModel {
     func finishDay() {
         now = store.currentDate()
         let moved = store.moveAllToTomorrow()
-        settingsStore.dayFinishedOn = store.calendar.startOfDay(for: now)
+        settingsStore.dayFinishedOn = now
         haptic(.success)
         flash(moved > 0 ? "Day finished. \(moved) moved to tomorrow" : "Day finished", undo: moved > 0)
     }
@@ -239,7 +239,10 @@ final class AppModel {
             if saved { flash("Keep holding until you’ve said the time", undo: false) }
             return
         }
-        capture(parse.title, to: .later, remindAt: date)
+        // Saved directly: step 3 asks about reminders before iOS does.
+        if store.capture(parse.title, to: .later, remindAt: date) != nil {
+            flash("Saved to Later", undo: false)
+        }
         onboarding = .permission
         sheet = .onboardingPermission(date)
     }
@@ -248,6 +251,9 @@ final class AppModel {
 
     /// Hold +: start listening, or explain why not.
     func startListening(tapToTalk: Bool = false) {
+        // One listener at a time: not while the last capture is still saving,
+        // and not while the Action button session is listening.
+        guard !isListening, !isStoppingListening, !isBackgroundListening else { return }
         switch voice.permission() {
         case .denied:
             haptic(.warning)
@@ -284,7 +290,9 @@ final class AppModel {
             if onboarding == .talk { onboarding = .hold }
             return
         }
+        isStoppingListening = true
         let result = await voice.stop()
+        isStoppingListening = false
         isListening = false
         if onboarding == .talk {
             finishOnboardingVoice(result, saved: true)
@@ -603,22 +611,47 @@ final class AppModel {
     /// catch://today, catch://inbox, catch://voice, catch://capture from widgets.
     func handle(_ url: URL) {
         guard url.scheme == "catch" else { return }
-        switch url.host() {
+        let host = url.host()
+        let hadSheet = sheet != nil || focus != nil || isCaptureOpen
+        if host == "voice" || host == "capture" {
+            // Whatever was open gives way to the capture.
+            sheet = nil
+            focus = nil
+            isCaptureOpen = false
+        }
+        switch host {
         case "inbox":
             projectPath = []
             tab = .inbox
         case "voice":
             tab = .today
-            startListening(tapToTalk: true)
+            afterSheetsClose(hadSheet) { $0.startListening(tapToTalk: true) }
         case "capture":
-            isCaptureOpen = true
+            afterSheetsClose(hadSheet) { $0.isCaptureOpen = true }
         default:
             tab = .today
         }
     }
 
+    /// Runs `action` now, or once a closing sheet has finished animating away.
+    private func afterSheetsClose(_ wait: Bool, _ action: @escaping (AppModel) -> Void) {
+        guard wait else { return action(self) }
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            action(self)
+        }
+    }
+
+    /// The app went to the background mid-listen (a call, switching apps):
+    /// drop the half-finished capture rather than leave the sheet stuck.
+    func appMovedToBackground() {
+        guard isListening else { return }
+        Task { await stopListening(save: false) }
+    }
+
     /// Done or In 1 Hour on an alert, or a tap on it.
-    func handleNotificationAction(_ action: String, itemID: UUID) {
+    func handleNotificationAction(_ action: String, itemID: UUID) async {
+        refreshClock()
         guard let item = store.allItems().first(where: { $0.id == itemID }) else { return }
         switch action {
         case NotificationAction.done:
@@ -628,7 +661,11 @@ final class AppModel {
         default:
             tab = .today
             projectPath = []
+            return
         }
+        // Run from a background launch: reschedule (dropping the nudge) and
+        // refresh widgets before iOS suspends the app again.
+        await syncReminders()
     }
 
     // MARK: - Toasts and haptics
@@ -636,7 +673,8 @@ final class AppModel {
     func flash(_ message: String, undo: Bool) {
         toastTask?.cancel()
         undoableNewProject = nil
-        toast = Toast(message: message, canUndo: undo && store.canUndo)
+        toast = Toast(message: message, canUndo: undo && store.canUndo,
+                      undoVersion: undo ? store.undoVersion : nil)
         toastTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3.2))
             guard !Task.isCancelled else { return }
@@ -646,7 +684,12 @@ final class AppModel {
 
     func undo() {
         toastTask?.cancel()
+        let version = toast?.undoVersion
         toast = nil
+        // Only reverse what the toast described; a newer change may have replaced it.
+        guard let version, version == store.undoVersion else { return }
+        // Undo can remove what an open sheet is working on.
+        sheet = nil
         // Undoing "Created X" deletes X; leave its screen before the model goes away.
         if let project = undoableNewProject, projectPath.contains(project) {
             projectPath.removeAll()

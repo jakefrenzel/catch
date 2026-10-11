@@ -102,6 +102,34 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(env.store.items(in: .inbox).map(\.text), ["Gym plan"])
     }
 
+    func testToastUndoOnlyReversesWhatItDescribes() throws {
+        let (model, env) = try makeModel()
+        let captured = env.add("X", to: .inbox)
+        model.move(captured, to: .someday)
+        XCTAssertEqual(model.toast?.message, "Moved to Someday")
+        // Something else records an undo without a toast of its own.
+        let other = env.add("Y", to: .inbox)
+        env.store.update(other, text: "Y edited", note: nil)
+
+        model.undo()
+
+        XCTAssertEqual(captured.list, .someday, "The toast's action was replaced; Undo does nothing")
+        XCTAssertEqual(other.text, "Y edited")
+        XCTAssertNil(model.toast)
+    }
+
+    func testUndoClosesAnOpenSheet() throws {
+        let (model, env) = try makeModel()
+        let item = env.add("X", to: .inbox)
+        model.move(item, to: .someday)
+        model.openEditor(for: item)
+
+        model.undo()
+
+        XCTAssertNil(model.sheet)
+        XCTAssertEqual(item.list, .inbox)
+    }
+
     func testPinnedBarHiddenUnderSheets() throws {
         let (model, env) = try makeModel()
         model.tab = .inbox

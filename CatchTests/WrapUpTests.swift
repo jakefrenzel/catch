@@ -15,7 +15,21 @@ final class WrapUpTests: XCTestCase {
         XCTAssertFalse(isEvening(hour: 20, minute: 59))
         XCTAssertTrue(isEvening(hour: 21))
         XCTAssertTrue(isEvening(hour: 23, minute: 59))
-        XCTAssertFalse(isEvening(hour: 0, minute: 30))
+        // The evening runs until the day turns over at 4 AM.
+        XCTAssertTrue(isEvening(hour: 0, minute: 30))
+        XCTAssertFalse(isEvening(hour: 4))
+        XCTAssertFalse(isEvening(hour: 12))
+    }
+
+    func testMidnightWrapUpIsNotAllDay() {
+        var settings = CatchSettings()
+        settings.wrapUpTime = TimeOfDay(hour: 0, minute: 0)
+        func evening(_ hour: Int) -> Bool {
+            WrapUp.isEvening(now: clock.at(day: 9, hour: hour), settings: settings, calendar: clock.calendar)
+        }
+        XCTAssertFalse(evening(12))
+        XCTAssertFalse(evening(23))
+        XCTAssertTrue(evening(1))
     }
 
     func testNoEveningWhenStyleIsOff() {
@@ -86,35 +100,34 @@ final class EveningFlowTests: XCTestCase {
         let (model, env) = try makeModel()
         let item = env.add("A", to: .now)
         env.store.moveToTomorrow(item)
-        env.settingsStore.lastActiveDay = env.clock.at(day: 8, hour: 0)
+        env.clock.date = env.clock.at(day: 10, hour: 9)
 
         model.refreshClock()
 
         XCTAssertFalse(item.movedToTomorrow)
         XCTAssertEqual(item.reason, "Carried over from last night")
-        XCTAssertEqual(env.settingsStore.lastActiveDay, env.clock.at(day: 9, hour: 0))
     }
 
     func testSameDayDoesNotCarryOver() throws {
         let (model, env) = try makeModel()
         let item = env.add("A", to: .now)
         env.store.moveToTomorrow(item)
-        env.settingsStore.lastActiveDay = env.clock.at(day: 9, hour: 0)
 
         model.refreshClock()
 
         XCTAssertTrue(item.movedToTomorrow)
     }
 
-    func testFirstLaunchJustRemembersTheDay() throws {
+    func testFinishedAfterMidnightStillCountsAsTonight() throws {
         let (model, env) = try makeModel()
-        let item = env.add("A", to: .now)
-        env.store.moveToTomorrow(item)
-
+        env.clock.date = env.clock.at(day: 10, hour: 0, minute: 30)
+        model.finishDay()
+        env.clock.date = env.clock.at(day: 10, hour: 1)
         model.refreshClock()
-
-        XCTAssertTrue(item.movedToTomorrow)
-        XCTAssertNotNil(env.settingsStore.lastActiveDay)
+        XCTAssertTrue(model.isDayFinished)
+        env.clock.date = env.clock.at(day: 10, hour: 9)
+        model.refreshClock()
+        XCTAssertFalse(model.isDayFinished)
     }
 
     func testPinnedBarHiddenInTheEvening() throws {

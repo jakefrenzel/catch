@@ -73,6 +73,8 @@ struct RootView: View {
                 .padding(.horizontal, 20)
             }
             .padding(.bottom, 8)
+            // Stay at the bottom behind the keyboard instead of riding up over text fields.
+            .ignoresSafeArea(.keyboard)
             .animation(reduceMotion ? nil : .catchEaseOut(0.28), value: model.showsPinnedUpFirst && upFirst != nil)
         }
         .overlay(alignment: .bottom) {
@@ -136,6 +138,8 @@ struct RootView: View {
             if phase == .active {
                 model.refreshClock()
                 model.scheduleReminderSync()
+            } else if phase == .background {
+                model.appMovedToBackground()
             }
         }
         .onChange(of: model.settings) { old, new in

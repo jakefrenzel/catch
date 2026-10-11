@@ -14,6 +14,7 @@ struct ItemSnapshot {
     let nudge: Bool?
     let reason: String?
     let movedToTomorrow: Bool
+    let movedToTomorrowAt: Date?
 
     init(_ item: Item) {
         id = item.id
@@ -28,6 +29,7 @@ struct ItemSnapshot {
         nudge = item.nudge
         reason = item.reason
         movedToTomorrow = item.movedToTomorrow
+        movedToTomorrowAt = item.movedToTomorrowAt
     }
 
     func apply(to item: Item) {
@@ -42,6 +44,7 @@ struct ItemSnapshot {
         item.nudge = nudge
         item.reason = reason
         item.movedToTomorrow = movedToTomorrow
+        item.movedToTomorrowAt = movedToTomorrowAt
     }
 
     /// A new item with the same contents and id, for undoing a delete.

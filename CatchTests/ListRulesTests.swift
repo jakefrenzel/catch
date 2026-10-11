@@ -235,9 +235,59 @@ final class ListRulesTests: XCTestCase {
         XCTAssertEqual(env.store.moveAllToTomorrow(), 2)
         XCTAssertTrue(env.store.openNowItems.isEmpty)
 
-        env.store.carryOverFromLastNight()
+        // Still the same evening: nothing comes back yet.
+        XCTAssertEqual(env.store.carryOverIfNewDay(), 0)
+
+        env.clock.date = env.clock.at(day: 10, hour: 8)
+        XCTAssertEqual(env.store.carryOverIfNewDay(), 2)
         let open = env.store.openNowItems
         XCTAssertEqual(open.map(\.text), ["Left 1", "Left 2"])
         XCTAssertEqual(Set(open.compactMap(\.reason)), ["Carried over from last night"])
+    }
+
+    func testCarryOverNeverOverfillsNow() throws {
+        let env = try TestEnvironment()
+        env.add("A", to: .now)
+        env.add("B", to: .now)
+        env.add("C", to: .now)
+        env.store.moveAllToTomorrow()
+        // The evening refills Now while those three wait for tomorrow.
+        env.add("D", to: .now)
+        env.add("E", to: .now)
+
+        env.clock.date = env.clock.at(day: 10, hour: 8)
+        env.store.carryOverIfNewDay()
+
+        XCTAssertEqual(env.store.openNowItems.map(\.text), ["A", "D", "E"])
+        XCTAssertEqual(env.store.items(in: .inbox).map(\.text), ["B", "C"])
+    }
+
+    func testLateNightWrapUpComesBackThatMorning() throws {
+        let env = try TestEnvironment()
+        env.add("A", to: .now)
+        // 12:30 AM Saturday still counts as Friday night.
+        env.clock.date = env.clock.at(day: 10, hour: 0, minute: 30)
+        env.store.moveAllToTomorrow()
+
+        env.clock.date = env.clock.at(day: 10, hour: 3)
+        XCTAssertEqual(env.store.carryOverIfNewDay(), 0)
+        env.clock.date = env.clock.at(day: 10, hour: 8)
+        XCTAssertEqual(env.store.carryOverIfNewDay(), 1)
+    }
+
+    func testOverduePromotionKeepsPendingUndo() throws {
+        let env = try TestEnvironment()
+        env.add("A", to: .now)
+        env.add("B", to: .now)
+        let c = env.add("C", to: .now)
+        let time = env.clock.date.addingTimeInterval(60)
+        env.store.capture("Overdue", to: .later, remindAt: time)
+        env.clock.date = time.addingTimeInterval(2 * 60 * 60)
+        env.store.setDone(c, true)
+
+        XCTAssertEqual(env.store.promoteOverdueLaterItems().count, 1)
+        XCTAssertTrue(env.store.canUndo)
+        env.store.undo()
+        XCTAssertFalse(c.isDone)
     }
 }

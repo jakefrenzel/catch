@@ -46,7 +46,8 @@ final class OnboardingTests: XCTestCase {
     }
 
     func testSayingATimeSavesAndAsksAboutReminders() async throws {
-        let (model, env, voice, _) = try makeModel()
+        let (model, env, voice, notifications) = try makeModel()
+        notifications.currentPermission = .notDetermined
         model.beginOnboarding()
         voice.result = VoiceResult(transcript: "Remind me to call Dana tomorrow at 10 about the lease", isUncertain: false)
 
@@ -56,6 +57,7 @@ final class OnboardingTests: XCTestCase {
 
         XCTAssertEqual(model.onboarding, .permission)
         XCTAssertEqual(env.store.items(in: .later).map(\.text), ["Call Dana about the lease"])
+        XCTAssertEqual(notifications.requestCount, 0, "iOS asks only after step 3")
         guard case .onboardingPermission? = model.sheet else { return XCTFail("Expected step 3") }
     }
 

@@ -157,7 +157,7 @@ struct VoiceActivityWidget: Widget {
 struct CatchControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "CatchControl") {
-            ControlWidgetButton(action: StartTalkingIntent()) {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "catch://voice")!)) {
                 Label("Catch", systemImage: "mic.fill")
             }
         }

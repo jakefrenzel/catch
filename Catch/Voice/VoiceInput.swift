@@ -44,6 +44,8 @@ final class SpeechVoiceInput: VoiceInput {
     @ObservationIgnored private var lastConfidence: Float = 1
     @ObservationIgnored private var failed = false
     @ObservationIgnored private var finalResult: CheckedContinuation<Void, Never>?
+    /// Bumped each start, so callbacks from an earlier session are ignored.
+    @ObservationIgnored private var session = 0
 
     func permission() -> VoicePermission {
         let mic = AVAudioApplication.shared.recordPermission
@@ -63,6 +65,8 @@ final class SpeechVoiceInput: VoiceInput {
 
     func start(language: String?) throws {
         cancel()
+        session += 1
+        let current = session
         transcript = ""
         failed = false
         lastConfidence = 1
@@ -90,10 +94,21 @@ final class SpeechVoiceInput: VoiceInput {
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             request.append(buffer)
             let level = Self.level(of: buffer)
-            Task { @MainActor in self?.push(level: level) }
+            Task { @MainActor in
+                guard self?.session == current else { return }
+                self?.push(level: level)
+            }
         }
         engine.prepare()
-        try engine.start()
+        do {
+            try engine.start()
+        } catch {
+            // The mic may be busy (a call). Remove the tap so the next start can add one.
+            stopAudio()
+            self.request = nil
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            throw error
+        }
 
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             let text = result?.bestTranscription.formattedString
@@ -102,7 +117,7 @@ final class SpeechVoiceInput: VoiceInput {
             let isFinal = result?.isFinal ?? false
             let failed = error != nil
             Task { @MainActor in
-                guard let self else { return }
+                guard let self, self.session == current else { return }
                 if let text { self.transcript = text }
                 if isFinal { self.lastConfidence = confidence }
                 if failed { self.failed = true }
@@ -120,6 +135,8 @@ final class SpeechVoiceInput: VoiceInput {
         request?.endAudio()
         // Wait for the final result, but never more than 1.5 s.
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            // Never leave an earlier waiter hanging.
+            finalResult?.resume()
             finalResult = continuation
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(1.5))
@@ -146,8 +163,10 @@ final class SpeechVoiceInput: VoiceInput {
     private func stopAudio() {
         if engine.isRunning {
             engine.stop()
-            engine.inputNode.removeTap(onBus: 0)
         }
+        // Always remove the tap, even if the engine was stopped by an interruption;
+        // installing a second one on the same bus would crash.
+        engine.inputNode.removeTap(onBus: 0)
     }
 
     private func finish() {

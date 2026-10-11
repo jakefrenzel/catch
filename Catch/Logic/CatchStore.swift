@@ -27,14 +27,19 @@ final class CatchStore {
     let settingsStore: SettingsStore
     let calendar: Calendar
     private let now: () -> Date
-    private var undoAction: (() -> Void)?
+    private var undoAction: (() -> Void)? {
+        didSet { undoVersion += 1 }
+    }
+    /// Changes whenever the pending undo does, so a toast can tell whether its
+    /// action is still the one Undo would reverse.
+    private(set) var undoVersion = 0
     /// Called after every save, so reminders can be rescheduled.
     var onChange: (() -> Void)?
     private let log = Logger(subsystem: "com.jakefrenzel.catch", category: "store")
 
     init(context: ModelContext,
          settingsStore: SettingsStore,
-         calendar: Calendar = .current,
+         calendar: Calendar = .autoupdatingCurrent,
          now: @escaping () -> Date = Date.init) {
         self.context = context
         self.settingsStore = settingsStore
@@ -206,6 +211,7 @@ final class CatchStore {
     func moveToTomorrow(_ item: Item) {
         recordUndo(restoring: [item])
         item.movedToTomorrow = true
+        item.movedToTomorrowAt = now()
         save()
     }
 
@@ -214,7 +220,11 @@ final class CatchStore {
     func moveAllToTomorrow() -> Int {
         let open = openNowItems
         recordUndo(restoring: open)
-        open.forEach { $0.movedToTomorrow = true }
+        let moment = now()
+        for item in open {
+            item.movedToTomorrow = true
+            item.movedToTomorrowAt = moment
+        }
         save()
         return open.count
     }
@@ -232,10 +242,8 @@ final class CatchStore {
             applyMove(item, to: .now, remindAt: nil)
             promoted.append(item)
         }
-        if !promoted.isEmpty {
-            undoAction = nil
-            save()
-        }
+        // Leaves the pending undo alone: it only touches its own items.
+        if !promoted.isEmpty { save() }
         return promoted
     }
 
@@ -248,14 +256,29 @@ final class CatchStore {
         save()
     }
 
-    /// Next morning: brings back everything moved to tomorrow. Not undoable.
-    func carryOverFromLastNight() {
+    /// Once tomorrow comes (the day turns over at 4 AM), brings back what was
+    /// moved to it, oldest first, up to the Now limit; anything beyond goes to
+    /// Inbox so Now never overflows. Safe to call often. Not undoable.
+    @discardableResult
+    func carryOverIfNewDay() -> Int {
+        let current = now()
+        let returning = allItems().filter { WrapUp.isBackFromTomorrow($0, at: current, calendar: calendar) }
+        guard !returning.isEmpty else { return 0 }
         undoAction = nil
-        for item in allItems() where item.movedToTomorrow {
+        var room = max(0, settings.maxNow - openNowItems.count)
+        for item in returning {
             item.movedToTomorrow = false
-            item.reason = Reason.carriedOver
+            item.movedToTomorrowAt = nil
+            if room > 0 {
+                item.reason = Reason.carriedOver
+                room -= 1
+            } else {
+                item.list = .inbox
+                item.reason = nil
+            }
         }
         save()
+        return returning.count
     }
 
     // MARK: - Projects
@@ -342,6 +365,8 @@ final class CatchStore {
     /// Removes a place. Later items that were waiting on it fall back to the
     /// "After work" time rather than losing their reminder.
     func deletePlace(_ place: Place) {
+        // A pending undo could still point at this place.
+        undoAction = nil
         for item in allItems() where item.place?.id == place.id {
             item.reminder = item.list == .later ? .date(defaultLaterTime()) : nil
         }

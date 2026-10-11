@@ -48,14 +48,25 @@ struct VoiceSheet: View {
                 .accessibilityHidden(true)
 
             if voiceOver || model.isTapToTalk {
-                Button {
-                    Task { await model.stopListening(save: true) }
-                } label: {
-                    Text("Save")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 52)
-                        .background(Theme.blue, in: Capsule())
+                HStack(spacing: 10) {
+                    Button {
+                        Task { await model.stopListening(save: false) }
+                    } label: {
+                        Text("Cancel")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Theme.blue)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .background(Theme.blueTint, in: Capsule())
+                    }
+                    Button {
+                        Task { await model.stopListening(save: true) }
+                    } label: {
+                        Text("Save")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .background(Theme.blue, in: Capsule())
+                    }
                 }
             } else {
                 Text("Let go to save")

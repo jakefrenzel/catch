@@ -55,7 +55,7 @@ enum ShortcutActions {
     /// "Wrap up my day": everything open in Now moves to tomorrow and the day is finished.
     static func wrapUp(store: CatchStore, settingsStore: SettingsStore) -> String {
         let moved = store.moveAllToTomorrow()
-        settingsStore.dayFinishedOn = store.calendar.startOfDay(for: store.currentDate())
+        settingsStore.dayFinishedOn = store.currentDate()
         switch moved {
         case 0: return "Day finished. Nothing was left in Now."
         case 1: return "Day finished. Moved 1 thing to tomorrow."
