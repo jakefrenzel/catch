@@ -9,12 +9,13 @@ struct WelcomeView: View {
         VStack(spacing: 0) {
             Spacer()
             VStack(spacing: 18) {
-                Image(systemName: "plus")
-                    .font(.system(size: 44, weight: .semibold))
-                    .foregroundStyle(.white)
+                // The app icon is light grey like the background, so the edge and shadow set it apart.
+                Image("AppIconImage")
+                    .resizable()
                     .frame(width: 96, height: 96)
-                    .background(Theme.blue, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .shadow(color: Theme.blue.opacity(0.3), radius: 15, x: 0, y: 12)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Theme.sep, lineWidth: 1))
+                    .floatingShadow()
                     .accessibilityHidden(true)
                 Text("Catch")
                     .font(.system(size: titleSize, weight: .bold))

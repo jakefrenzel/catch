@@ -328,7 +328,7 @@ struct Settings { notifications, nudgeDefault, afterWork: Time, wrapUpTime: Time
 ## Assets
 - No images. All icons are **SF Symbols**: `plus`, `mic.fill`, `sun.max`, `tray`, `archivebox`, `clock`, `moon`, `checkmark`, `xmark`, `gearshape`, `bell.slash`, `mic.slash`, `location`, `house`, `briefcase`, `folder`, `arrow.right`, `waveform`.
 - Map areas in Places are placeholders; use MapKit.
-- The app icon (a blue rounded square with a white +) is a placeholder.
+- The app icon is in [`app-icon/`](app-icon/): two pills, a long blue one (Now) over a shorter orange one (Later), on light grey. Default, Dark and Tinted are the iOS 18 appearances; Small-Default drops the dots for small sizes and isn't used yet.
 
 ## Files
 - `Catch Prototype.dc.html`: the interactive prototype and source of truth for behavior. Side panel: Replay First Launch, Reset demo, Evening mode, Dark mode, haptic labels, Text size, Block mic, Garbled voice.
