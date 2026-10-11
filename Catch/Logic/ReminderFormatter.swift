@@ -28,6 +28,20 @@ struct ReminderFormatter {
         return "\(format(date, .dateTime.month(.abbreviated).day())) \(time)"
     }
 
+    /// When something was caught: "8:14 AM", "Yesterday 8:14 AM", "Tue 8:14 AM", "Oct 2 8:14 AM".
+    func caughtLabel(for date: Date, now: Date) -> String {
+        let time = timeLabel(date)
+        if calendar.isDate(date, inSameDayAs: now) { return time }
+
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date),
+                                           to: calendar.startOfDay(for: now)).day ?? 0
+        switch days {
+        case 1: return "Yesterday \(time)"
+        case 2...6: return "\(format(date, .dateTime.weekday(.abbreviated))) \(time)"
+        default: return "\(format(date, .dateTime.month(.abbreviated).day())) \(time)"
+        }
+    }
+
     /// The time part of a quick-time chip: "7 PM", or "Sat 10 AM" for the weekend.
     func detail(for quickTime: QuickTime) -> String {
         let time = timeLabel(quickTime.date)

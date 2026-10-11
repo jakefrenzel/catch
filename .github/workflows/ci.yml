@@ -68,6 +68,9 @@ jobs:
           shot today-projects light -scrollToProjects
           shot capture-light light -openCapture -sampleToast
           shot capture-dark dark -openCapture
+          shot inbox-light light -showInbox
+          shot inbox-dark dark -showInbox
+          shot someday-light light -showSomeday
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4

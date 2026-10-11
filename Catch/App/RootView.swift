@@ -19,8 +19,8 @@ struct RootView: View {
 
             switch model.tab {
             case .today: TodayView()
-            case .inbox: PlaceholderScreen(title: "Inbox", subtitle: "Sorting comes next.")
-            case .someday: PlaceholderScreen(title: "Someday", subtitle: "No dates. Look through it once a month.")
+            case .inbox: InboxView()
+            case .someday: SomedayView()
             }
 
             VStack(spacing: 12) {
@@ -58,6 +58,8 @@ struct RootView: View {
             // Used by CI to screenshot the capture sheet and a toast.
             let arguments = ProcessInfo.processInfo.arguments
             try? await Task.sleep(for: .milliseconds(500))
+            if arguments.contains("-showInbox") { model.tab = .inbox }
+            if arguments.contains("-showSomeday") { model.tab = .someday }
             if arguments.contains("-openCapture") { model.isCaptureOpen = true }
             if arguments.contains("-sampleToast") {
                 try? await Task.sleep(for: .seconds(4))  // still showing when CI captures at 6 s
@@ -73,24 +75,5 @@ struct RootView: View {
         case .light: return .light
         case .dark: return .dark
         }
-    }
-}
-
-private struct PlaceholderScreen: View {
-    let title: String
-    let subtitle: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.largeTitle.bold())
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(Theme.ink2)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
     }
 }

@@ -30,6 +30,19 @@ final class ReminderFormatterTests: XCTestCase {
         XCTAssertEqual(label(clock.at(day: 20, hour: 9)), "Oct 20 9 AM")
     }
 
+    func testCaughtLabels() {
+        let now = clock.at(day: 9, hour: 12)
+        func caught(_ date: Date) -> String {
+            formatter.caughtLabel(for: date, now: now)
+                .replacingOccurrences(of: "\u{202F}", with: " ")
+                .replacingOccurrences(of: "\u{00A0}", with: " ")
+        }
+        XCTAssertEqual(caught(clock.at(day: 9, hour: 8, minute: 14)), "8:14 AM")
+        XCTAssertEqual(caught(clock.at(day: 8, hour: 21)), "Yesterday 9 PM")
+        XCTAssertEqual(caught(clock.at(day: 6, hour: 10)), "Tue 10 AM")
+        XCTAssertEqual(caught(clock.at(day: 1, hour: 10)), "Oct 1 10 AM")
+    }
+
     @MainActor
     func testPlaceLabels() throws {
         let env = try TestEnvironment()

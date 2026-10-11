@@ -112,7 +112,7 @@ struct TodayView: View {
                         doneSwipe(for: item)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button { model.sendToLater(item) } label: {
+                        Button { model.move(item, to: .later) } label: {
                             Label("Later", systemImage: "clock")
                         }
                         .tint(Theme.orangeText)
@@ -145,7 +145,7 @@ struct TodayView: View {
                         doneSwipe(for: item)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button { model.bringToNow(item) } label: {
+                        Button { model.move(item, to: .now) } label: {
                             Label("Now", systemImage: "sun.max")
                         }
                         .tint(Theme.blue)

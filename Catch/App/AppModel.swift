@@ -78,24 +78,29 @@ final class AppModel {
         }
     }
 
-    /// Left swipe on a Now row.
-    func sendToLater(_ item: Item) {
-        // TODO: open the Remind sheet once it exists. Until then, use the default time.
-        store.move(item, to: .later)
-        haptic(.light)
-        flash("Moved to Later", undo: true)
-    }
-
-    /// Left swipe on a Later row.
-    func bringToNow(_ item: Item) {
-        switch store.move(item, to: .now) {
+    /// Moves an item between lists from a swipe, a sort button or "Move to Now".
+    func move(_ item: Item, to list: ListKind) {
+        if list == .later {
+            // TODO: open the Remind sheet once it exists. Until then, use the default time.
+            store.move(item, to: .later)
+            haptic(.light)
+            flash("Moved to Later", undo: true)
+            return
+        }
+        switch store.move(item, to: list) {
         case .moved:
-            flash("Moved to Now", undo: true)
+            flash("Moved to \(list.title)", undo: true)
         case .nowIsFull:
             // TODO: open the Swap sheet once it exists.
             haptic(.warning)
             flash("Now is full (\(settings.maxNow)). Move something out first", undo: false)
         }
+    }
+
+    func delete(_ item: Item) {
+        store.delete(item)
+        haptic(.warning)
+        flash("Deleted", undo: true)
     }
 
     func setExpanded(_ project: Project, _ expanded: Bool) {
