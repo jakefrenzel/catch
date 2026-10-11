@@ -38,7 +38,9 @@ struct VoiceSheet: View {
 
             WillSaveCard(parse: parse)
 
-            Spacer(minLength: 0)
+            // Room above the waveform, but don't grow past the 460 pt design height.
+            Spacer(minLength: 12)
+                .frame(maxHeight: 60)
 
             Waveform(levels: model.voice.levels)
                 .frame(height: 44)
