@@ -111,6 +111,24 @@ struct RootView: View {
             }
         }
         .animation(reduceMotion ? nil : .catchEaseOut(0.34), value: model.isListening)
+        // Tap +: the capture card, docked on the keyboard, over a backdrop that closes it.
+        .overlay {
+            if model.isCaptureOpen {
+                Button { model.isCaptureOpen = false } label: {
+                    Color.black.opacity(0.22).ignoresSafeArea()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close")
+                .transition(.opacity)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if model.isCaptureOpen {
+                CaptureCard()
+                    .transition(reduceMotion ? .opacity : .move(edge: .bottom))
+            }
+        }
+        .animation(reduceMotion ? nil : .catchEaseOut(0.3), value: model.isCaptureOpen)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: model.onboarding)
         .overlay {
             if model.onboarding == .welcome {
@@ -121,9 +139,6 @@ struct RootView: View {
         .background(ToastWindowInstaller(model: model))
         .background(KeyboardWarmup())
         .onChange(of: upFirst?.key, initial: true) { _, key in model.currentUpFirst = key }
-        .sheet(isPresented: $model.isCaptureOpen) {
-            CaptureSheet()
-        }
         .sheet(item: $model.sheet) { sheet in
             switch sheet {
             case .edit(let item): EditSheet(item: item)
@@ -174,7 +189,7 @@ struct RootView: View {
         #endif
         #if DEBUG
         .task {
-            // Used by CI to screenshot the capture sheet and a toast.
+            // Used by CI to screenshot the capture card and a toast.
             let arguments = ProcessInfo.processInfo.arguments
             try? await Task.sleep(for: .milliseconds(500))
             if arguments.contains("-evening") { model.forceEvening = true }

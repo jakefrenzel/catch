@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 /// Tap an item's text: change its title, note and list, set its reminder, or delete it.
+/// The title and note read like a page; list, reminder and Focus are one settings group.
 struct EditSheet: View {
     let item: Item
 
@@ -22,22 +23,30 @@ struct EditSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
                 SheetCloseButton { dismiss() }
                 Spacer()
-                Text("Edit")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
-                Spacer()
+                Button(role: .destructive) {
+                    model.deleteFromEditor(item)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Theme.red)
+                        .frame(width: 44, height: 44)
+                        .background(Theme.red.opacity(0.12), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Delete")
                 SheetSaveButton(action: save)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
+            // The title and note sit on the sheet itself, like a page, not in a box.
+            VStack(alignment: .leading, spacing: 4) {
                 // A long item shows 3 lines and "…" until tapped, then opens up to 8
                 // (scrolling inside past that) so it can be read and edited in full.
                 TextField("Title", text: $text, axis: .vertical)
-                    .font(.title2.weight(.semibold))
+                    .font(Self.titleFont)
                     .lineLimit(1...(isTitleFocused ? 8 : 3))
                     .focused($isTitleFocused)
                     .submitLabel(.done)
@@ -57,53 +66,78 @@ struct EditSheet: View {
                     .overlay(alignment: .topLeading) {
                         if !isTitleFocused {
                             Text(text)
-                                .font(.title2.weight(.semibold))
+                                .font(Self.titleFont)
                                 .lineLimit(3)
                                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                                .background(Theme.card)
+                                .background(Theme.bg)
                                 .allowsHitTesting(false)
                                 .accessibilityHidden(true)
                         }
                     }
                 TextField("Add a note", text: $note, axis: .vertical)
-                    .font(.callout)
-                    .lineLimit(3...6)
+                    .lineLimit(1...6)
+                    .foregroundStyle(Theme.ink2)
                     .accessibilityLabel("Note")
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(EdgeInsets(top: 12, leading: 6, bottom: 20, trailing: 6))
+
+            // List, reminder and Focus as one settings-style group.
+            VStack(spacing: 0) {
+                listRow
+                if list == .later {
+                    separator
+                    remindRow
+                }
+                if !item.isDone {
+                    separator
+                    focusRow
+                }
+            }
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-            ListPicker(selection: $list, isNowFull: isNowFull) {
-                model.flash("Now is full (\(model.settings.maxNow)). Move something out first", undo: false)
-            }
-
-            if list == .later {
-                remindRow
-            }
-
-            if !item.isDone {
-                focusRow
-            }
 
             Text(caughtLabel)
                 .font(.footnote)
                 .foregroundStyle(Theme.ink2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 6)
-
-            Button(role: .destructive) {
-                model.deleteFromEditor(item)
-            } label: {
-                Text("Delete Item")
-                    .foregroundStyle(Theme.red)
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            }
-            .buttonStyle(.plain)
+                .padding(EdgeInsets(top: 10, leading: 6, bottom: 0, trailing: 6))
         }
         .padding(EdgeInsets(top: 22, leading: 16, bottom: 20, trailing: 16))
         .fittedSheet()
+    }
+
+    private static let titleFont = Font.title2.bold()
+
+    // MARK: - Rows
+
+    /// Which list it's in, picked from a menu. Now can't be picked while it's full.
+    private var listRow: some View {
+        let style = Self.listStyle(for: list)
+        return Menu {
+            ForEach(ListKind.allCases) { kind in
+                let isBlocked = kind == .now && isNowFull
+                Button {
+                    guard kind != list else { return }
+                    model.haptic(.selection)
+                    list = kind
+                } label: {
+                    if kind == list {
+                        Label(kind.title, systemImage: "checkmark")
+                    } else {
+                        Text(isBlocked ? "Now (full)" : kind.title)
+                    }
+                }
+                .disabled(isBlocked)
+            }
+        } label: {
+            row(icon: style.icon, tint: style.tint, title: "List") {
+                Text(list.title)
+                    .foregroundStyle(Theme.ink2)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.ink4)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("List, \(list.title)")
     }
 
     /// Later only: shows when it comes back and opens the Remind sheet.
@@ -111,26 +145,11 @@ struct EditSheet: View {
         Button {
             model.saveEditAndPickTime(item, text: text, note: note)
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "clock.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(Theme.orange, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                    .accessibilityHidden(true)
-                Text("Remind me")
-                    .foregroundStyle(Color.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            row(icon: "bell.fill", tint: Theme.orange, title: "Remind me") {
                 Text(reminderLabel)
-                    .font(.subheadline)
                     .foregroundStyle(Theme.orangeText)
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.ink4)
+                chevron
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 11)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remind me, \(reminderLabel)")
@@ -141,25 +160,50 @@ struct EditSheet: View {
         Button {
             model.saveEditAndFocus(item, text: text, note: note, list: list)
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "timer")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(Theme.blue, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                    .accessibilityHidden(true)
-                Text("Start Focus")
-                    .foregroundStyle(Color.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.ink4)
+            row(icon: "timer", tint: Theme.blue, title: "Start Focus") {
+                chevron
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 11)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+
+    private func row<Trailing: View>(icon: String, tint: Color, title: String,
+                                     @ViewBuilder trailing: () -> Trailing) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(tint, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .accessibilityHidden(true)
+            Text(title)
+                .foregroundStyle(Color.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            trailing()
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 50)
+        .contentShape(Rectangle())
+    }
+
+    private var chevron: some View {
+        Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Theme.ink4)
+    }
+
+    /// Lines up with the row titles, past the icon.
+    private var separator: some View {
+        Theme.sep.frame(height: 1).padding(.leading, 56)
+    }
+
+    private static func listStyle(for kind: ListKind) -> (icon: String, tint: Color) {
+        switch kind {
+        case .inbox: return ("tray.fill", Theme.blue)
+        case .now: return ("sun.max.fill", Theme.blue)
+        case .later: return ("clock.fill", Theme.orange)
+        case .someday: return ("archivebox.fill", Theme.gray)
+        }
     }
 
     // MARK: - State

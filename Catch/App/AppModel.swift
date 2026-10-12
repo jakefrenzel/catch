@@ -404,7 +404,7 @@ final class AppModel {
                           calendar: store.calendar)
     }
 
-    /// 10a's Type Instead: swap the mic sheet for the Capture sheet.
+    /// 10a's Type Instead: swap the mic sheet for the Capture card.
     func typeInstead() {
         sheet = nil
         Task {

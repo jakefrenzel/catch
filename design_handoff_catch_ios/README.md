@@ -64,19 +64,19 @@ All measurements are in points on a 402 × 874 device (iPhone 16 Pro). Content s
   - Inline steps: indented 38 pt so they line up with the project name. They have a 20 pt circle and 15 pt text, and the next step is shown at 600 weight with a "Next" chip (12/600 blue on a 12% tint, radius 8).
   - Empty state: a "Start a project · For anything with more than one step" row.
 - **Floating tab bar**: left 20, right 96, bottom 30, height 62, radius 31, background `bar` with a 20 pt blur, shadow `0 8 24 rgba(0,0,0,.12)`, inner 1 pt edge `barEdge`. Three tabs (Today, Inbox, Someday). Each has a 22 pt icon and an 11 pt label; the active tab gets a 52 pt pill in a 12% blue tint with blue text. Inbox shows a red count badge.
-- **Capture button (+)**: 62 pt circle, blue, at right 20 / bottom 30, shadow `0 8 24 rgba(0,122,255,.35)`. Tap opens the Capture sheet; hold for 380 ms starts voice.
+- **Capture button (+)**: 62 pt circle, blue, at right 20 / bottom 30, shadow `0 8 24 rgba(0,122,255,.35)`. Tap opens the Capture card; hold for 380 ms starts voice.
 - **Pinned Up first bar**: left 16, right 16, bottom 104, radius 22, `bar` background with blur. It shows "Up first" (12/600 blue), the title (16/600, one line), Skip, and a 40 pt blue check button.
   - It appears when Today is scrolled more than 150 pt, on other tabs, and on Project Detail.
   - It is hidden during the wrap-up, onboarding, any sheet, and voice capture.
   - It animates in by sliding up 24 pt and fading, over 0.28 s with `cubic-bezier(.2,.8,.2,1)`.
 
-### 2. Capture sheet (tap +)
-A bottom sheet with radius 38 at the top, `bg` background, padding 8 16 14, and the keyboard up.
-- **Header row**: a 44 pt close button (fill), the title, and a 44 pt save button (blue, at 35% opacity when empty). The title depends on the destination: "New Idea", "Add to Now", "Remind Me Later" or "Someday".
-- **Text field**: 22/600 on a card, radius 20, padding 16. Placeholder "What's on your mind?".
-- **Destination**: segmented control Inbox / Now / Later / Someday. Now is dimmed when full.
-- **Later**: shows time chips.
-- **Return**: saves and clears the field for the next idea. The hint reads "Return saves and clears for the next idea."
+### 2. Capture card (tap +)
+Not a sheet: a card docked on top of the keyboard, so the two rise together. Inset 8 from the sides and the keyboard, radius 26, `card` background, shadow `0 10 30 rgba(0,0,0,.18)`, padding 16 14 12 18, over a 22% black backdrop.
+- **Text field**: 20/600, 1–5 lines. Placeholder "What's on your mind?".
+- **Destination**: four 36 pt buttons (Inbox `tray`, Now `sun.max`, Later `clock`, Someday `archivebox`). The chosen one widens into a tinted pill with its name; the others are icons on `fill`. Now is dimmed when full, and tapping it shows the toast "Now is full (3). Move something out first".
+- **Later**: shows time chips inside the card, above the buttons.
+- **Save**: a 36 pt blue arrow button at the right (35% opacity when empty) saves and closes. Return saves and clears the field for the next idea.
+- **Closing**: tap the backdrop or swipe the card down.
 - **Saving to a full Now**: the item goes to Inbox, with the toast "Now is full. Saved to Inbox".
 
 ### 3. Voice capture (hold +)
@@ -128,10 +128,13 @@ A large title with the subtitle "No dates. Look through it once a month." Each r
 - **"Nudge again if I miss it"**: a toggle, "Once, 30 min later". Its default comes from Settings.
 
 ### 8. Edit sheet (tap an item's text)
-- **Fields**: title (22/600) and note (16, multiline, placeholder "Add a note"). Return in the title field saves.
-- **List**: segmented control Inbox / Now / Later / Someday. Now is disabled when full, and tapping it shows the toast "Now is full (3). Move something out first".
-- **Later**: a "Remind me ‹time chip› ›" row that opens the Remind sheet.
-- **Also shown**: "Caught today at ‹time›" and a "Delete Item" button (red text on a card). Deleting can be undone.
+- **Header**: a 44 pt close button, then at the right a 44 pt trash button (red on a 12% red tint, labelled "Delete"; deleting can be undone) and the 44 pt save button.
+- **Fields**: the title (22/700) and note (17, secondary, placeholder "Add a note") sit on the sheet, not on a card. Return in the title field saves. A long title shows 3 lines and "…" until tapped.
+- **Settings group**: one card with rows (28 pt icon squares, 50 pt tall, separators inset past the icon):
+  - **List**: the current list, picked from a menu. Now shows "Now (full)" and can't be picked when full.
+  - **Remind me** (Later only): the time in orange; opens the Remind sheet.
+  - **Start Focus** (not done items): opens Focus.
+- **Footer**: "Caught today at ‹time›".
 
 ### 9. New Project sheet
 - **Fields**: name (22/600, placeholder "Project name") and a Steps card listing the steps, each with a remove button.
@@ -172,7 +175,7 @@ A page sheet (radius 14) with a round blue check button to close.
 | — | Replay the Tutorial |
 
 ### 14. Error and empty states (10a–10f)
-- **10a No mic access**: a sheet with a red mic-off icon, "Catch can't use the mic", "Open iOS Settings" and "Type Instead" (opens the Capture sheet).
+- **10a No mic access**: a sheet with a red mic-off icon, "Catch can't use the mic", "Open iOS Settings" and "Type Instead" (opens the Capture card).
 - **10b Not understood**: "Didn't catch all of that". The gap is an inline editable field in the sentence, with Try Again, Save / Save as Is, and Discard. Nothing is saved until the user chooses.
 - **10c Notifications off**: an orange-tinted banner above Later, "Reminders are off / These won't alert you…", with a Turn On button. Each time shows a muted bell.
 - **10d Now is full**: see the Swap sheet above.
