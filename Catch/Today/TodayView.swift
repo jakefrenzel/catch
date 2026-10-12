@@ -8,9 +8,10 @@ struct TodayView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Items just checked off, held in place for a moment before they move down.
     @State private var settling: Set<UUID> = []
-    /// The folded done items are showing, in Now and in Later.
+    /// The folded done rows are showing, in Now, Later and Projects.
     @State private var showsDoneInNow = false
     @State private var showsDoneInLater = false
+    @State private var showsDoneProjects = false
 
     var body: some View {
         let settings = model.settings
@@ -163,14 +164,21 @@ struct TodayView: View {
         }
     }
 
-    /// Now and Later: open items first, then what's done, oldest first, like a Notes
-    /// checklist. From 3 done items on, they fold into one row that opens on tap.
-    private func checklistRows(_ items: [Item], showsDone: Bool) -> [ChecklistRow] {
+    /// Now, Later and Projects: open rows first, then what's done, oldest first, like a
+    /// Notes checklist. From 3 done on, they fold into one row that opens on tap.
+    private func checklistRows(_ items: [Item], showsDone: Bool) -> [ChecklistRow<Item>] {
+        checklistRows(items, showsDone: showsDone, isDone: \.isDone, completedAt: \.completedAt)
+    }
+
+    private func checklistRows<Element: Identifiable>(
+        _ elements: [Element], showsDone: Bool,
+        isDone: (Element) -> Bool, completedAt: (Element) -> Date?
+    ) -> [ChecklistRow<Element>] where Element.ID == UUID {
         // Just checked off: stays put for a moment so the check is seen before it moves.
-        let isOpen = { (item: Item) in !item.isDone || settling.contains(item.id) }
-        let open = items.filter(isOpen)
-        let done = items.filter { !isOpen($0) }
-            .sorted { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }
+        let isOpen = { (element: Element) in !isDone(element) || settling.contains(element.id) }
+        let open = elements.filter(isOpen)
+        let done = elements.filter { !isOpen($0) }
+            .sorted { (completedAt($0) ?? .distantPast) < (completedAt($1) ?? .distantPast) }
         var rows = open.map(ChecklistRow.item)
         if done.count >= foldDoneAt {
             rows.append(.doneFold(count: done.count))
@@ -211,11 +219,21 @@ struct TodayView: View {
     private func toggleDone(_ item: Item) {
         let finishing = !item.isDone
         model.toggleDone(item)
-        guard finishing else { return }
-        settling.insert(item.id)
+        if finishing { settle(item.id) }
+    }
+
+    /// The last step done: the project stays put for a moment, then moves down.
+    private func toggleDone(_ step: Step, in project: Project) {
+        let wasDone = project.isDone
+        model.toggleDone(step)
+        if !wasDone && project.isDone { settle(project.id) }
+    }
+
+    private func settle(_ id: UUID) {
+        settling.insert(id)
         Task {
             try? await Task.sleep(for: .milliseconds(700))
-            withAnimation(reduceMotion ? nil : .catchEaseOut(0.35)) { _ = settling.remove(item.id) }
+            withAnimation(reduceMotion ? nil : .catchEaseOut(0.35)) { _ = settling.remove(id) }
         }
     }
 
@@ -298,16 +316,24 @@ struct TodayView: View {
             if projects.isEmpty {
                 StartProjectRow { model.openNewProject() }
             }
-            ForEach(projects) { project in
-                ProjectRow(project: project,
-                           onOpen: { model.openProject(project) },
-                           onToggleExpanded: { model.setExpanded(project, !project.isExpanded) })
-                if project.isExpanded {
-                    ForEach(project.orderedSteps) { step in
-                        StepRow(step: step, isNext: step.id == project.nextStep?.id) {
-                            model.toggleDone(step)
+            ForEach(checklistRows(projects, showsDone: showsDoneProjects,
+                                  isDone: \.isDone, completedAt: \.completedAt)) { row in
+                switch row {
+                case .item(let project):
+                    ProjectRow(project: project,
+                               onOpen: { model.openProject(project) },
+                               onToggleExpanded: { model.setExpanded(project, !project.isExpanded) })
+                    if project.isExpanded {
+                        ForEach(project.orderedSteps) { step in
+                            StepRow(step: step, isNext: step.id == project.nextStep?.id) {
+                                toggleDone(step, in: project)
+                            }
+                            .focusMenu(step.isDone ? nil : { model.startChosenFocus(.step(step, project: project)) })
                         }
-                        .focusMenu(step.isDone ? nil : { model.startChosenFocus(.step(step, project: project)) })
+                    }
+                case .doneFold(let count):
+                    DoneFoldRow(count: count, isExpanded: showsDoneProjects, color: Theme.green) {
+                        withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { showsDoneProjects.toggle() }
                     }
                 }
             }
@@ -381,20 +407,20 @@ extension SectionHeader where Accessory == EmptyView {
     }
 }
 
-/// A row in Now or Later: an item, or the fold that holds what's done.
-private enum ChecklistRow: Identifiable {
-    case item(Item)
+/// A row in Now, Later or Projects: an item or project, or the fold that holds what's done.
+private enum ChecklistRow<Element: Identifiable>: Identifiable where Element.ID == UUID {
+    case item(Element)
     case doneFold(count: Int)
 
     var id: String {
         switch self {
-        case .item(let item): return item.id.uuidString
+        case .item(let element): return element.id.uuidString
         case .doneFold: return "doneFold"
         }
     }
 }
 
-/// "3 done", at the bottom of Now or Later once enough is checked off. Tap to show or hide them.
+/// "3 done", at the bottom of Now, Later or Projects once enough is checked off. Tap to show or hide them.
 private struct DoneFoldRow: View {
     let count: Int
     let isExpanded: Bool

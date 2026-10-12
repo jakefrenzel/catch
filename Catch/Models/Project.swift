@@ -61,6 +61,12 @@ extension Project {
 
     var doneCount: Int { orderedSteps.filter(\.isDone).count }
 
+    /// Every step is checked off. A project with no steps isn't done yet.
+    var isDone: Bool { !(steps ?? []).isEmpty && nextStep == nil }
+
+    /// When the last step was checked off, if the project is done.
+    var completedAt: Date? { isDone ? orderedSteps.compactMap(\.completedAt).max() : nil }
+
     /// 0...1, for the progress ring.
     var progress: Double {
         let total = orderedSteps.count

@@ -30,6 +30,20 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(trip.progress, 1)
     }
 
+    /// Done projects sink to the bottom of Today.
+    func testIsDoneOnceEveryStepIs() throws {
+        let env = try TestEnvironment()
+        let trip = env.addProject("Trip", steps: [("Book", "Book"), ("Pack", "Go")])
+
+        env.store.setDone(trip.orderedSteps[0], true)
+        XCTAssertFalse(trip.isDone)
+        XCTAssertNil(trip.completedAt)
+
+        env.store.setDone(trip.orderedSteps[1], true)
+        XCTAssertTrue(trip.isDone)
+        XCTAssertEqual(trip.completedAt, trip.orderedSteps[1].completedAt)
+    }
+
     // MARK: Creating
 
     func testCreateRequiresName() throws {
