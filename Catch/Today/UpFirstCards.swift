@@ -112,7 +112,7 @@ struct AllClearCard: View {
 }
 
 /// The compact Up first bar that floats above the tab bar when the card is off screen.
-/// Swipe it down to hide it.
+/// Swipe it down to hide it until something else is up first.
 struct PinnedUpFirstBar: View {
     let candidate: UpFirstCandidate
     let onDone: () -> Void
@@ -168,6 +168,6 @@ struct PinnedUpFirstBar: View {
                 }
         )
         .accessibilityElement(children: .contain)
-        .accessibilityAction(named: "Hide until you reopen Catch", onHide)
+        .accessibilityAction(named: "Hide until something else is up first", onHide)
     }
 }

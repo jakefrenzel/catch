@@ -120,6 +120,7 @@ struct RootView: View {
         }
         .background(ToastWindowInstaller(model: model))
         .background(KeyboardWarmup())
+        .onChange(of: upFirst?.key, initial: true) { _, key in model.currentUpFirst = key }
         .sheet(isPresented: $model.isCaptureOpen) {
             CaptureSheet()
         }

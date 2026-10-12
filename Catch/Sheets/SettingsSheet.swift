@@ -108,7 +108,7 @@ struct SettingsSheet: View {
                 } header: {
                     Text("Today")
                 } footer: {
-                    Text("The pinned bar shows when the Up first card is off screen. Swipe it down to hide it until you reopen Catch.")
+                    Text("The pinned bar shows when the Up first card is off screen. Swipe it down to hide it until something else is up first.")
                 }
 
                 Section("Display") {

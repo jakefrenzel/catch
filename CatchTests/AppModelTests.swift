@@ -150,16 +150,27 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.showsPinnedUpFirst)
     }
 
-    func testSwipingThePinnedBarHidesItUntilTheAppReopens() throws {
-        let (model, _) = try makeModel()
+    func testSwipingThePinnedBarHidesItUntilUpFirstChanges() throws {
+        let (model, env) = try makeModel()
+        let first = UUID(), second = UUID()
         model.tab = .inbox
+        model.currentUpFirst = first
         model.hidePinnedUpFirst()
         XCTAssertFalse(model.showsPinnedUpFirst)
         model.tab = .someday
         XCTAssertFalse(model.showsPinnedUpFirst, "Stays hidden on other tabs")
 
         model.appMovedToBackground()
-        XCTAssertTrue(model.showsPinnedUpFirst)
+        XCTAssertFalse(model.showsPinnedUpFirst, "Stays hidden after leaving the app")
+        let relaunched = AppModel(store: env.store, settingsStore: env.settingsStore, notifications: FakeNotifications())
+        relaunched.tab = .inbox
+        relaunched.currentUpFirst = first
+        XCTAssertFalse(relaunched.showsPinnedUpFirst, "Stays hidden after a relaunch")
+
+        model.currentUpFirst = second
+        XCTAssertTrue(model.showsPinnedUpFirst, "Back for a new suggestion")
+        model.currentUpFirst = first
+        XCTAssertTrue(model.showsPinnedUpFirst, "And stays back if the first one returns")
     }
 
     func testStartingFocusOutOfOrderSaysWhereItsFrom() throws {
@@ -207,13 +218,18 @@ final class AppModelTests: XCTestCase {
     func testListsGiveBackTheBarsRoomWhenItsHidden() throws {
         let (model, env) = try makeModel()
         model.tab = .inbox
+        model.currentUpFirst = UUID()
         let withBar = model.listBottomMargin
 
         model.hidePinnedUpFirst()
         XCTAssertLessThan(model.listBottomMargin, withBar, "Swiped away")
 
-        model.appMovedToBackground()
+        model.currentUpFirst = UUID()
         XCTAssertEqual(model.listBottomMargin, withBar)
+
+        model.currentUpFirst = nil
+        XCTAssertLessThan(model.listBottomMargin, withBar, "Nothing up first")
+        model.currentUpFirst = UUID()
 
         env.settingsStore.settings.pinnedUpFirst = false
         XCTAssertLessThan(model.listBottomMargin, withBar, "Turned off in Settings")
