@@ -31,7 +31,7 @@ struct ProjectDetailView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 180)
+            .padding(.bottom, model.listBottomMargin)
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(Theme.bg)

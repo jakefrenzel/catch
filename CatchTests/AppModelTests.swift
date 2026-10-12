@@ -195,6 +195,21 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.focusReason(for: .item(item)), "From Someday")
     }
 
+    func testListsGiveBackTheBarsRoomWhenItsHidden() throws {
+        let (model, env) = try makeModel()
+        model.tab = .inbox
+        let withBar = model.listBottomMargin
+
+        model.hidePinnedUpFirst()
+        XCTAssertLessThan(model.listBottomMargin, withBar, "Swiped away")
+
+        model.appMovedToBackground()
+        XCTAssertEqual(model.listBottomMargin, withBar)
+
+        env.settingsStore.settings.pinnedUpFirst = false
+        XCTAssertLessThan(model.listBottomMargin, withBar, "Turned off in Settings")
+    }
+
     func testPinnedBarSettingTurnsItOff() throws {
         let (model, env) = try makeModel()
         model.tab = .inbox

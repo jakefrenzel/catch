@@ -34,7 +34,7 @@ struct SomedayView: View {
                     .padding(.horizontal, 16)
                 }
             }
-            .padding(.bottom, 180)
+            .padding(.bottom, model.listBottomMargin)
         }
         .scrollBounceBehavior(.basedOnSize)
     }

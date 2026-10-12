@@ -131,6 +131,12 @@ final class AppModel {
             && (tab != .today || upFirstCardScrolledAway || !projectPath.isEmpty)
     }
 
+    /// Room the lists leave at the bottom: the tab bar, plus the pinned Up first bar
+    /// unless it's turned off, swiped away or the evening wrap-up has replaced it.
+    var listBottomMargin: CGFloat {
+        settings.pinnedUpFirst && !pinnedUpFirstHidden && !isEvening ? 180 : 120
+    }
+
     // MARK: - Day
 
     var isEvening: Bool {

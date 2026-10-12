@@ -38,7 +38,7 @@ struct InboxView: View {
                 }
             }
             .animation(reduceMotion ? nil : .catchEaseOut(0.3), value: inbox.first?.id)
-            .padding(.bottom, 180)
+            .padding(.bottom, model.listBottomMargin)
         }
         .scrollBounceBehavior(.basedOnSize)
     }
