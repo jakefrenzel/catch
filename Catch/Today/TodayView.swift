@@ -6,10 +6,11 @@ struct TodayView: View {
     @Query(sort: \Item.capturedAt) private var items: [Item]
     @Query(sort: \Project.sortOrder) private var projects: [Project]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Now items just checked off, held in place for a moment before they move down.
+    /// Items just checked off, held in place for a moment before they move down.
     @State private var settling: Set<UUID> = []
-    /// The folded done items in Now are showing.
+    /// The folded done items are showing, in Now and in Later.
     @State private var showsDoneInNow = false
+    @State private var showsDoneInLater = false
 
     var body: some View {
         let settings = model.settings
@@ -138,7 +139,7 @@ struct TodayView: View {
                 EmptyRow(text: isEvening ? "Nothing left in Now." : "Nothing in Now. Sort your Inbox to add some.")
             }
             // One ForEach, so a checked-off row slides down rather than vanishing and reappearing.
-            ForEach(nowRows(nowItems)) { row in
+            ForEach(checklistRows(nowItems, showsDone: showsDoneInNow)) { row in
                 switch row {
                 case .item(let item):
                     nowItemRow(item, isEvening: isEvening)
@@ -162,20 +163,20 @@ struct TodayView: View {
         }
     }
 
-    /// Open items first, then what's done, oldest first, like a Notes checklist.
-    /// From 3 done items on, they fold into one row that opens on tap.
-    private func nowRows(_ nowItems: [Item]) -> [NowRow] {
+    /// Now and Later: open items first, then what's done, oldest first, like a Notes
+    /// checklist. From 3 done items on, they fold into one row that opens on tap.
+    private func checklistRows(_ items: [Item], showsDone: Bool) -> [ChecklistRow] {
         // Just checked off: stays put for a moment so the check is seen before it moves.
         let isOpen = { (item: Item) in !item.isDone || settling.contains(item.id) }
-        let open = nowItems.filter(isOpen)
-        let done = nowItems.filter { !isOpen($0) }
+        let open = items.filter(isOpen)
+        let done = items.filter { !isOpen($0) }
             .sorted { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }
-        var rows = open.map(NowRow.item)
+        var rows = open.map(ChecklistRow.item)
         if done.count >= foldDoneAt {
             rows.append(.doneFold(count: done.count))
-            if showsDoneInNow { rows += done.map(NowRow.item) }
+            if showsDone { rows += done.map(ChecklistRow.item) }
         } else {
-            rows += done.map(NowRow.item)
+            rows += done.map(ChecklistRow.item)
         }
         return rows
     }
@@ -191,17 +192,13 @@ struct TodayView: View {
     private func nowItemRow(_ item: Item, isEvening: Bool) -> some View {
         let showsEveningActions = isEvening && !item.isDone
         return ItemRow(item: item, accent: Theme.blue,
-                       onToggle: { toggleNowItem(item) },
+                       onToggle: { toggleDone(item) },
                        onEdit: { model.openEditor(for: item) },
                        onTomorrow: showsEveningActions ? { model.moveToTomorrow(item) } : nil,
                        onSomeday: showsEveningActions ? { model.move(item, to: .someday) } : nil)
             .focusMenu(item.isDone ? nil : { model.startChosenFocus(.item(item)) })
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                Button { toggleNowItem(item) } label: {
-                    Label(item.isDone ? "Undo" : "Done",
-                          systemImage: item.isDone ? "arrow.uturn.backward" : "checkmark")
-                }
-                .tint(Theme.green)
+                doneSwipe(for: item)
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                 Button { model.move(item, to: .later) } label: {
@@ -211,7 +208,7 @@ struct TodayView: View {
             }
     }
 
-    private func toggleNowItem(_ item: Item) {
+    private func toggleDone(_ item: Item) {
         let finishing = !item.isDone
         model.toggleDone(item)
         guard finishing else { return }
@@ -265,22 +262,29 @@ struct TodayView: View {
             if laterItems.isEmpty {
                 EmptyRow(text: "No reminders set.")
             }
-            ForEach(laterItems) { item in
-                ItemRow(item: item, accent: Theme.orange,
-                        showsTime: true, notificationsOn: notificationsOn,
-                        onToggle: { model.toggleDone(item) },
-                        onEdit: { model.openEditor(for: item) },
-                        onTime: { model.openReminder(for: item) })
-                    .focusMenu(item.isDone ? nil : { model.startChosenFocus(.item(item)) })
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                        doneSwipe(for: item)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button { model.move(item, to: .now) } label: {
-                            Label("Now", systemImage: "sun.max")
+            ForEach(checklistRows(laterItems, showsDone: showsDoneInLater)) { row in
+                switch row {
+                case .item(let item):
+                    ItemRow(item: item, accent: Theme.orange,
+                            showsTime: true, notificationsOn: notificationsOn,
+                            onToggle: { toggleDone(item) },
+                            onEdit: { model.openEditor(for: item) },
+                            onTime: { model.openReminder(for: item) })
+                        .focusMenu(item.isDone ? nil : { model.startChosenFocus(.item(item)) })
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                            doneSwipe(for: item)
                         }
-                        .tint(Theme.blue)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button { model.move(item, to: .now) } label: {
+                                Label("Now", systemImage: "sun.max")
+                            }
+                            .tint(Theme.blue)
+                        }
+                case .doneFold(let count):
+                    DoneFoldRow(count: count, isExpanded: showsDoneInLater) {
+                        withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { showsDoneInLater.toggle() }
                     }
+                }
             }
         } header: {
             SectionHeader(title: "Later", color: Theme.orangeText, detail: "")
@@ -328,7 +332,7 @@ struct TodayView: View {
     // MARK: - Helpers
 
     private func doneSwipe(for item: Item) -> some View {
-        Button { model.toggleDone(item) } label: {
+        Button { toggleDone(item) } label: {
             Label(item.isDone ? "Undo" : "Done",
                   systemImage: item.isDone ? "arrow.uturn.backward" : "checkmark")
         }
@@ -377,8 +381,8 @@ extension SectionHeader where Accessory == EmptyView {
     }
 }
 
-/// A row in Now: an item, or the fold that holds what's done.
-private enum NowRow: Identifiable {
+/// A row in Now or Later: an item, or the fold that holds what's done.
+private enum ChecklistRow: Identifiable {
     case item(Item)
     case doneFold(count: Int)
 
@@ -390,7 +394,7 @@ private enum NowRow: Identifiable {
     }
 }
 
-/// "3 done", at the bottom of Now once enough is checked off. Tap to show or hide them.
+/// "3 done", at the bottom of Now or Later once enough is checked off. Tap to show or hide them.
 private struct DoneFoldRow: View {
     let count: Int
     let isExpanded: Bool
