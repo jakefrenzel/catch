@@ -33,10 +33,21 @@ struct EditSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                TextField("Title", text: $text)
+                // Wraps so a long item can be read in full; scrolls inside past 8 lines.
+                TextField("Title", text: $text, axis: .vertical)
                     .font(.title2.weight(.semibold))
+                    .lineLimit(1...8)
                     .submitLabel(.done)
-                    .onSubmit(save)
+                    .onChange(of: text) { _, new in
+                        guard new.contains("\n") else { return }
+                        // Return saves rather than adding a line; pasted line breaks become spaces.
+                        let typedReturn = new.filter { $0 == "\n" }.count == 1
+                        let cleaned = new.replacingOccurrences(of: "\n", with: typedReturn ? "" : " ")
+                        text = cleaned
+                        if typedReturn {
+                            model.saveEdit(item, text: cleaned, note: note, list: list)
+                        }
+                    }
                     .accessibilityLabel("Title")
                 TextField("Add a note", text: $note, axis: .vertical)
                     .font(.callout)
