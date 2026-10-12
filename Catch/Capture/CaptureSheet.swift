@@ -47,7 +47,8 @@ struct CaptureSheet: View {
                 .padding(.horizontal, 4)
         }
         .padding(EdgeInsets(top: 22, leading: 16, bottom: 14, trailing: 16))
-        .fittedSheet()
+        // Opens at its last height, so the keyboard isn't held up by a resize.
+        .fittedSheet(rememberAs: "capture")
         .onAppear { isFieldFocused = true }
     }
 

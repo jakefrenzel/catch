@@ -119,6 +119,7 @@ struct RootView: View {
             }
         }
         .background(ToastWindowInstaller(model: model))
+        .background(KeyboardWarmup())
         .sheet(isPresented: $model.isCaptureOpen) {
             CaptureSheet()
         }
