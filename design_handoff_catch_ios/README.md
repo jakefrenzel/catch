@@ -52,7 +52,7 @@ All measurements are in points on a 402 × 874 device (iPhone 16 Pro). Content s
   - Middle: "Up first" (13/600 blue, nowrap), a Skip text button (13, tertiary), the task title (17/600) and the reason (12, secondary), e.g. "In Now since Tuesday · about 10 min".
   - Right: a "Start" pill (36 tall, radius 18, blue, white 15/600). It opens Focus.
 - **All clear card** (no suggestion): a green check in a 60 pt tinted circle, "Today is clear" (22/700), "N done. Nothing left in Now and no project steps waiting." Then "Sort Inbox (N)" and "Pull from Someday" pills.
-- **Section headers**: title 20/700 (Now in blue, Later in orange text, Projects in ink) with a count on the right (13, secondary, nowrap). Padding 20 36 8.
+- **Section headers**: title 20/700 (Now in blue, Later in orange text, Projects in ink) and no counts: the rows are right there. Now alone shows "Full" on the right (13, secondary, nowrap) when it's at `maxNow`, since that's why sorting into it is refused. Padding 20 36 8.
 - **List cards**: margin 0 16, radius 20, padding-left 16, overflow hidden.
   - Rows have padding 11 16 11 0 and a 1 pt separator (`sep`) that starts at the text inset.
   - A row has a 24 pt check circle (1.5 pt border in `ink4`, filled blue for Now or orange for Later when done), the title at 17, and an optional note line (13, secondary, one line).

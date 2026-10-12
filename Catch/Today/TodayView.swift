@@ -151,8 +151,9 @@ struct TodayView: View {
                     }
             }
         } header: {
+            // Only says something when it explains why nothing more fits.
             SectionHeader(title: "Now", color: Theme.blue,
-                          detail: showsAllToTomorrow ? "" : "\(openCount) of \(model.settings.maxNow) open") {
+                          detail: !showsAllToTomorrow && openCount >= model.settings.maxNow ? "Full" : "") {
                 if showsAllToTomorrow {
                     Button("All to Tomorrow") { model.moveAllToTomorrow() }
                         .font(.subheadline.weight(.semibold))
@@ -224,8 +225,7 @@ struct TodayView: View {
                     }
             }
         } header: {
-            SectionHeader(title: "Later", color: Theme.orangeText,
-                          detail: "\(laterItems.filter { !$0.isDone }.count)")
+            SectionHeader(title: "Later", color: Theme.orangeText, detail: "")
         }
     }
 
@@ -250,7 +250,7 @@ struct TodayView: View {
                 }
             }
         } header: {
-            SectionHeader(title: "Projects", color: .primary, detail: "\(projects.count)") {
+            SectionHeader(title: "Projects", color: .primary, detail: "") {
                 Button {
                     model.openNewProject()
                 } label: {
