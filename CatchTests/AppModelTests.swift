@@ -20,6 +20,15 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.toast?.canUndo, true)
     }
 
+    func testSwipingAToastAwayDismissesIt() throws {
+        let (model, env) = try makeModel()
+        model.move(env.add("Learn pasta", to: .inbox), to: .someday)
+        XCTAssertNotNil(model.toast)
+
+        model.dismissToast()
+        XCTAssertNil(model.toast)
+    }
+
     func testSortingIntoFullNowLeavesItemInInbox() throws {
         let (model, env) = try makeModel()
         env.add("A", to: .now)

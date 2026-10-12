@@ -118,10 +118,12 @@ struct CaptureButton: View {
     }
 }
 
-/// The toast that slides in from the top after an action.
+/// The toast that slides in from the top after an action. Swipe it up to dismiss it.
 struct ToastView: View {
     let toast: AppModel.Toast
     let onUndo: () -> Void
+    let onDismiss: () -> Void
+    @State private var drag: CGFloat = 0
 
     var body: some View {
         HStack(spacing: 10) {
@@ -144,6 +146,21 @@ struct ToastView: View {
         .padding(.vertical, toast.canUndo ? 2 : 13)
         .background(Theme.toastBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .floatingShadow()
+        .offset(y: drag)
+        .gesture(
+            DragGesture(minimumDistance: 10)
+                // Follows the finger up; resists being pulled down.
+                .onChanged { drag = $0.translation.height < 0 ? $0.translation.height : $0.translation.height / 4 }
+                .onEnded { value in
+                    if value.translation.height < -30 || value.predictedEndTranslation.height < -80 {
+                        // Leaves from where it was dragged to; a new toast starts fresh.
+                        onDismiss()
+                    } else {
+                        withAnimation(.catchEaseOut(0.25)) { drag = 0 }
+                    }
+                }
+        )
         .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Dismiss", onDismiss)
     }
 }

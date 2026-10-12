@@ -66,7 +66,7 @@ private struct ToastLayer: View {
     var body: some View {
         VStack {
             if let toast = model.toast {
-                ToastView(toast: toast, onUndo: { model.undo() })
+                ToastView(toast: toast, onUndo: { model.undo() }, onDismiss: { model.dismissToast() })
                     .padding(.horizontal, 16)
                     .padding(.top, 4)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in

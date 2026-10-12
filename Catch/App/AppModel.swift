@@ -793,6 +793,12 @@ final class AppModel {
         }
     }
 
+    /// Swiping the toast up.
+    func dismissToast() {
+        toastTask?.cancel()
+        toast = nil
+    }
+
     func undo() {
         toastTask?.cancel()
         let version = toast?.undoVersion
