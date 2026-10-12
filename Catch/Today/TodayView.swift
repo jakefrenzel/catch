@@ -111,11 +111,11 @@ struct TodayView: View {
                 model.openSettings()
             } label: {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                     .foregroundStyle(Theme.blue)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 40, height: 40)
                     .background(Theme.fill, in: Circle())
-                    .contentShape(Rectangle().inset(by: -4))
+                    .contentShape(Rectangle().inset(by: -2))
             }
             .buttonStyle(.borderless)
             .accessibilityLabel("Settings")
@@ -255,11 +255,11 @@ struct TodayView: View {
                     model.openNewProject()
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.blue)
-                        .frame(width: 30, height: 30)
+                        .frame(width: 36, height: 36)
                         .background(Theme.blueTint, in: Circle())
-                        .contentShape(Rectangle().inset(by: -7))
+                        .contentShape(Rectangle().inset(by: -4))
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel("New Project")

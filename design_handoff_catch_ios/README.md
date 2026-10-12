@@ -46,7 +46,7 @@ The files in this bundle are **design references made in HTML**. They show the i
 All measurements are in points on a 402 × 874 device (iPhone 16 Pro). Content starts below the status bar (58 pt).
 
 ### 1. Today (home)
-- **Header**: date label (15/600, secondary; reads "Friday evening" in orange text during the wrap-up) above the large title "Today" (34/700, tracking -0.01em). Padding 8 20 12. On the right: a 36 pt round Settings button (fill tint, gear icon 20 pt, blue).
+- **Header**: date label (15/600, secondary; reads "Friday evening" in orange text during the wrap-up) above the large title "Today" (34/700, tracking -0.01em). Padding 8 20 12. On the right: a 40 pt round Settings button (fill tint, gear icon 22 pt, blue).
 - **Up first card** (when there is a suggestion and it's not evening): margin 0 16 14, radius 22, card background, shadow `0 4 16 rgba(0,0,0,.06)`, padding 14 14 14 16.
   - Left: a 36 pt circle (blue 12% tint) with an arrow icon.
   - Middle: "Up first" (13/600 blue, nowrap), a Skip text button (13, tertiary), the task title (17/600) and the reason (12, secondary), e.g. "In Now since Tuesday · about 10 min".
@@ -58,7 +58,7 @@ All measurements are in points on a 402 × 874 device (iPhone 16 Pro). Content s
   - A row has a 24 pt check circle (1.5 pt border in `ink4`, filled blue for Now or orange for Later when done), the title at 17, and an optional note line (13, secondary, one line).
   - Later rows also show the time at the end (15, orange text). It is tappable and opens the Remind sheet. When notifications are off, a crossed-out bell icon shows next to the time.
 - **Projects**:
-  - Header: "Projects" with a 30 pt round + button (blue 12% tint), labelled "New Project".
+  - Header: "Projects" with a 36 pt round + button (blue 12% tint), labelled "New Project".
   - Project row: progress ring (26 pt, conic fill in blue, green at 100%), name (17/600), "2 of 5", and a 44 pt chevron button that expands the steps inline. Tapping the name opens Project Detail.
   - Inline steps: indented 38 pt so they line up with the project name. They have a 20 pt circle and 15 pt text, and the next step is shown at 600 weight with a "Next" chip (12/600 blue on a 12% tint, radius 8).
   - Empty state: a "Start a project · For anything with more than one step" row.
