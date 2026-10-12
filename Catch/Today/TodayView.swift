@@ -172,7 +172,7 @@ struct TodayView: View {
 
     private func checklistRows<Element: Identifiable>(
         _ elements: [Element], showsDone: Bool,
-        isDone: (Element) -> Bool, completedAt: (Element) -> Date?
+        isDone: @escaping (Element) -> Bool, completedAt: (Element) -> Date?
     ) -> [ChecklistRow<Element>] where Element.ID == UUID {
         // Just checked off: stays put for a moment so the check is seen before it moves.
         let isOpen = { (element: Element) in !isDone(element) || settling.contains(element.id) }
