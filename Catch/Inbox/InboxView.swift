@@ -96,7 +96,7 @@ struct InboxView: View {
     }
 }
 
-/// The oldest Inbox item, big, with when it was caught and a Delete button.
+/// The oldest Inbox item, big, with when it was caught and a trash button.
 private struct CurrentItemCard: View {
     let item: Item
     let onEdit: () -> Void
@@ -125,12 +125,15 @@ private struct CurrentItemCard: View {
 
             Spacer(minLength: 0)
 
-            Button("Delete", role: .destructive, action: onDelete)
-                .font(.subheadline)
-                .foregroundStyle(Theme.red)
-                .frame(minHeight: 44, alignment: .leading)
-                .contentShape(Rectangle())
-                .buttonStyle(.plain)
+            Button(role: .destructive, action: onDelete) {
+                Image(systemName: "trash")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Theme.red)
+                    .frame(minWidth: 44, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Delete")
         }
         .padding(EdgeInsets(top: 22, leading: 22, bottom: 10, trailing: 22))
         .frame(maxWidth: .infinity, minHeight: 230, alignment: .topLeading)

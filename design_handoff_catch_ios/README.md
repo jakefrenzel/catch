@@ -94,7 +94,7 @@ A white sheet with a red "Listening" label, a timer and a live transcript (28/60
 
 ### 4. Inbox
 - **Header**: "Inbox" (34/700) with "N to sort" under it.
-- **Current item card**: radius 26, 230 tall, shadow `0 10 30 rgba(0,0,0,.08)`. It shows "Caught 8:14 AM" (13), the item text (26/600, tap to edit) and a red Delete text button.
+- **Current item card**: radius 26, 230 tall, shadow `0 10 30 rgba(0,0,0,.08)`. It shows "Caught 8:14 AM" (13), the item text (26/600, tap to edit) and a red trash button (`trash`, 18 pt, 44 pt target, labelled "Delete").
 - **Sort buttons**: three 64 pt circle buttons in a row.
   - Someday: white with a grey archive icon.
   - Later: white with an orange clock icon. Opens the Remind sheet.
@@ -326,7 +326,7 @@ struct Settings { notifications, nudgeDefault, afterWork: Time, wrapUpTime: Time
 - Respect Reduce Motion, Increase Contrast and Bold Text.
 
 ## Assets
-- No images. All icons are **SF Symbols**: `plus`, `mic.fill`, `sun.max`, `tray`, `archivebox`, `clock`, `moon`, `checkmark`, `xmark`, `gearshape`, `bell.slash`, `mic.slash`, `location`, `house`, `briefcase`, `folder`, `arrow.right`, `waveform`.
+- No images. All icons are **SF Symbols**: `plus`, `mic.fill`, `sun.max`, `tray`, `archivebox`, `clock`, `moon`, `checkmark`, `xmark`, `gearshape`, `trash`, `bell.slash`, `mic.slash`, `location`, `house`, `briefcase`, `folder`, `arrow.right`, `waveform`.
 - Map areas in Places are placeholders; use MapKit.
 - The app icon is in [`app-icon/`](app-icon/): two pills, a long blue one (Now) over a shorter orange one (Later), on light grey. Default, Dark and Tinted are the iOS 18 appearances. The regular icon is used at every size; Small-Default (no dots) was an option and isn't shipped.
 
