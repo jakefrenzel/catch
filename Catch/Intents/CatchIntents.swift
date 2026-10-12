@@ -171,6 +171,12 @@ struct SavedSnippet: View {
             .buttonStyle(.bordered)
         }
         .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Siri's card is glass that turns dark over a dark wallpaper even in light mode,
+        // so give the text a background in the appearance it was colored for.
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 }
 
