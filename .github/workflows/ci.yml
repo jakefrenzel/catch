@@ -65,6 +65,7 @@ jobs:
           }
           shot today-light light
           shot today-dark dark
+          shot today-done-fold light -foldDoneEarly
           shot today-projects light -scrollToProjects
           shot capture-light light -openCapture -sampleToast
           shot capture-dark dark -openCapture

@@ -5,6 +5,11 @@ struct TodayView: View {
     @Environment(AppModel.self) private var model
     @Query(sort: \Item.capturedAt) private var items: [Item]
     @Query(sort: \Project.sortOrder) private var projects: [Project]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Now items just checked off, held in place for a moment before they move down.
+    @State private var settling: Set<UUID> = []
+    /// The folded done items in Now are showing.
+    @State private var showsDoneInNow = false
 
     var body: some View {
         let settings = model.settings
@@ -132,23 +137,16 @@ struct TodayView: View {
             if nowItems.isEmpty {
                 EmptyRow(text: isEvening ? "Nothing left in Now." : "Nothing in Now. Sort your Inbox to add some.")
             }
-            ForEach(nowItems) { item in
-                let showsEveningActions = isEvening && !item.isDone
-                ItemRow(item: item, accent: Theme.blue,
-                        onToggle: { model.toggleDone(item) },
-                        onEdit: { model.openEditor(for: item) },
-                        onTomorrow: showsEveningActions ? { model.moveToTomorrow(item) } : nil,
-                        onSomeday: showsEveningActions ? { model.move(item, to: .someday) } : nil)
-                    .focusMenu(item.isDone ? nil : { model.startChosenFocus(.item(item)) })
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                        doneSwipe(for: item)
+            // One ForEach, so a checked-off row slides down rather than vanishing and reappearing.
+            ForEach(nowRows(nowItems)) { row in
+                switch row {
+                case .item(let item):
+                    nowItemRow(item, isEvening: isEvening)
+                case .doneFold(let count):
+                    DoneFoldRow(count: count, isExpanded: showsDoneInNow) {
+                        withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { showsDoneInNow.toggle() }
                     }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button { model.move(item, to: .later) } label: {
-                            Label("Later", systemImage: "clock")
-                        }
-                        .tint(Theme.orangeText)
-                    }
+                }
             }
         } header: {
             // Only says something when it explains why nothing more fits.
@@ -161,6 +159,66 @@ struct TodayView: View {
                         .buttonStyle(.borderless)
                 }
             }
+        }
+    }
+
+    /// Open items first, then what's done, oldest first, like a Notes checklist.
+    /// From 3 done items on, they fold into one row that opens on tap.
+    private func nowRows(_ nowItems: [Item]) -> [NowRow] {
+        // Just checked off: stays put for a moment so the check is seen before it moves.
+        let isOpen = { (item: Item) in !item.isDone || settling.contains(item.id) }
+        let open = nowItems.filter(isOpen)
+        let done = nowItems.filter { !isOpen($0) }
+            .sorted { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }
+        var rows = open.map(NowRow.item)
+        if done.count >= foldDoneAt {
+            rows.append(.doneFold(count: done.count))
+            if showsDoneInNow { rows += done.map(NowRow.item) }
+        } else {
+            rows += done.map(NowRow.item)
+        }
+        return rows
+    }
+
+    private var foldDoneAt: Int {
+        #if DEBUG
+        // CI screenshots the fold with the sample data's one done item.
+        if ProcessInfo.processInfo.arguments.contains("-foldDoneEarly") { return 1 }
+        #endif
+        return 3
+    }
+
+    private func nowItemRow(_ item: Item, isEvening: Bool) -> some View {
+        let showsEveningActions = isEvening && !item.isDone
+        return ItemRow(item: item, accent: Theme.blue,
+                       onToggle: { toggleNowItem(item) },
+                       onEdit: { model.openEditor(for: item) },
+                       onTomorrow: showsEveningActions ? { model.moveToTomorrow(item) } : nil,
+                       onSomeday: showsEveningActions ? { model.move(item, to: .someday) } : nil)
+            .focusMenu(item.isDone ? nil : { model.startChosenFocus(.item(item)) })
+            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                Button { toggleNowItem(item) } label: {
+                    Label(item.isDone ? "Undo" : "Done",
+                          systemImage: item.isDone ? "arrow.uturn.backward" : "checkmark")
+                }
+                .tint(Theme.green)
+            }
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button { model.move(item, to: .later) } label: {
+                    Label("Later", systemImage: "clock")
+                }
+                .tint(Theme.orangeText)
+            }
+    }
+
+    private func toggleNowItem(_ item: Item) {
+        let finishing = !item.isDone
+        model.toggleDone(item)
+        guard finishing else { return }
+        settling.insert(item.id)
+        Task {
+            try? await Task.sleep(for: .milliseconds(700))
+            withAnimation(reduceMotion ? nil : .catchEaseOut(0.35)) { _ = settling.remove(item.id) }
         }
     }
 
@@ -316,6 +374,51 @@ private struct SectionHeader<Accessory: View>: View {
 extension SectionHeader where Accessory == EmptyView {
     init(title: String, color: Color, detail: String) {
         self.init(title: title, color: color, detail: detail) { EmptyView() }
+    }
+}
+
+/// A row in Now: an item, or the fold that holds what's done.
+private enum NowRow: Identifiable {
+    case item(Item)
+    case doneFold(count: Int)
+
+    var id: String {
+        switch self {
+        case .item(let item): return item.id.uuidString
+        case .doneFold: return "doneFold"
+        }
+    }
+}
+
+/// "3 done", at the bottom of Now once enough is checked off. Tap to show or hide them.
+private struct DoneFoldRow: View {
+    let count: Int
+    let isExpanded: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Theme.ink4)
+                    .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
+                Text("\(count) done")
+                    .foregroundStyle(Theme.ink2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.ink4)
+                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel("\(count) done")
+        .accessibilityHint(isExpanded ? "Hides them." : "Shows them.")
     }
 }
 
