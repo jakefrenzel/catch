@@ -183,13 +183,11 @@ struct CatchShortcuts: AppShortcutsProvider {
                     shortTitle: "Catch a thought",
                     systemImageName: "plus.circle")
         // The Action button's Shortcut picker lists only these, so this is how it listens.
-        if #available(iOS 18.0, *) {
-            AppShortcut(intent: ListenInBackgroundIntent(),
-                        phrases: ["Listen in \(.applicationName)",
-                                  "Catch a thought by voice in \(.applicationName)"],
-                        shortTitle: "Catch by voice",
-                        systemImageName: "mic")
-        }
+        AppShortcut(intent: ListenInBackgroundIntent(),
+                    phrases: ["Listen in \(.applicationName)",
+                              "Catch a thought by voice in \(.applicationName)"],
+                    shortTitle: "Catch by voice",
+                    systemImageName: "mic")
         AppShortcut(intent: UpFirstIntent(),
                     phrases: ["What's up first in \(.applicationName)",
                               "What's next in \(.applicationName)"],
