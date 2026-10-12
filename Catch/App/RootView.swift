@@ -236,7 +236,7 @@ struct RootView: View {
                 model.sheet = .swap(incoming: item)
             }
             if arguments.contains("-sampleToast") {
-                try? await Task.sleep(for: .seconds(4))  // still showing when CI captures at 6 s
+                try? await Task.sleep(for: .seconds(2.5))  // well inside the 3.2 s it shows when CI captures at 6 s
                 model.flash("Saved to Inbox", undo: false)
             }
         }
