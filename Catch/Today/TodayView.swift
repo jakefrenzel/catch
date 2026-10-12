@@ -144,7 +144,7 @@ struct TodayView: View {
                 case .item(let item):
                     nowItemRow(item, isEvening: isEvening)
                 case .doneFold(let count):
-                    DoneFoldRow(count: count, isExpanded: showsDoneInNow) {
+                    DoneFoldRow(count: count, isExpanded: showsDoneInNow, color: Theme.blue) {
                         withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { showsDoneInNow.toggle() }
                     }
                 }
@@ -281,7 +281,7 @@ struct TodayView: View {
                             .tint(Theme.blue)
                         }
                 case .doneFold(let count):
-                    DoneFoldRow(count: count, isExpanded: showsDoneInLater) {
+                    DoneFoldRow(count: count, isExpanded: showsDoneInLater, color: Theme.orangeText) {
                         withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { showsDoneInLater.toggle() }
                     }
                 }
@@ -398,6 +398,8 @@ private enum ChecklistRow: Identifiable {
 private struct DoneFoldRow: View {
     let count: Int
     let isExpanded: Bool
+    /// The section's color: a colored check on a pale circle, so it's clearly not a done item's solid one.
+    let color: Color
     let action: () -> Void
 
     var body: some View {
@@ -405,7 +407,8 @@ private struct DoneFoldRow: View {
             HStack(spacing: 12) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 22))
-                    .foregroundStyle(Theme.ink4)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(color, color.opacity(0.2))
                     .frame(width: 24, height: 24)
                     .accessibilityHidden(true)
                 Text("\(count) done")
