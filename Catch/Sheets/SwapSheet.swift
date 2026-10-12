@@ -19,7 +19,7 @@ struct SwapSheet: View {
                 Text("Now holds \(maxNow) thing\(maxNow == 1 ? "" : "s")")
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text("To add “\(incoming.text)”, move one out. It goes back to Inbox.")
+                Text("To add “\(Self.shortened(incoming.text))”, move one out. It goes back to Inbox.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.ink2)
                     .lineSpacing(2)
@@ -80,8 +80,10 @@ struct SwapSheet: View {
                 .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 1) {
+                    // Cut short like Today's rows; tapping a row picks it.
                     Text(item.text)
                         .foregroundStyle(Color.primary)
+                        .lineLimit(3)
                     if let reason = item.reason {
                         Text(reason)
                             .font(.footnote)
@@ -102,5 +104,10 @@ struct SwapSheet: View {
         }
         .accessibilityLabel(item.text)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+
+    /// A long incoming item would push the instructions off the sheet.
+    private static func shortened(_ text: String) -> String {
+        text.count > 60 ? text.prefix(57).trimmingCharacters(in: .whitespaces) + "…" : text
     }
 }

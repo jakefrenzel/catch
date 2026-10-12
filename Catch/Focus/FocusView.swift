@@ -10,6 +10,8 @@ struct FocusView: View {
     let onClose: () -> Void
 
     @State private var startedAt = Date.now
+    @State private var showsWholeTitle = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var timerSize: CGFloat = 64
 
     var body: some View {
@@ -50,8 +52,14 @@ struct FocusView: View {
                 Text(reason)
                     .font(.subheadline)
                     .foregroundStyle(Theme.ink2)
+                // A long item shows 3 lines and "…" until tapped, so the timer stays in view.
                 Text(candidate.title)
                     .font(.largeTitle.bold())
+                    .lineLimit(showsWholeTitle ? nil : 3)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(reduceMotion ? nil : .catchEaseOut(0.25)) { showsWholeTitle.toggle() }
+                    }
                 TimelineView(.periodic(from: startedAt, by: 1)) { context in
                     Text(elapsed(until: context.date))
                         .font(.system(size: timerSize, weight: .light).monospacedDigit())
