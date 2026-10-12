@@ -183,6 +183,9 @@ struct RootView: View {
                 model.sheet = .remind(item)
             }
             if arguments.contains("-openEdit"), let item = items.first(where: { $0.list == .later }) {
+                if arguments.contains("-longTitle") {
+                    item.text = "Book dentist for Mia, and ask whether they can fit in a cleaning the same afternoon so we don't have to make two trips across town"
+                }
                 model.sheet = .edit(item)
             }
             if arguments.contains("-openProject"), let project = projects.first {

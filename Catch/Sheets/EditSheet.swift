@@ -12,6 +12,7 @@ struct EditSheet: View {
     @State private var text: String
     @State private var note: String
     @State private var list: ListKind
+    @FocusState private var isTitleFocused: Bool
 
     init(item: Item) {
         self.item = item
@@ -33,10 +34,12 @@ struct EditSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                // Wraps so a long item can be read in full; scrolls inside past 8 lines.
+                // A long item shows 3 lines and "…" until tapped, then opens up to 8
+                // (scrolling inside past that) so it can be read and edited in full.
                 TextField("Title", text: $text, axis: .vertical)
                     .font(.title2.weight(.semibold))
-                    .lineLimit(1...8)
+                    .lineLimit(1...(isTitleFocused ? 8 : 3))
+                    .focused($isTitleFocused)
                     .submitLabel(.done)
                     .onChange(of: text) { _, new in
                         guard new.contains("\n") else { return }
@@ -49,6 +52,19 @@ struct EditSheet: View {
                         }
                     }
                     .accessibilityLabel("Title")
+                    // The field doesn't add "…" itself; this covers it until tapped.
+                    // Taps pass through to the field underneath.
+                    .overlay(alignment: .topLeading) {
+                        if !isTitleFocused {
+                            Text(text)
+                                .font(.title2.weight(.semibold))
+                                .lineLimit(3)
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                                .background(Theme.card)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
                 TextField("Add a note", text: $note, axis: .vertical)
                     .font(.callout)
                     .lineLimit(3...6)

@@ -75,6 +75,7 @@ jobs:
           shot remind-picker-dark dark -openRemind -remindPicking
           shot swap-light light -openSwap
           shot edit-light light -openEdit
+          shot edit-long-dark dark -openEdit -longTitle
           shot project-light light -openProject
           shot project-dark dark -openProject
           shot new-project-light light -openNewProject
