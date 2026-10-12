@@ -64,12 +64,12 @@ struct ActionButtonHelpView: View {
             Section {
                 step(1, "Open the Settings app and choose Action Button.")
                 step(2, "Swipe to Shortcut, then tap Choose a Shortcut.")
-                step(3, "Under Catch, pick Catch by Voice in the Background to listen in the Dynamic Island without opening Catch. Catch saves when you stop talking.")
+                step(3, "Under Catch, pick Catch by voice to listen in the Dynamic Island without opening Catch. Catch saves when you stop talking.")
             } header: {
                 Text("Catch a thought with one press")
                     .textCase(nil)
             } footer: {
-                Text("Catch a Thought by Voice opens the app listening instead, and Catch a Thought asks Siri.")
+                Text("Catch a thought asks Siri instead. To open Catch listening, swipe to Controls and pick Catch a Thought.")
             }
         }
         .listStyle(.insetGrouped)

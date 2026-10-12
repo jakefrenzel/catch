@@ -99,16 +99,15 @@ struct FocusView: View {
 
 extension View {
     /// Long-press menu with Start Focus; none when `action` is nil (done items).
-    @ViewBuilder
+    /// The menu is always attached and only emptied, so checking a row off doesn't
+    /// swap it for a new view and skip its check and swipe animations.
     func focusMenu(_ action: (() -> Void)?) -> some View {
-        if let action {
-            contextMenu {
+        contextMenu {
+            if let action {
                 Button(action: action) {
                     Label("Start Focus", systemImage: "timer")
                 }
             }
-        } else {
-            self
         }
     }
 }
