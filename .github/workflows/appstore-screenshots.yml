@@ -59,13 +59,22 @@ jobs:
           export SIMCTL_CHILD_TZ="$zone"
 
           # shot <name> <light|dark> [launch arguments...]
+          # A shot taken before the app has drawn is a blank screen under
+          # 150 KB (real ones are 250 KB+), so take it again.
           shot() {
             local name=$1 mode=$2; shift 2
+            local file="screenshots/$name.png"
             xcrun simctl ui "$UDID" appearance "$mode"
-            xcrun simctl terminate "$UDID" com.buildmonkeys.catch 2>/dev/null || true
-            xcrun simctl launch "$UDID" com.buildmonkeys.catch -seedSampleData "$@"
-            sleep 7
-            xcrun simctl io "$UDID" screenshot "screenshots/$name.png"
+            for attempt in 1 2 3; do
+              xcrun simctl terminate "$UDID" com.buildmonkeys.catch 2>/dev/null || true
+              xcrun simctl launch "$UDID" com.buildmonkeys.catch -seedSampleData "$@"
+              sleep $(( 5 + attempt * 2 ))
+              xcrun simctl io "$UDID" screenshot "$file"
+              [ "$(stat -f %z "$file")" -ge 150000 ] && return
+              echo "$name looks blank, retaking"
+            done
+            echo "::error::$name is still blank after 3 tries"
+            return 1
           }
           shot 01-today light
           shot 02-voice light -voiceDemo -startVoice
