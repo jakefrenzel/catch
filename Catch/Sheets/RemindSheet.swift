@@ -15,6 +15,9 @@ struct RemindSheet: View {
     @State private var pickedDay: Date
     @State private var pickedTime: Date
     @State private var hasPicked: Bool
+    /// An earlier custom time, saved exactly as it was until the day or time is changed. The
+    /// wheel only has quarter hours, so rounding it would move it, past midnight even a day.
+    @State private var keptDate: Date?
     @State private var nudge: Bool
 
     private let formatter = ReminderFormatter()
@@ -30,6 +33,7 @@ struct RemindSheet: View {
         var day = tomorrow
         var time = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) ?? tomorrow
         var hasPicked = false
+        var keptDate: Date?
         switch item.reminder {
         case .place(let trigger, let place):
             selection = trigger == .leave ? .leave(place.id) : .arrive(place.id)
@@ -42,6 +46,7 @@ struct RemindSheet: View {
                 hasPicked = true
                 day = calendar.startOfDay(for: date)
                 time = date
+                keptDate = date
             }
         case nil:
             break
@@ -51,6 +56,7 @@ struct RemindSheet: View {
         _pickedDay = State(initialValue: day)
         _pickedTime = State(initialValue: RemindOptions.roundedToQuarterHour(time, calendar: calendar))
         _hasPicked = State(initialValue: hasPicked)
+        _keptDate = State(initialValue: keptDate)
         _nudge = State(initialValue: item.nudge ?? settings.nudgeDefault)
     }
 
@@ -72,6 +78,8 @@ struct RemindSheet: View {
         }
         .padding(EdgeInsets(top: 22, leading: 16, bottom: 20, trailing: 16))
         .fittedSheet()
+        .onChange(of: pickedDay) { keptDate = nil }
+        .onChange(of: pickedTime) { keptDate = nil }
         #if DEBUG
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("-remindPicking") { pickCustom() }
@@ -256,7 +264,7 @@ struct RemindSheet: View {
     // MARK: - Helpers
 
     private var pickedDate: Date {
-        RemindOptions.combine(day: pickedDay, time: pickedTime, calendar: .current)
+        keptDate ?? RemindOptions.combine(day: pickedDay, time: pickedTime, calendar: .current)
     }
 
     private func pickCustom() {
