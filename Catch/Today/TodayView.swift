@@ -8,6 +8,14 @@ struct TodayView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Items just checked off, held in place for a moment before they move down.
     @State private var settling: Set<UUID> = []
+    /// Done projects that have moved down. One just finished, however its last step was checked
+    /// off, isn't here yet, so it holds its place. Nil until Today appears: all done ones have moved.
+    @State private var settledProjects: Set<UUID>?
+    /// Just-finished projects with their steps hidden, so they move into a closed fold as one row.
+    /// Not saved: the steps show as the user left them if the project opens again.
+    @State private var foldingSteps: Set<UUID> = []
+    /// The pending move for each held item or project. A newer check-off replaces it.
+    @State private var settleTasks: [UUID: Task<Void, Never>] = [:]
     /// The folded done rows are showing, in Now, Later and Projects.
     @State private var showsDoneInNow = false
     @State private var showsDoneInLater = false
@@ -22,6 +30,7 @@ struct TodayView: View {
         let laterItems = visible.filter { $0.list == .later }
         let candidates = UpFirst.candidates(items: items, projects: projects,
                                             includeSteps: settings.upFirstIncludesSteps)
+        let doneProjectIDs = Set(projects.filter(\.isDone).map(\.id))
 
         ScrollViewReader { proxy in
             List {
@@ -86,6 +95,19 @@ struct TodayView: View {
             .toolbar(.hidden, for: .navigationBar)
             .onDisappear {
                 if model.projectPath.isEmpty { model.upFirstCardScrolledAway = false }
+            }
+            // Whatever finished while Today was away has already moved.
+            .onAppear { settledProjects = doneProjectIDs }
+            .onChange(of: doneProjectIDs) { old, new in
+                // Opened again or deleted.
+                settledProjects?.formIntersection(new)
+                for id in old.subtracting(new) {
+                    settleTasks.removeValue(forKey: id)?.cancel()
+                    foldingSteps.remove(id)
+                }
+                for id in new.subtracting(old) {
+                    if let project = projects.first(where: { $0.id == id }) { settle(project) }
+                }
             }
             #if DEBUG
             .task {
@@ -222,31 +244,44 @@ struct TodayView: View {
         if finishing { settle(item.id) }
     }
 
-    /// The last step done: the project stays put for a moment, folds its steps away, then
-    /// moves down as one row. Moving it with its steps open slid the fold over them.
-    private func toggleDone(_ step: Step, in project: Project) {
-        let wasDone = project.isDone
-        model.toggleDone(step)
-        guard !wasDone && project.isDone else { return }
-        settle(project.id) {
-            // Deleted or undone in the meantime: leave it be.
-            guard project.modelContext != nil, project.isDone, project.isExpanded else { return false }
-            model.setExpanded(project, false)
-            return true
+    private func settle(_ id: UUID) {
+        settling.insert(id)
+        afterHold(id) {
+            withAnimation(reduceMotion ? nil : .catchEaseOut(0.35)) { _ = settling.remove(id) }
         }
     }
 
-    /// `beforeMoving` runs, animated, before the row moves; it returns whether it changed anything.
-    private func settle(_ id: UUID, beforeMoving: (() -> Bool)? = nil) {
-        settling.insert(id)
-        Task {
-            try? await Task.sleep(for: .milliseconds(700))
-            if let beforeMoving {
-                let changed = withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { beforeMoving() }
-                if changed && !reduceMotion { try? await Task.sleep(for: .milliseconds(300)) }
+    /// A project just finished: it holds its place for a moment, then moves down. Into a closed
+    /// fold, it hides its steps first, or the fold slides up over them as they fade.
+    private func settle(_ project: Project) {
+        let id = project.id
+        afterHold(id) {
+            let intoClosedFold = !showsDoneProjects && (settledProjects?.count ?? 0) + 1 >= foldDoneAt
+            if intoClosedFold && !reduceMotion && !project.isDeleted && project.isExpanded {
+                withAnimation(.catchEaseOut(0.3)) { _ = foldingSteps.insert(id) }
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
             }
-            withAnimation(reduceMotion ? nil : .catchEaseOut(0.35)) { _ = settling.remove(id) }
+            withAnimation(reduceMotion ? nil : .catchEaseOut(0.35)) { _ = settledProjects?.insert(id) }
+            try? await Task.sleep(for: .milliseconds(350))
+            // In the fold now, out of sight.
+            foldingSteps.remove(id)
         }
+    }
+
+    /// Runs `move` after the hold, in place of any move still pending for the same row.
+    private func afterHold(_ id: UUID, move: @escaping @MainActor () async -> Void) {
+        settleTasks[id]?.cancel()
+        settleTasks[id] = Task {
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled else { return }
+            await move()
+        }
+    }
+
+    /// Done and already moved down; one just finished holds its place first.
+    private func hasSettled(_ project: Project) -> Bool {
+        project.isDone && settledProjects?.contains(project.id) != false
     }
 
     // MARK: - Evening
@@ -329,16 +364,17 @@ struct TodayView: View {
                 StartProjectRow { model.openNewProject() }
             }
             ForEach(checklistRows(projects, showsDone: showsDoneProjects,
-                                  isDone: \.isDone, completedAt: \.completedAt)) { row in
+                                  isDone: hasSettled, completedAt: \.completedAt)) { row in
                 switch row {
                 case .item(let project):
-                    ProjectRow(project: project,
+                    let showsSteps = project.isExpanded && !foldingSteps.contains(project.id)
+                    ProjectRow(project: project, showsSteps: showsSteps,
                                onOpen: { model.openProject(project) },
                                onToggleExpanded: { model.setExpanded(project, !project.isExpanded) })
-                    if project.isExpanded {
+                    if showsSteps {
                         ForEach(project.orderedSteps) { step in
                             StepRow(step: step, isNext: step.id == project.nextStep?.id) {
-                                toggleDone(step, in: project)
+                                model.toggleDone(step)
                             }
                             .focusMenu(step.isDone ? nil : { model.startChosenFocus(.step(step, project: project)) })
                         }

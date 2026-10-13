@@ -3,6 +3,8 @@ import SwiftUI
 /// Project on Today: progress ring, name and "2 of 5". The chevron shows the steps inline.
 struct ProjectRow: View {
     let project: Project
+    /// Usually the project's isExpanded, but Today hides a just-finished project's steps for its move.
+    let showsSteps: Bool
     let onOpen: () -> Void
     let onToggleExpanded: () -> Void
 
@@ -37,12 +39,12 @@ struct ProjectRow: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.ink4)
-                    .rotationEffect(.degrees(project.isExpanded ? 180 : 0))
+                    .rotationEffect(.degrees(showsSteps ? 180 : 0))
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(project.isExpanded ? "Hide steps" : "Show steps")
+            .accessibilityLabel(showsSteps ? "Hide steps" : "Show steps")
         }
         .padding(.vertical, -4)
     }
