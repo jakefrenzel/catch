@@ -76,7 +76,7 @@ struct SettingsSheet: View {
                     }
                 }
 
-                Section("Evening wrap-up") {
+                Section {
                     DatePicker(selection: timeBinding($settingsStore.settings.wrapUpTime),
                                displayedComponents: .hourAndMinute) {
                         SettingLabel("Time", icon: "moon.fill", tint: Theme.purple)
@@ -86,6 +86,12 @@ struct SettingsSheet: View {
                         Text("Off").tag(CatchSettings.WrapUpStyle.off)
                     } label: {
                         SettingLabel("Style", icon: "sun.horizon.fill", tint: Theme.purple)
+                    }
+                } header: {
+                    Text("Evening wrap-up")
+                } footer: {
+                    if !WrapUp.isEveningTime(settingsStore.settings.wrapUpTime) {
+                        Text("Pick a time from noon on. A morning wrap-up doesn't show on Today or send an alert.")
                     }
                 }
 

@@ -41,12 +41,16 @@ enum WrapUp {
     /// From the wrap-up time until the day turns over at 4 AM, when the style is On Today.
     static func isEvening(now: Date, settings: CatchSettings, calendar: Calendar) -> Bool {
         guard settings.wrapUpStyle == .onToday else { return false }
+        guard isEveningTime(settings.wrapUpTime) else { return false }
         let parts = calendar.dateComponents([.hour, .minute], from: now)
         let minutes = DayClock.minutesIntoDay(hour: parts.hour ?? 0, minute: parts.minute ?? 0)
-        let wrapUp = DayClock.minutesIntoDay(hour: settings.wrapUpTime.hour, minute: settings.wrapUpTime.minute)
-        // A wrap-up time between 4 AM and noon isn't an evening; don't turn the whole day into one.
-        guard wrapUp >= 8 * 60 else { return false }
-        return minutes >= wrapUp
+        return minutes >= DayClock.minutesIntoDay(hour: settings.wrapUpTime.hour, minute: settings.wrapUpTime.minute)
+    }
+
+    /// Noon until 4 AM. A wrap-up time between 4 AM and noon isn't an evening, so neither
+    /// Today nor the alert uses it, rather than turn the whole day into one.
+    static func isEveningTime(_ time: TimeOfDay) -> Bool {
+        DayClock.minutesIntoDay(hour: time.hour, minute: time.minute) >= 8 * 60
     }
 
     /// Moved to tomorrow, and tomorrow has come (even if the app hasn't run yet).

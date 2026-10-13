@@ -163,6 +163,17 @@ final class NotificationFlowTests: XCTestCase {
         XCTAssertFalse(fake.pending.contains { $0.kind == .wrapUp }, "No alert once the day is finished")
     }
 
+    func testNoWrapUpAlertForAMorningTime() {
+        let clock = TestClock()
+        var settings = CatchSettings()
+        settings.wrapUpTime = TimeOfDay(hour: 9, minute: 0)
+
+        let planned = ReminderPlanner.wrapUp(openInNow: 2, settings: settings, dayFinished: false,
+                                             now: clock.at(day: 9, hour: 7), calendar: clock.calendar)
+
+        XCTAssertTrue(planned.isEmpty, "Today never shows a morning wrap-up, so the alert shouldn't either")
+    }
+
     func testNoWrapUpAlertWhenNowIsEmpty() async throws {
         let (model, _, fake) = try makeModel()
         await model.syncReminders()

@@ -38,7 +38,8 @@ enum ReminderPlanner {
     /// time, only when something is left in Now and the day isn't finished.
     static func wrapUp(openInNow: Int, settings: CatchSettings, dayFinished: Bool,
                        now: Date, calendar: Calendar) -> [PlannedReminder] {
-        guard settings.wrapUpStyle == .onToday, openInNow > 0, !dayFinished else { return [] }
+        guard settings.wrapUpStyle == .onToday, WrapUp.isEveningTime(settings.wrapUpTime),
+              openInNow > 0, !dayFinished else { return [] }
         let next = settings.wrapUpTime.next(after: now, calendar: calendar)
         guard DayClock.isSameDay(next, now, calendar: calendar) else { return [] }
         let body = openInNow == 1 ? "1 thing left for today." : "\(openInNow) things left for today."
