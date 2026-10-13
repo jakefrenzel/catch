@@ -65,7 +65,8 @@ struct RemindSheet: View {
         let options = RemindOptions.options(now: now, calendar: .current,
                                             afterWork: model.settings.afterWork, places: places,
                                             offerLeave: model.settings.offerLeave,
-                                            offerArrive: model.settings.offerArrive)
+                                            offerArrive: model.settings.offerArrive,
+                                            keeping: item.reminder)
 
         VStack(spacing: 14) {
             header
@@ -316,7 +317,8 @@ struct RemindSheet: View {
             let options = RemindOptions.options(now: now, calendar: .current,
                                                 afterWork: model.settings.afterWork, places: places,
                                                 offerLeave: model.settings.offerLeave,
-                                                offerArrive: model.settings.offerArrive)
+                                                offerArrive: model.settings.offerArrive,
+                                                keeping: item.reminder)
             guard let option = options.first(where: { $0.kind == selection }) ?? options.first(where: { $0.kind == .afterWork }) else {
                 return
             }

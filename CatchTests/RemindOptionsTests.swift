@@ -60,6 +60,20 @@ final class RemindOptionsTests: XCTestCase {
         XCTAssertEqual(leaveOnly.map(\.title), ["After work", "When I leave Office", "Tomorrow morning"])
     }
 
+    @MainActor
+    func testAnItemsOwnPlaceReminderStaysOfferedWhenTurnedOff() throws {
+        let env = try TestEnvironment()
+        let office = Place(name: "Office", address: "", latitude: 0, longitude: 0)
+        env.store.context.insert(office)
+
+        let result = RemindOptions.options(now: clock.at(day: 9, hour: 21), calendar: clock.calendar,
+                                           afterWork: afterWork, places: [office],
+                                           offerLeave: false, offerArrive: false,
+                                           keeping: .place(.leave, office))
+        XCTAssertEqual(result.map(\.title), ["After work", "When I leave Office", "Tomorrow morning"])
+        XCTAssertEqual(result[1].reminder, .place(.leave, office))
+    }
+
     func testPickerDaysStartToday() {
         let days = RemindOptions.pickerDays(now: clock.at(day: 9, hour: 15), calendar: clock.calendar)
         XCTAssertEqual(days.count, 7)

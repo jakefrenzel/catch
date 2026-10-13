@@ -23,8 +23,11 @@ struct RemindOption: Identifiable, Equatable {
 enum RemindOptions {
     /// The suggestions, in the prototype's order. "This afternoon" and "Tonight"
     /// only appear while they're still ahead; "After work" is always the next one.
+    /// The item's `current` place reminder stays offered even once its kind is turned off,
+    /// so saving the sheet for something else doesn't swap it for After work.
     static func options(now: Date, calendar: Calendar, afterWork: TimeOfDay, places: [Place],
-                        offerLeave: Bool = true, offerArrive: Bool = true) -> [RemindOption] {
+                        offerLeave: Bool = true, offerArrive: Bool = true,
+                        keeping current: ReminderTime? = nil) -> [RemindOption] {
         var result: [RemindOption] = []
 
         func today(_ hour: Int) -> Date? {
@@ -43,20 +46,29 @@ enum RemindOptions {
             result.append(RemindOption(kind: .tonight, title: "Tonight", reminder: .date(tonight)))
         }
         for place in places {
-            if offerLeave {
-                result.append(RemindOption(kind: .leave(place.id), title: "When I leave \(place.name)",
-                                           reminder: .place(.leave, place)))
-            }
-            if offerArrive {
-                result.append(RemindOption(kind: .arrive(place.id), title: "When I get to \(place.name)",
-                                           reminder: .place(.arrive, place)))
-            }
+            if offerLeave { result.append(placeOption(.leave, place)) }
+            if offerArrive { result.append(placeOption(.arrive, place)) }
+        }
+        if case .place(let trigger, let place)? = current {
+            let kept = placeOption(trigger, place)
+            if !result.contains(where: { $0.kind == kept.kind }) { result.append(kept) }
         }
         if let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0,
                                        of: DayClock.tomorrow(after: now, calendar: calendar)) {
             result.append(RemindOption(kind: .tomorrowMorning, title: "Tomorrow morning", reminder: .date(morning)))
         }
         return result
+    }
+
+    private static func placeOption(_ trigger: PlaceTrigger, _ place: Place) -> RemindOption {
+        switch trigger {
+        case .leave:
+            return RemindOption(kind: .leave(place.id), title: "When I leave \(place.name)",
+                                reminder: .place(.leave, place))
+        case .arrive:
+            return RemindOption(kind: .arrive(place.id), title: "When I get to \(place.name)",
+                                reminder: .place(.arrive, place))
+        }
     }
 
     /// The seven days offered in the date picker's day strip, starting today.
