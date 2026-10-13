@@ -65,6 +65,8 @@ final class AppModel {
 
     var tab: Tab = .today
     var onboarding: OnboardingStep?
+    /// A mic or capture link that came in during step 3, run once the question is answered.
+    private var linkAfterOnboarding: URL?
     var isCaptureOpen = false
     var sheet: Sheet?
     /// Today's navigation stack: empty, or the open Project Detail.
@@ -263,6 +265,10 @@ final class AppModel {
             flash("You can turn reminders on later", undo: false)
         }
         await syncReminders()
+        if let url = linkAfterOnboarding {
+            linkAfterOnboarding = nil
+            afterSheetsClose(true) { $0.handle(url) }
+        }
     }
 
     /// Step 2 ends: saved only once a time was heard, otherwise back to step 1.
@@ -730,6 +736,11 @@ final class AppModel {
     func handle(_ url: URL) {
         guard url.scheme == "catch" else { return }
         let host = url.host()
+        // Closing step 3's sheet would leave the tutorial unfinished and the app disabled.
+        if onboarding == .permission && (host == "voice" || host == "capture") {
+            linkAfterOnboarding = url
+            return
+        }
         let hadSheet = sheet != nil || focus != nil || isCaptureOpen
         if host == "voice" || host == "capture" {
             // Whatever was open gives way to the capture.

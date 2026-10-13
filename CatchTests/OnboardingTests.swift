@@ -124,6 +124,26 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue(env.settingsStore.settings.notifications)
     }
 
+    func testMicLinkWaitsForTheRemindersQuestion() async throws {
+        let (model, env, _, _) = try makeModel()
+        let date = env.clock.at(day: 9, hour: 17)
+        model.onboarding = .permission
+        model.sheet = .onboardingPermission(date)
+
+        model.handle(URL(string: "catch://voice")!)
+
+        // Step 3 stays up rather than closing and leaving the app disabled.
+        XCTAssertEqual(model.onboarding, .permission)
+        guard case .onboardingPermission = model.sheet else { return XCTFail("Step 3 closed") }
+        XCTAssertFalse(model.isListening)
+
+        await model.finishOnboarding(allowReminders: false)
+        try await Task.sleep(for: .milliseconds(600))
+
+        XCTAssertNil(model.onboarding)
+        XCTAssertTrue(model.isListening)
+    }
+
     func testSkip() throws {
         let (model, env, _, _) = try makeModel()
         model.beginOnboarding()
