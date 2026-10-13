@@ -12,6 +12,8 @@ struct WidgetSnapshot: Equatable {
         case evening(left: Int, done: Int, time: String)
         /// Nothing to suggest.
         case clear(done: Int)
+        /// The shared store couldn't be read, as before Catch has first run.
+        case unavailable
     }
 
     var mode: Mode
@@ -23,6 +25,9 @@ struct WidgetSnapshot: Equatable {
     static let placeholder = WidgetSnapshot(
         mode: .upFirst(itemID: nil, stepID: nil, title: "Send Q3 invoice to Halden", reason: "In Now since Tue"),
         listTitle: "NOW · 2 OF 3", list: ["Call Dana about the lease", "Order cabinet samples"], inboxCount: 4)
+
+    /// Shown in place of the user's day when it can't be read, so sample data never passes for theirs.
+    static let unavailable = WidgetSnapshot(mode: .unavailable, listTitle: "", list: [], inboxCount: 0)
 }
 
 enum WidgetTimeline {

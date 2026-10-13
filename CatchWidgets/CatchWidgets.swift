@@ -35,20 +35,27 @@ struct CatchProvider: TimelineProvider {
             completion(placeholder(in: context))
             return
         }
-        completion(entries(from: .now).first ?? placeholder(in: context))
+        completion(entries(from: .now)?.first ?? CatchEntry(date: .now, snapshot: .unavailable))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<CatchEntry>) -> Void) {
-        let entries = entries(from: .now)
-        let nextDay = DayClock.nextStart(after: .now, calendar: .current)
+        let now = Date.now
+        guard let entries = entries(from: now) else {
+            // Not readable yet, as before Catch first runs: try again soon.
+            completion(Timeline(entries: [CatchEntry(date: now, snapshot: .unavailable)],
+                                policy: .after(now.addingTimeInterval(15 * 60))))
+            return
+        }
+        let nextDay = DayClock.nextStart(after: now, calendar: .current)
         completion(Timeline(entries: entries, policy: .after(nextDay)))
     }
 
-    private func entries(from now: Date) -> [CatchEntry] {
+    /// Nil when the shared store can't be opened.
+    private func entries(from now: Date) -> [CatchEntry]? {
         // Read-only: only the app writes (and migrates) the shared store.
         guard let container = try? ModelContainer(for: Schema(CatchSchema.models),
                                                   configurations: ModelConfiguration(allowsSave: false)) else {
-            return [CatchEntry(date: now, snapshot: .placeholder)]
+            return nil
         }
         let context = ModelContext(container)
         let items = (try? context.fetch(FetchDescriptor<Item>())) ?? []
@@ -112,7 +119,7 @@ private struct UpFirstWidgetView: View {
 struct InboxCountWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "InboxCount", provider: CatchProvider()) { entry in
-            LockScreenInboxCount(count: entry.snapshot.inboxCount)
+            LockScreenInboxCount(count: entry.snapshot.mode == .unavailable ? nil : entry.snapshot.inboxCount)
                 .widgetURL(URL(string: "catch://inbox"))
                 .containerBackground(for: .widget) { Color.clear }
         }

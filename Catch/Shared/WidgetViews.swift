@@ -115,7 +115,7 @@ private struct TopSpot: View {
                     }
                 }
             }
-        case .clear:
+        case .clear, .unavailable:
             EmptyView()
         }
     }
@@ -148,12 +148,13 @@ private struct TopSpot: View {
         case .laterDue(_, _, let time, _): return "LATER · \(time)"
         case .evening(_, _, let time): return "\(time) · WRAP UP"
         case .clear: return "TODAY"
+        case .unavailable: return "CATCH"
         }
     }
 
     private var labelColor: Color {
         switch snapshot.mode {
-        case .upFirst, .clear: return Theme.blue
+        case .upFirst, .clear, .unavailable: return Theme.blue
         case .laterDue, .evening: return Theme.orangeText
         }
     }
@@ -163,6 +164,7 @@ private struct TopSpot: View {
         case .upFirst(_, _, let title, _), .laterDue(_, let title, _, _): return title
         case .evening(let left, _, _): return left == 0 ? "Nothing left for today" : "\(left) left for today"
         case .clear: return "Today is clear"
+        case .unavailable: return "Open Catch"
         }
     }
 
@@ -172,6 +174,7 @@ private struct TopSpot: View {
         case .laterDue(_, _, _, let detail): return detail
         case .evening(_, let done, _): return "\(done) done today"
         case .clear(let done): return done > 0 ? "\(done) done" : "Nothing waiting"
+        case .unavailable: return "To see your day here"
         }
     }
 }
@@ -223,26 +226,27 @@ struct LockScreenUpFirst: View {
         case .upFirst(_, _, let title, _), .laterDue(_, let title, _, _): return title
         case .evening(let left, _, _): return "\(left) left for today"
         case .clear: return "Today is clear"
+        case .unavailable: return "Open Catch"
         }
     }
 }
 
-/// 11f: the Inbox count.
+/// 11f: the Inbox count. Nil when it couldn't be read.
 struct LockScreenInboxCount: View {
-    let count: Int
+    let count: Int?
 
     var body: some View {
         ZStack {
             AccessoryWidgetBackground()
             VStack(spacing: 0) {
-                Text("\(count)")
+                Text(count.map { "\($0)" } ?? "–")
                     .font(.title2.weight(.semibold))
                 Text("Inbox")
                     .font(.caption2.weight(.semibold))
                     .minimumScaleFactor(0.7)
             }
         }
-        .accessibilityLabel("\(count) in Inbox")
+        .accessibilityLabel(count.map { "\($0) in Inbox" } ?? "Open Catch to see your Inbox")
     }
 }
 
