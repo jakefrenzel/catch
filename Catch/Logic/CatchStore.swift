@@ -37,8 +37,9 @@ final class CatchStore {
     var onChange: (() -> Void)?
     /// Called when a save fails; the change has been rolled back.
     var onSaveFailure: (() -> Void)?
-    /// The last save failed and was rolled back, so what it made is gone.
-    private(set) var lastSaveFailed = false
+    /// Goes up each time a save fails and is rolled back, so a caller can compare it
+    /// before and after to tell whether its own change was lost.
+    private(set) var saveFailures = 0
     private let log = Logger(subsystem: "com.buildmonkeys.catch", category: "store")
 
     init(context: ModelContext,
@@ -117,8 +118,7 @@ final class CatchStore {
         }
         context.insert(item)
         undoAction = { [context] in context.delete(item) }
-        save()
-        guard !lastSaveFailed else { return nil }
+        guard save() else { return nil }
         return CaptureResult(item: item, requested: list)
     }
 
@@ -334,8 +334,7 @@ final class CatchStore {
             context.delete(project)
             for snapshot in consumed { context.insert(snapshot.recreate()) }
         }
-        save()
-        return lastSaveFailed ? nil : project
+        return save() ? project : nil
     }
 
     /// Adds a step at the end of the project's current phase
@@ -449,18 +448,21 @@ final class CatchStore {
         }
     }
 
-    private func save() {
+    /// False when it failed and the change was rolled back.
+    @discardableResult
+    private func save() -> Bool {
+        defer { onChange?() }
         do {
             try context.save()
-            lastSaveFailed = false
+            return true
         } catch {
-            lastSaveFailed = true
+            saveFailures += 1
             // Don't leave unsaved changes in memory looking saved.
             log.error("Save failed: \(error.localizedDescription)")
             context.rollback()
             undoAction = nil
             onSaveFailure?()
+            return false
         }
-        onChange?()
     }
 }

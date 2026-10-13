@@ -18,8 +18,9 @@ struct CatchThoughtIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         AppServices.shared.model.refreshClock()
+        let failures = AppServices.shared.store.saveFailures
         guard let saved = ShortcutActions.catchThought(text, store: AppServices.shared.store) else {
-            if AppServices.shared.store.lastSaveFailed { throw SaveFailedError() }
+            if AppServices.shared.store.saveFailures != failures { throw SaveFailedError() }
             throw $text.needsValueError("What's on your mind?")
         }
         // Siri runs this in a background launch; finish scheduling the reminder first.
@@ -47,8 +48,9 @@ struct AddToNowIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         AppServices.shared.model.refreshClock()
+        let failures = AppServices.shared.store.saveFailures
         guard let saved = ShortcutActions.addToNow(text, store: AppServices.shared.store) else {
-            if AppServices.shared.store.lastSaveFailed { throw SaveFailedError() }
+            if AppServices.shared.store.saveFailures != failures { throw SaveFailedError() }
             throw $text.needsValueError("What should go in Now?")
         }
         await AppServices.shared.model.syncReminders()

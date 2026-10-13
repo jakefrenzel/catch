@@ -574,9 +574,10 @@ final class AppModel {
     /// Creates the project and opens it. Returns false (with a nudge) without a name.
     @discardableResult
     func createProject(from draft: ProjectDraft) -> Bool {
+        let failures = store.saveFailures
         guard let project = store.createProject(from: draft) else {
             // A failed save has already said so.
-            if !store.lastSaveFailed {
+            if store.saveFailures == failures {
                 haptic(.warning)
                 flash("Give the project a name", undo: false)
             }

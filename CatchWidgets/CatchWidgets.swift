@@ -201,6 +201,8 @@ private struct IslandIcon: View {
             Image(systemName: compact ? "checkmark.circle.fill" : "checkmark").foregroundStyle(Theme.green)
         case .nothing:
             Image(systemName: "mic.slash").foregroundStyle(.secondary)
+        case .failed:
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.orange)
         }
     }
 }
@@ -211,6 +213,7 @@ private extension VoiceActivityAttributes.ContentState.Phase {
         case .listening: return "Listening"
         case .saved: return "Saved"
         case .nothing: return "Nothing heard"
+        case .failed: return "Not saved"
         }
     }
 }

@@ -79,12 +79,15 @@ final class VoiceActivityController {
         let shown = model.voice.transcript
         let result = model.keepingWhatWasShown(await model.voice.stop(), shown: shown)
         model.isBackgroundListening = false
+        let failures = model.store.saveFailures
         let saved = ShortcutActions.catchThought(result.transcript, store: model.store)
+        let saveFailed = model.store.saveFailures != failures
         let state: VoiceActivityAttributes.ContentState = saved.map {
             .saved(title: $0.title, destination: $0.destination, itemID: $0.itemID)
-        } ?? .nothingHeard
+        } ?? (saveFailed ? .saveFailed : .nothingHeard)
         self.activity = nil
         if saved != nil { model.haptic(.success) }
+        if saveFailed { model.haptic(.warning) }
 
         // Update rather than end, so the confirmation and Undo show in the Dynamic
         // Island too; then take it down after a few seconds. (If iOS suspends the

@@ -5,7 +5,11 @@ import SwiftUI
 /// 11g: listening in the Dynamic Island after pressing the Action button.
 struct VoiceActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
-        enum Phase: String, Codable { case listening, saved, nothing }
+        enum Phase: String, Codable {
+            case listening, saved, nothing
+            /// Heard, but the store couldn't save it.
+            case failed
+        }
 
         struct Chunk: Codable, Hashable {
             /// "normal", "filler", "time" or "project", as in VoiceParse.
@@ -30,6 +34,7 @@ struct VoiceActivityAttributes: ActivityAttributes {
         }
 
         static let nothingHeard = ContentState(phase: .nothing, chunks: [])
+        static let saveFailed = ContentState(phase: .failed, chunks: [])
 
         private static func kindName(_ kind: VoiceParse.Chunk.Kind) -> String {
             switch kind {
@@ -85,6 +90,10 @@ struct VoiceActivityView: View {
                 Text("Press the Action button and talk.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.7))
+            case .failed:
+                Text("Open Catch and try again.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.7))
             }
         }
         .foregroundStyle(.white)
@@ -110,6 +119,13 @@ struct VoiceActivityView: View {
         case .nothing:
             Text("Didn't hear anything")
                 .font(.subheadline.weight(.semibold))
+        case .failed:
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Theme.orange)
+                Text("Couldn't save that")
+                    .font(.subheadline.weight(.semibold))
+            }
         }
     }
 }
