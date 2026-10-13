@@ -1,0 +1,89 @@
+name: App Store screenshots
+
+# Takes the App Store screenshots on a 6.9" iPhone (1320 x 2868), the size
+# App Store Connect asks for; it scales them down for smaller iPhones.
+# Run it by hand, then download the "AppStoreScreenshots" artifact:
+#
+#   gh workflow run appstore-screenshots.yml --ref main
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Pick a simulator
+        id: sim
+        run: echo "udid=$(python3 scripts/pick_simulator.py 'iPhone 17 Pro Max')" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Catch.xcodeproj \
+            -scheme Catch \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Take screenshots
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          APP=DerivedData/Build/Products/Debug-iphonesimulator/Catch.app
+          mkdir -p screenshots
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 \
+            --dataNetwork wifi --wifiMode active --wifiBars 3 \
+            --cellularMode active --cellularBars 4 \
+            --batteryState discharging --batteryLevel 100
+          xcrun simctl install "$UDID" "$APP"
+
+          # Run the app in a time zone where it's early afternoon, so Today
+          # isn't in its evening wrap-up whenever the job happens to run.
+          offset=$(( (13 - 10#$(date -u +%H) + 24) % 24 ))
+          [ $offset -gt 12 ] && offset=$(( offset - 24 ))
+          if [ $offset -ge 0 ]; then zone="Etc/GMT-$offset"; else zone="Etc/GMT+$(( -offset ))"; fi
+          echo "App time zone: $zone"
+          export SIMCTL_CHILD_TZ="$zone"
+
+          # shot <name> <light|dark> [launch arguments...]
+          shot() {
+            local name=$1 mode=$2; shift 2
+            xcrun simctl ui "$UDID" appearance "$mode"
+            xcrun simctl terminate "$UDID" com.buildmonkeys.catch 2>/dev/null || true
+            xcrun simctl launch "$UDID" com.buildmonkeys.catch -seedSampleData "$@"
+            sleep 7
+            xcrun simctl io "$UDID" screenshot "screenshots/$name.png"
+          }
+          shot 01-today light
+          shot 02-voice light -voiceDemo -startVoice
+          shot 03-inbox light -showInbox
+          shot 04-project light -openProject
+          shot 05-capture light -openCapture
+          shot 06-remind light -openRemind
+          shot 07-evening light -evening
+          shot 08-someday light -showSomeday
+          shot 09-today-dark dark
+          shot 10-voice-dark dark -voiceDemo -startVoice
+
+          for f in screenshots/*.png; do
+            echo "$f: $(sips -g pixelWidth -g pixelHeight "$f" | awk '/pixel/ {printf "%s ", $2}')"
+          done
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppStoreScreenshots
+          path: screenshots
