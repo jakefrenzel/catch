@@ -112,6 +112,18 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue(env.settingsStore.hasOnboarded)
     }
 
+    func testNotNowOnAReplayKeepsRemindersOn() async throws {
+        let (model, env, _, notifications) = try makeModel()
+        env.settingsStore.hasOnboarded = true
+        env.settingsStore.settings.notifications = true
+        model.onboarding = .permission
+
+        await model.finishOnboarding(allowReminders: false)
+
+        XCTAssertEqual(notifications.requestCount, 0)
+        XCTAssertTrue(env.settingsStore.settings.notifications)
+    }
+
     func testSkip() throws {
         let (model, env, _, _) = try makeModel()
         model.beginOnboarding()

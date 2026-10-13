@@ -247,8 +247,10 @@ final class AppModel {
         flash("Hold it down to talk", undo: false)
     }
 
-    /// Step 3's buttons. "Not Now" turns reminders off, so Today shows 10c.
+    /// Step 3's buttons. "Not Now" turns reminders off, so Today shows 10c. On a replay
+    /// it leaves them as they were: the tutorial shouldn't switch off reminders already set.
     func finishOnboarding(allowReminders: Bool) async {
+        let isReplay = settingsStore.hasOnboarded
         sheet = nil
         onboarding = nil
         settingsStore.hasOnboarded = true
@@ -256,7 +258,7 @@ final class AppModel {
             let granted = await notifications.requestAuthorization()
             settingsStore.settings.notifications = granted
             flash(granted ? "Reminders are on" : "You can turn reminders on later", undo: false)
-        } else {
+        } else if !isReplay {
             settingsStore.settings.notifications = false
             flash("You can turn reminders on later", undo: false)
         }
