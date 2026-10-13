@@ -19,6 +19,13 @@ enum DayClock {
         return calendar.date(bySettingHour: startHour, minute: 0, second: 0, of: next) ?? next
     }
 
+    /// Midnight starting tomorrow, by the Catch day: at 1 AM Sunday, still Saturday night,
+    /// tomorrow is Sunday.
+    static func tomorrow(after date: Date, calendar: Calendar) -> Date {
+        let today = day(of: date, calendar: calendar)
+        return calendar.date(byAdding: .day, value: 1, to: today) ?? today
+    }
+
     static func isSameDay(_ a: Date, _ b: Date, calendar: Calendar) -> Bool {
         day(of: a, calendar: calendar) == day(of: b, calendar: calendar)
     }

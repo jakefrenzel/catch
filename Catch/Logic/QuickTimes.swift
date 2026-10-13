@@ -30,9 +30,8 @@ enum QuickTimes {
             result.append(QuickTime(kind: .tonight, date: tonight))
         }
 
-        let startOfToday = calendar.startOfDay(for: now)
-        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday),
-           let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) {
+        let tomorrow = DayClock.tomorrow(after: now, calendar: calendar)
+        if let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) {
             result.append(QuickTime(kind: .tomorrow, date: morning))
         }
 

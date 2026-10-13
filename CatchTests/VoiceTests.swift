@@ -26,8 +26,7 @@ final class VoiceParserTests: XCTestCase {
         XCTAssertEqual(result.chunks.map(\.text), ["Remind me to", "call Dana", "tomorrow at 10", "about the lease"])
 
         let date = try XCTUnwrap(result.date)
-        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: .now))
-        XCTAssertTrue(calendar.isDate(date, inSameDayAs: tomorrow))
+        XCTAssertTrue(calendar.isDate(date, inSameDayAs: DayClock.tomorrow(after: .now, calendar: calendar)))
         XCTAssertEqual(calendar.component(.hour, from: date), 10)
         XCTAssertEqual(result.destination, .later(date))
     }
@@ -85,12 +84,20 @@ final class VoiceParserTests: XCTestCase {
         XCTAssertEqual(calendar.component(.minute, from: date), 30)
     }
 
+    func testTomorrowSaidAfterMidnightIsTheComingDay() throws {
+        let clock = TestClock()
+        // 1 AM Saturday, still Friday night by the Catch day.
+        let result = VoiceParser.parse("Remind me to call Bob tomorrow at five", projects: [],
+                                       afterWork: TimeOfDay(hour: 17, minute: 30),
+                                       now: clock.at(day: 10, hour: 1), calendar: clock.calendar)
+        XCTAssertEqual(result.date, clock.at(day: 10, hour: 17))
+    }
+
     func testSpokenHourWithADay() throws {
         let result = parse("Remind me to call Bob tomorrow at five")
         XCTAssertEqual(result.title, "Call Bob")
         let date = try XCTUnwrap(result.date)
-        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: .now))
-        XCTAssertTrue(calendar.isDate(date, inSameDayAs: tomorrow))
+        XCTAssertTrue(calendar.isDate(date, inSameDayAs: DayClock.tomorrow(after: .now, calendar: calendar)))
         XCTAssertEqual(calendar.component(.hour, from: date), 17)
     }
 

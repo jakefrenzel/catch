@@ -224,11 +224,12 @@ enum VoiceParser {
     /// Without AM or PM, 1–6 means afternoon and 7–11 the next time that hour comes round.
     private static func spokenDate(hour: Int, minute: Int, pm: Bool?, day: String?,
                                    now: Date, calendar: Calendar) -> Date? {
-        let today = calendar.startOfDay(for: now)
+        // By the Catch day: "tomorrow" said at 1 AM, still last night, means later today.
+        let today = DayClock.day(of: now, calendar: calendar)
         var start = today
         var dayGiven = false
         if day == "tomorrow" {
-            start = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+            start = DayClock.tomorrow(after: now, calendar: calendar)
             dayGiven = true
         } else if let day, let weekday = weekdays.firstIndex(of: day) {
             start = calendar.nextDate(after: today, matching: DateComponents(weekday: weekday + 1),

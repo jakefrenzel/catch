@@ -28,6 +28,12 @@ final class RemindOptionsTests: XCTestCase {
         XCTAssertEqual(late.first?.date, clock.at(day: 10, hour: 17, minute: 30))
     }
 
+    func testTomorrowAfterMidnightIsTheComingMorning() {
+        // 1 AM is still last night by the Catch day, so tomorrow morning is in 8 hours, not 32.
+        let tomorrow = options(day: 10, hour: 1).first { $0.kind == .tomorrowMorning }
+        XCTAssertEqual(tomorrow?.date, clock.at(day: 10, hour: 9))
+    }
+
     @MainActor
     func testPlacesAppearBeforeTomorrow() throws {
         let env = try TestEnvironment()

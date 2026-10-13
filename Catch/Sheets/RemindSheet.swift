@@ -23,7 +23,7 @@ struct RemindSheet: View {
         self.item = item
         let calendar = Calendar.current
         let now = Date.now
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        let tomorrow = DayClock.tomorrow(after: now, calendar: calendar)
         let options = RemindOptions.options(now: now, calendar: calendar, afterWork: settings.afterWork, places: [])
 
         var selection: RemindOption.Kind? = .afterWork

@@ -52,8 +52,8 @@ enum RemindOptions {
                                            reminder: .place(.arrive, place)))
             }
         }
-        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)),
-           let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) {
+        if let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0,
+                                       of: DayClock.tomorrow(after: now, calendar: calendar)) {
             result.append(RemindOption(kind: .tomorrowMorning, title: "Tomorrow morning", reminder: .date(morning)))
         }
         return result
