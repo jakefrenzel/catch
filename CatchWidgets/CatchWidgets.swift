@@ -35,41 +35,58 @@ struct CatchProvider: TimelineProvider {
             completion(placeholder(in: context))
             return
         }
-        completion(entries(from: .now)?.first ?? CatchEntry(date: .now, snapshot: .unavailable))
+        let now = Date.now
+        // Only the moment now, not the whole day's timeline.
+        let snapshot = load(at: now).map { $0.snapshot(at: now) } ?? .unavailable
+        completion(CatchEntry(date: now, snapshot: snapshot))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<CatchEntry>) -> Void) {
         let now = Date.now
-        guard let entries = entries(from: now) else {
+        guard let day = load(at: now) else {
             // Not readable yet, as before Catch first runs: try again soon.
             completion(Timeline(entries: [CatchEntry(date: now, snapshot: .unavailable)],
                                 policy: .after(now.addingTimeInterval(15 * 60))))
             return
         }
+        let entries = WidgetTimeline.entryDates(now: now, items: day.items, settings: day.settings,
+                                                calendar: day.calendar).map { date in
+            CatchEntry(date: date, snapshot: day.snapshot(at: date))
+        }
         let nextDay = DayClock.nextStart(after: now, calendar: .current)
         completion(Timeline(entries: entries, policy: .after(nextDay)))
     }
 
+    /// Today as read from the shared store.
+    private struct Day {
+        let items: [Item]
+        let projects: [Project]
+        let inboxCount: Int
+        let settings: CatchSettings
+        let calendar: Calendar
+
+        func snapshot(at date: Date) -> WidgetSnapshot {
+            WidgetTimeline.snapshot(at: date, items: items, projects: projects, settings: settings,
+                                    skipped: SharedStore.widgetSkipped, calendar: calendar,
+                                    formatter: ReminderFormatter(), inboxCount: inboxCount)
+        }
+    }
+
     /// Nil when the shared store can't be opened.
-    private func entries(from now: Date) -> [CatchEntry]? {
+    private func load(at now: Date) -> Day? {
         // Read-only: only the app writes (and migrates) the shared store.
         guard let container = try? ModelContainer(for: Schema(CatchSchema.models),
                                                   configurations: ModelConfiguration(allowsSave: false)) else {
             return nil
         }
         let context = ModelContext(container)
-        let items = (try? context.fetch(FetchDescriptor<Item>())) ?? []
-        let projects = (try? context.fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\Project.sortOrder)]))) ?? []
-        let settings = SettingsStore(defaults: SharedStore.defaults).settings
-        let skipped = SharedStore.widgetSkipped
         let calendar = Calendar.current
-        let formatter = ReminderFormatter()
-
-        return WidgetTimeline.entryDates(now: now, items: items, settings: settings, calendar: calendar).map { date in
-            CatchEntry(date: date, snapshot: WidgetTimeline.snapshot(
-                at: date, items: items, projects: projects, settings: settings,
-                skipped: skipped, calendar: calendar, formatter: formatter))
-        }
+        // Only what's on screen today, so years of done items don't load into the widget's memory.
+        let items = (try? context.fetch(WidgetTimeline.itemsDescriptor(now: now, calendar: calendar))) ?? []
+        let projects = (try? context.fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\Project.sortOrder)]))) ?? []
+        let inboxCount = (try? context.fetchCount(WidgetTimeline.inboxDescriptor())) ?? 0
+        return Day(items: items, projects: projects, inboxCount: inboxCount,
+                   settings: SettingsStore(defaults: SharedStore.defaults).settings, calendar: calendar)
     }
 }
 

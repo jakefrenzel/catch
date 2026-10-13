@@ -80,6 +80,25 @@ final class WidgetTimelineTests: XCTestCase {
         if case .laterDue = nextMorning.mode { XCTFail("Yesterday's reminder shouldn't take the top spot") }
     }
 
+    func testWidgetFetchesOnlyTodaysItems() throws {
+        let env = try TestEnvironment()
+        let open = env.add("Open", to: .now)
+        let doneToday = env.add("Done today", to: .now)
+        env.store.setDone(doneToday, true)
+        let doneYesterday = env.add("Done yesterday", to: .now)
+        doneYesterday.completedAt = env.clock.at(day: 8, hour: 15)
+        let later = env.add("Later", to: .later)
+        env.add("Idea", to: .inbox)
+        env.add("Someday", to: .someday)
+        try env.store.context.save()
+
+        let now = env.clock.at(day: 9, hour: 13)
+        let fetched = try env.store.context.fetch(WidgetTimeline.itemsDescriptor(now: now, calendar: env.clock.calendar))
+
+        XCTAssertEqual(Set(fetched.map(\.id)), [open.id, doneToday.id, later.id])
+        XCTAssertEqual(try env.store.context.fetchCount(WidgetTimeline.inboxDescriptor()), 1)
+    }
+
     func testEveningShowsWhatsLeft() throws {
         let env = try TestEnvironment()
         env.add("A", to: .now)

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// What the home screen widget shows at a moment (12b–12d). Pure, so it can be
 /// built from fetched items in the widget and tested in the app.
@@ -31,8 +32,28 @@ struct WidgetSnapshot: Equatable {
 }
 
 enum WidgetTimeline {
+    /// The items the widget reads: open in Now or Later, or done since today began. Not
+    /// the Inbox, which it only counts, nor years of finished ones.
+    static func itemsDescriptor(now: Date, calendar: Calendar) -> FetchDescriptor<Item> {
+        let dayStart = calendar.date(bySettingHour: DayClock.startHour, minute: 0, second: 0,
+                                     of: DayClock.day(of: now, calendar: calendar)) ?? now
+        let nowList = ListKind.now.rawValue
+        let laterList = ListKind.later.rawValue
+        let notDone = Date.distantFuture
+        return FetchDescriptor(predicate: #Predicate<Item> { item in
+            (item.listRaw == nowList || item.listRaw == laterList) && (item.completedAt ?? notDone) >= dayStart
+        })
+    }
+
+    static func inboxDescriptor() -> FetchDescriptor<Item> {
+        let inbox = ListKind.inbox.rawValue
+        return FetchDescriptor(predicate: #Predicate<Item> { $0.listRaw == inbox })
+    }
+
+    /// `inboxCount` is counted from `items` when they include the Inbox.
     static func snapshot(at date: Date, items: [Item], projects: [Project], settings: CatchSettings,
-                         skipped: Set<UUID>, calendar: Calendar, formatter: ReminderFormatter) -> WidgetSnapshot {
+                         skipped: Set<UUID>, calendar: Calendar, formatter: ReminderFormatter,
+                         inboxCount: Int? = nil) -> WidgetSnapshot {
         // Items moved to tomorrow count again once tomorrow arrives, even before
         // the app has run and brought them back.
         // Returning items only fill the room left in Now, as carry-over will.
@@ -46,7 +67,7 @@ enum WidgetTimeline {
             guard let completedAt = item.completedAt else { return false }
             return (item.list == .now || item.list == .later) && DayClock.isSameDay(completedAt, date, calendar: calendar)
         }.count
-        let inboxCount = items.filter { $0.list == .inbox }.count
+        let inboxCount = inboxCount ?? items.filter { $0.list == .inbox }.count
 
         if WrapUp.isEvening(now: date, settings: settings, calendar: calendar) {
             let wrapUp = calendar.date(bySettingHour: settings.wrapUpTime.hour, minute: settings.wrapUpTime.minute,
