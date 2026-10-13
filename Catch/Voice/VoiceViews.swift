@@ -145,7 +145,11 @@ private struct WillSaveCard: View {
                     chip(project, icon: "folder", foreground: Theme.purple, background: Theme.purple.opacity(0.12))
                 }
                 if parse.date == nil && parse.projectName == nil {
-                    chip("Inbox", icon: nil, foreground: Theme.ink2, background: Theme.fill)
+                    if parse.isSomeday {
+                        chip("Someday", icon: "archivebox", foreground: Theme.ink2, background: Theme.fill)
+                    } else {
+                        chip("Inbox", icon: nil, foreground: Theme.ink2, background: Theme.fill)
+                    }
                 }
             }
         }

@@ -12,6 +12,21 @@ final class VoiceParserTests: XCTestCase {
                           now: .now, calendar: calendar)
     }
 
+    func testSomedayGoesToSomeday() {
+        let leading = parse("Someday learn to make fresh pasta")
+        XCTAssertEqual(leading.title, "Learn to make fresh pasta")
+        XCTAssertEqual(leading.destination, .someday)
+
+        let trailing = parse("Put visiting Japan in someday")
+        XCTAssertEqual(trailing.title, "Put visiting Japan")
+        XCTAssertEqual(trailing.destination, .someday)
+    }
+
+    func testATimeBeatsSomeday() {
+        let result = parse("Someday call Dana tomorrow at five")
+        guard case .later = result.destination else { return XCTFail("Expected Later") }
+    }
+
     func testAfterWorkIsAWholePhrase() throws {
         let result = parse("Book the after workout massage")
         XCTAssertNil(result.date)

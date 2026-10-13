@@ -389,7 +389,7 @@ final class AppModel {
     }
 
     /// Saves a spoken (or corrected) sentence where it says to go: Later at
-    /// the time heard, a step in the project heard, or Inbox.
+    /// the time heard, a step in the project heard, Someday, or Inbox.
     @discardableResult
     func saveSpoken(_ text: String) -> Bool {
         let parse = parseVoice(text)
@@ -406,6 +406,8 @@ final class AppModel {
                 return addStep(parse.title, to: project)
             }
             return capture(parse.title, to: .inbox)
+        case .someday:
+            return capture(parse.title, to: .someday)
         case .inbox:
             return capture(parse.title, to: .inbox)
         }

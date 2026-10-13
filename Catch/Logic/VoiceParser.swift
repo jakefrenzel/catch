@@ -14,6 +14,8 @@ struct VoiceParse: Equatable {
         case later(Date)
         /// Only a project was heard: add a step to it.
         case projectStep(UUID)
+        /// "Someday" was said, with no time or project.
+        case someday
         case inbox
     }
 
@@ -22,10 +24,12 @@ struct VoiceParse: Equatable {
     var date: Date?
     var projectID: UUID?
     var projectName: String?
+    var isSomeday = false
 
     var destination: Destination {
         if let date { return .later(date) }
         if let projectID { return .projectStep(projectID) }
+        if isSomeday { return .someday }
         return .inbox
     }
 }
@@ -47,6 +51,7 @@ enum VoiceParser {
     private static let projectPrepositions: Set<String> = ["to", "for", "in", "into", "on"]
     private static let projectArticles: Set<String> = ["the", "my", "our"]
     private static let timeLeadIns: Set<String> = ["at", "on", "by", "this", "next"]
+    private static let somedayPrepositions: Set<String> = ["to", "in", "into", "for"]
 
     private struct Token {
         let range: NSRange
@@ -66,9 +71,10 @@ enum VoiceParser {
         markLeadIn(&tokens)
         let date = markTime(&tokens, in: ns, afterWork: afterWork, now: now, calendar: calendar)
         let project = markProject(&tokens, projects: projects)
+        let isSomeday = markSomeday(&tokens)
 
         return VoiceParse(chunks: chunks(from: tokens), title: title(from: tokens), date: date,
-                          projectID: project?.id, projectName: project?.name)
+                          projectID: project?.id, projectName: project?.name, isSomeday: isSomeday)
     }
 
     // MARK: - Steps
@@ -295,6 +301,19 @@ enum VoiceParser {
             }
         }
         return nil
+    }
+
+    /// "Someday learn to make pasta", "put it in someday": the word says where it goes,
+    /// so it isn't part of the title.
+    private static func markSomeday(_ tokens: inout [Token]) -> Bool {
+        guard let index = tokens.firstIndex(where: { $0.word == "someday" && $0.kind == .normal }) else {
+            return false
+        }
+        tokens[index].kind = .filler
+        if index > 0, somedayPrepositions.contains(tokens[index - 1].word), tokens[index - 1].kind == .normal {
+            tokens[index - 1].kind = .filler
+        }
+        return true
     }
 
     private static func chunks(from tokens: [Token]) -> [VoiceParse.Chunk] {

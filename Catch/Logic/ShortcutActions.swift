@@ -11,8 +11,8 @@ enum ShortcutActions {
         let destination: String
     }
 
-    /// "Catch …": Inbox, or Later when a time is heard. Never a project step,
-    /// so Siri's result is predictable.
+    /// "Catch …": Inbox, Later when a time is heard, or Someday when it's said.
+    /// Never a project step, so Siri's result is predictable.
     static func catchThought(_ text: String, store: CatchStore, formatter: ReminderFormatter = .init()) -> Saved? {
         let now = store.currentDate()
         let parse = VoiceParser.parse(text, projects: [], afterWork: store.settings.afterWork,
@@ -22,7 +22,7 @@ enum ShortcutActions {
         if let date = parse.date {
             result = store.capture(parse.title, to: .later, remindAt: date)
         } else {
-            result = store.capture(parse.title, to: .inbox)
+            result = store.capture(parse.title, to: parse.isSomeday ? .someday : .inbox)
         }
         guard let item = result?.item else { return nil }
         return Saved(itemID: item.id, title: item.text, destination: destination(of: item, now: now, formatter: formatter))
