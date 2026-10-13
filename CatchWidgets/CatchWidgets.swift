@@ -24,7 +24,7 @@ struct CatchEntry: TimelineEntry {
 }
 
 /// Reads the shared database and lays out the day: now, each Later reminder
-/// still to come today, the wrap-up time, and midnight.
+/// still to come today, the wrap-up time, and the 4 AM day change.
 struct CatchProvider: TimelineProvider {
     func placeholder(in context: Context) -> CatchEntry {
         CatchEntry(date: .now, snapshot: .placeholder)

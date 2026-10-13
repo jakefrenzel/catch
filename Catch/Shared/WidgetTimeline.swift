@@ -56,12 +56,12 @@ enum WidgetTimeline {
                                   listTitle: "LEFT", list: Array(open.prefix(3).map(\.text)), inboxCount: inboxCount)
         }
 
-        // The most recently due Later reminder from today takes the top spot.
+        // The most recently due Later reminder from today (until 4 AM) takes the top spot.
         let due = items
             .filter { $0.list == .later && !$0.isDone }
             .compactMap { item -> (Item, Date)? in
                 guard let remindAt = item.remindAt, remindAt <= date,
-                      calendar.isDate(remindAt, inSameDayAs: date) else { return nil }
+                      DayClock.isSameDay(remindAt, date, calendar: calendar) else { return nil }
                 return (item, remindAt)
             }
             .max { $0.1 < $1.1 }

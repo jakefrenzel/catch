@@ -65,6 +65,21 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertEqual(after.list, ["Send invoice"])
     }
 
+    func testLateReminderStaysDueUntilTheDayTurnsOver() throws {
+        let env = try TestEnvironment()
+        env.settingsStore.settings.wrapUpStyle = .off
+        let due = try XCTUnwrap(env.store.capture("Take out the bins", to: .later,
+                                                  remindAt: env.clock.at(day: 9, hour: 23, minute: 30))).item
+
+        // Past midnight it's still the same Catch day, as the timeline has no entry until 4 AM.
+        let lateNight = snapshot(env, at: env.clock.at(day: 10, hour: 0, minute: 30))
+        let nextMorning = snapshot(env, at: env.clock.at(day: 10, hour: 4, minute: 1))
+
+        guard case .laterDue(let itemID, _, _, _) = lateNight.mode else { return XCTFail("Expected Later") }
+        XCTAssertEqual(itemID, due.id)
+        if case .laterDue = nextMorning.mode { XCTFail("Yesterday's reminder shouldn't take the top spot") }
+    }
+
     func testEveningShowsWhatsLeft() throws {
         let env = try TestEnvironment()
         env.add("A", to: .now)
