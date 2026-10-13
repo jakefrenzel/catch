@@ -120,6 +120,7 @@ struct UndoCatchIntent: AppIntent {
         let services = AppServices.shared
         if let item = services.store.allItems().first(where: { $0.id.uuidString == itemID }) {
             services.store.delete(item)
+            services.model.closeWhatWasDeleted()
             await services.model.syncReminders()
         }
         return .result(dialog: "Undone.")

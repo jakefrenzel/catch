@@ -61,6 +61,7 @@ enum WidgetActions {
     static func undoCapture(itemID: String) async {
         if let item = services.store.allItems().first(where: { $0.id.uuidString == itemID }) {
             services.store.delete(item)
+            services.model.closeWhatWasDeleted()
         }
         await services.voiceActivity.endNow()
         await services.model.syncReminders()

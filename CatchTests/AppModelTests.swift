@@ -139,6 +139,18 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(item.list, .inbox)
     }
 
+    func testUndoingACaptureClosesFocusOnIt() throws {
+        let (model, env) = try makeModel()
+        XCTAssertTrue(model.capture("Call Bob", to: .now))
+        let item = try XCTUnwrap(env.store.items(in: .now).first)
+        model.startFocus(on: .item(item))
+
+        model.undo()
+
+        XCTAssertTrue(env.store.allItems().isEmpty)
+        XCTAssertNil(model.focus)
+    }
+
     func testPinnedBarHiddenUnderSheets() throws {
         let (model, env) = try makeModel()
         model.tab = .inbox

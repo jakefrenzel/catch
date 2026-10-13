@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftData
 import UIKit
 import WidgetKit
 
@@ -838,6 +839,15 @@ final class AppModel {
         }
         undoableNewProject = nil
         store.undo()
+        // Undoing "Saved to Now" deletes the item, which Focus may be showing.
+        closeWhatWasDeleted()
+    }
+
+    /// After a delete the screen didn't ask for (an undo, Siri or the Live Activity), close
+    /// Focus or a sheet still showing what's gone, before anything reads the deleted model.
+    func closeWhatWasDeleted() {
+        if let focus, focus.isGone { self.focus = nil }
+        if let sheet, sheet.isGone { self.sheet = nil }
     }
 
     func haptic(_ haptic: Haptic) {
@@ -848,4 +858,27 @@ final class AppModel {
 
 extension UpFirstCandidate: Identifiable {
     var id: UUID { key }
+}
+
+private extension PersistentModel {
+    /// Deleted, saved or not. Safe to ask of a model that's gone.
+    var isGone: Bool { modelContext == nil || isDeleted }
+}
+
+private extension UpFirstCandidate {
+    var isGone: Bool {
+        switch self {
+        case .item(let item): return item.isGone
+        case .step(let step, let project): return step.isGone || project.isGone
+        }
+    }
+}
+
+private extension AppModel.Sheet {
+    var isGone: Bool {
+        switch self {
+        case .edit(let item), .remind(let item), .swap(let item): return item.isGone
+        case .newProject, .settings, .micDenied, .voiceRetry, .onboardingPermission: return false
+        }
+    }
 }
