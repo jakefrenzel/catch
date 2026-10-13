@@ -158,16 +158,42 @@ struct VoiceActivityWidget: Widget {
                         .padding(.horizontal, 6)
                 }
             } compactLeading: {
-                Image(systemName: context.state.phase == .saved ? "checkmark.circle.fill" : "mic.fill")
-                    .foregroundStyle(context.state.phase == .saved ? Theme.green : Theme.red)
+                IslandIcon(phase: context.state.phase, compact: true)
             } compactTrailing: {
-                Text(context.state.phase == .saved ? "Saved" : "Listening")
+                Text(context.state.phase.islandLabel)
                     .font(.caption.weight(.semibold))
             } minimal: {
-                Image(systemName: context.state.phase == .saved ? "checkmark" : "mic.fill")
-                    .foregroundStyle(context.state.phase == .saved ? Theme.green : Theme.red)
+                IslandIcon(phase: context.state.phase, compact: false)
             }
             .widgetURL(URL(string: "catch://today"))
+        }
+    }
+}
+
+/// The island's small icon: a red mic only while it's actually listening.
+private struct IslandIcon: View {
+    let phase: VoiceActivityAttributes.ContentState.Phase
+    /// The compact island has room for the filled circle; the minimal one doesn't.
+    let compact: Bool
+
+    var body: some View {
+        switch phase {
+        case .listening:
+            Image(systemName: "mic.fill").foregroundStyle(Theme.red)
+        case .saved:
+            Image(systemName: compact ? "checkmark.circle.fill" : "checkmark").foregroundStyle(Theme.green)
+        case .nothing:
+            Image(systemName: "mic.slash").foregroundStyle(.secondary)
+        }
+    }
+}
+
+private extension VoiceActivityAttributes.ContentState.Phase {
+    var islandLabel: String {
+        switch self {
+        case .listening: return "Listening"
+        case .saved: return "Saved"
+        case .nothing: return "Nothing heard"
         }
     }
 }
