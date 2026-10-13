@@ -209,8 +209,9 @@ struct LockScreenUpFirst: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text("UP FIRST")
+            Text(label)
                 .font(.caption2.weight(.bold))
+                .lineLimit(1)
                 .widgetAccentable()
             Text(title)
                 .font(.headline)
@@ -221,10 +222,21 @@ struct LockScreenUpFirst: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// As on the home screen widget, so a due reminder doesn't read as Up first.
+    private var label: String {
+        switch snapshot.mode {
+        case .upFirst: return "UP FIRST"
+        case .laterDue(_, _, let time, _): return "LATER · \(time)"
+        case .evening: return "WRAP UP"
+        case .clear: return "TODAY"
+        case .unavailable: return "CATCH"
+        }
+    }
+
     private var title: String {
         switch snapshot.mode {
         case .upFirst(_, _, let title, _), .laterDue(_, let title, _, _): return title
-        case .evening(let left, _, _): return "\(left) left for today"
+        case .evening(let left, _, _): return left == 0 ? "Nothing left for today" : "\(left) left for today"
         case .clear: return "Today is clear"
         case .unavailable: return "Open Catch"
         }
