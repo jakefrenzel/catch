@@ -222,17 +222,29 @@ struct TodayView: View {
         if finishing { settle(item.id) }
     }
 
-    /// The last step done: the project stays put for a moment, then moves down.
+    /// The last step done: the project stays put for a moment, folds its steps away, then
+    /// moves down as one row. Moving it with its steps open slid the fold over them.
     private func toggleDone(_ step: Step, in project: Project) {
         let wasDone = project.isDone
         model.toggleDone(step)
-        if !wasDone && project.isDone { settle(project.id) }
+        guard !wasDone && project.isDone else { return }
+        settle(project.id) {
+            // Deleted or undone in the meantime: leave it be.
+            guard project.modelContext != nil, project.isDone, project.isExpanded else { return false }
+            model.setExpanded(project, false)
+            return true
+        }
     }
 
-    private func settle(_ id: UUID) {
+    /// `beforeMoving` runs, animated, before the row moves; it returns whether it changed anything.
+    private func settle(_ id: UUID, beforeMoving: (() -> Bool)? = nil) {
         settling.insert(id)
         Task {
             try? await Task.sleep(for: .milliseconds(700))
+            if let beforeMoving {
+                let changed = withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { beforeMoving() }
+                if changed && !reduceMotion { try? await Task.sleep(for: .milliseconds(300)) }
+            }
             withAnimation(reduceMotion ? nil : .catchEaseOut(0.35)) { _ = settling.remove(id) }
         }
     }
