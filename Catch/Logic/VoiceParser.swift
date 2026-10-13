@@ -137,6 +137,12 @@ enum VoiceParser {
                let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
                 date = tomorrow
             }
+            // Its "tomorrow" is the calendar's. Before 4 AM, still last night, Catch's is a day sooner.
+            if lower.substring(with: match.range).contains("tomorrow"),
+               DayClock.tomorrow(after: now, calendar: calendar) == calendar.startOfDay(for: now),
+               let sooner = calendar.date(byAdding: .day, value: -1, to: date) {
+                date = sooner
+            }
             found = (match.range, date)
         }
 

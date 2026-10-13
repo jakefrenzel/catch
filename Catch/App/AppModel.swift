@@ -125,6 +125,8 @@ final class AppModel {
         self.notifications = notifications
         self.voice = voice ?? SpeechVoiceInput()
         self.location = LocationService()
+        // The store's clock, so tests don't depend on when they run.
+        self.now = store.currentDate()
         store.onChange = { [weak self] in self?.scheduleReminderSync() }
         store.onSaveFailure = { [weak self] in
             self?.haptic(.warning)
