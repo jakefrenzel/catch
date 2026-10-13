@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 6b: a project's phases as a vertical timeline. Done phases collapse, the
 /// current phase shows its steps with an Add Step field, upcoming ones are dimmed.
+/// A finished project keeps the field under its last phase.
 struct ProjectDetailView: View {
     let project: Project
 
@@ -22,6 +23,7 @@ struct ProjectDetailView: View {
                               state: state(of: index, current: current, isDone: phase.isDone),
                               previousName: index > 0 ? phases[index - 1].name : nil,
                               isLast: index == phases.count - 1,
+                              offersAddStep: index == (current ?? phases.count - 1),
                               nextStepID: project.nextStep?.id,
                               newStep: $newStep,
                               isAddingStep: $isAddingStep,
@@ -85,6 +87,8 @@ private struct PhaseNode: View {
     let state: State
     let previousName: String?
     let isLast: Bool
+    /// The current phase, or the last one once the project is finished.
+    let offersAddStep: Bool
     let nextStepID: UUID?
     @Binding var newStep: String
     var isAddingStep: FocusState<Bool>.Binding
@@ -116,13 +120,17 @@ private struct PhaseNode: View {
                 }
                 .padding(.top, 1)
 
-                if state == .current {
-                    stepsCard
-                } else {
+                // Separate ifs, so the card (and the field's focus) survives a
+                // finished project reopening when a step is added to it.
+                if state != .current {
                     Text(phase.steps.map(\.text).joined(separator: " · "))
                         .font(.subheadline)
                         .foregroundStyle(Theme.ink2)
                         .lineSpacing(2)
+                }
+                if offersAddStep {
+                    stepsCard
+                        .padding(.top, state == .current ? 0 : 8)
                 }
             }
             .padding(.bottom, 18)
@@ -169,7 +177,7 @@ private struct PhaseNode: View {
 
     private var stepsCard: some View {
         VStack(spacing: 0) {
-            ForEach(phase.steps) { step in
+            ForEach(state == .current ? phase.steps : []) { step in
                 let isNext = step.id == nextStepID
                 HStack(spacing: 10) {
                     CheckCircle(isDone: step.isDone, color: Theme.blue, size: 22) { onToggle(step) }
