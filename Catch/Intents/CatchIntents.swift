@@ -19,12 +19,18 @@ struct CatchThoughtIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         AppServices.shared.model.refreshClock()
         guard let saved = ShortcutActions.catchThought(text, store: AppServices.shared.store) else {
+            if AppServices.shared.store.lastSaveFailed { throw SaveFailedError() }
             throw $text.needsValueError("What's on your mind?")
         }
         // Siri runs this in a background launch; finish scheduling the reminder first.
         await AppServices.shared.model.syncReminders()
         return .result(dialog: "Saved to \(saved.destination).", view: SavedSnippet(saved: saved))
     }
+}
+
+/// The store couldn't save, so Siri mustn't say it did.
+struct SaveFailedError: Error, CustomLocalizedStringResourceConvertible {
+    var localizedStringResource: LocalizedStringResource { "Catch couldn't save that. Try again." }
 }
 
 struct AddToNowIntent: AppIntent {
@@ -42,6 +48,7 @@ struct AddToNowIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         AppServices.shared.model.refreshClock()
         guard let saved = ShortcutActions.addToNow(text, store: AppServices.shared.store) else {
+            if AppServices.shared.store.lastSaveFailed { throw SaveFailedError() }
             throw $text.needsValueError("What should go in Now?")
         }
         await AppServices.shared.model.syncReminders()

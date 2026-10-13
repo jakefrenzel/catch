@@ -93,6 +93,8 @@ final class AppModel {
     var now = Date.now
     /// Debug and screenshots: show the evening wrap-up regardless of the time.
     var forceEvening = false
+    /// A save failed during the current update; its toast stays up over any other.
+    @ObservationIgnored private var saveJustFailed = false
 
     private var toastTask: Task<Void, Never>?
     /// Set while "Created X" can be undone, so Undo can close its detail screen first.
@@ -129,8 +131,12 @@ final class AppModel {
         self.now = store.currentDate()
         store.onChange = { [weak self] in self?.scheduleReminderSync() }
         store.onSaveFailure = { [weak self] in
-            self?.haptic(.warning)
-            self?.flash("Couldn't save that change. Try again.", undo: false)
+            guard let self else { return }
+            haptic(.warning)
+            flash("Couldn't save that change. Try again.", undo: false)
+            // Whatever the failed change goes on to say ("Saved to Now") mustn't cover this.
+            saveJustFailed = true
+            Task { self.saveJustFailed = false }
         }
     }
 
@@ -567,8 +573,11 @@ final class AppModel {
     @discardableResult
     func createProject(from draft: ProjectDraft) -> Bool {
         guard let project = store.createProject(from: draft) else {
-            haptic(.warning)
-            flash("Give the project a name", undo: false)
+            // A failed save has already said so.
+            if !store.lastSaveFailed {
+                haptic(.warning)
+                flash("Give the project a name", undo: false)
+            }
             return false
         }
         sheet = nil
@@ -803,6 +812,7 @@ final class AppModel {
     // MARK: - Toasts and haptics
 
     func flash(_ message: String, undo: Bool) {
+        guard !saveJustFailed else { return }
         toastTask?.cancel()
         undoableNewProject = nil
         toast = Toast(message: message, canUndo: undo && store.canUndo,
