@@ -59,6 +59,8 @@ struct CatchProvider: TimelineProvider {
 
     /// Today as read from the shared store.
     private struct Day {
+        /// Kept so the fetched items and projects can still be read after `load` returns.
+        let context: ModelContext
         let items: [Item]
         let projects: [Project]
         let inboxCount: Int
@@ -85,7 +87,7 @@ struct CatchProvider: TimelineProvider {
         let items = (try? context.fetch(WidgetTimeline.itemsDescriptor(now: now, calendar: calendar))) ?? []
         let projects = (try? context.fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\Project.sortOrder)]))) ?? []
         let inboxCount = (try? context.fetchCount(WidgetTimeline.inboxDescriptor())) ?? 0
-        return Day(items: items, projects: projects, inboxCount: inboxCount,
+        return Day(context: context, items: items, projects: projects, inboxCount: inboxCount,
                    settings: SettingsStore(defaults: SharedStore.defaults).settings, calendar: calendar)
     }
 }
