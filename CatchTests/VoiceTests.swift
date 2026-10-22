@@ -164,12 +164,28 @@ final class FakeVoice: VoiceInput {
     var result = VoiceResult(transcript: "", isUncertain: false)
     var started = false
     var cancelled = false
+    /// Makes `stop()` wait for `finishStop()`, like the wait for the final transcript.
+    var holdsStop = false
+    private var pendingStop: CheckedContinuation<Void, Never>?
+    var isWaitingToStop: Bool { pendingStop != nil }
 
     func permission() -> VoicePermission { currentPermission }
     func requestPermission() async -> Bool { true }
     func start(language: String?) throws { started = true }
-    func stop() async -> VoiceResult { result }
+    func stop() async -> VoiceResult {
+        if holdsStop {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                pendingStop = continuation
+            }
+        }
+        return result
+    }
     func cancel() { cancelled = true }
+
+    func finishStop() {
+        pendingStop?.resume()
+        pendingStop = nil
+    }
 }
 
 @MainActor
@@ -256,6 +272,36 @@ final class VoiceFlowTests: XCTestCase {
         model.startListening()
 
         await model.stopListening(save: false)
+
+        XCTAssertTrue(voice.cancelled)
+        XCTAssertTrue(env.store.allItems().isEmpty)
+    }
+
+    func testLeavingTheAppWhileSavingStillSaves() async throws {
+        let (model, env, voice) = try makeModel()
+        voice.result = VoiceResult(transcript: "Buy milk", isUncertain: false)
+        voice.holdsStop = true
+        model.startListening()
+
+        let saving = Task { await model.stopListening(save: true) }
+        while !voice.isWaitingToStop { await Task.yield() }
+        model.appMovedToBackground()
+        await Task.yield()
+        voice.finishStop()
+        await saving.value
+
+        XCTAssertFalse(voice.cancelled)
+        XCTAssertFalse(model.isListening)
+        XCTAssertEqual(env.store.items(in: .inbox).map(\.text), ["Buy milk"])
+    }
+
+    func testLeavingTheAppWhileHoldingDropsTheCapture() async throws {
+        let (model, env, voice) = try makeModel()
+        voice.result = VoiceResult(transcript: "Buy milk", isUncertain: false)
+        model.startListening()
+
+        model.appMovedToBackground()
+        while model.isListening { await Task.yield() }
 
         XCTAssertTrue(voice.cancelled)
         XCTAssertTrue(env.store.allItems().isEmpty)

@@ -788,8 +788,9 @@ final class AppModel {
 
     /// The app went to the background mid-listen (a call, switching apps):
     /// drop the half-finished capture rather than leave the sheet stuck.
+    /// One already let go of is still saving, so it's kept.
     func appMovedToBackground() {
-        guard isListening else { return }
+        guard isListening, !isStoppingListening else { return }
         Task { await stopListening(save: false) }
     }
 
