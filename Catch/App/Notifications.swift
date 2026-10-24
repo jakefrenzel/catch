@@ -15,6 +15,8 @@ protocol NotificationScheduling: AnyObject {
     func requestAuthorization() async -> Bool
     /// Replaces every pending Catch alert with these.
     func replacePending(with reminders: [PlannedReminder]) async
+    /// Takes alerts already shown off the Notification Center unless their item is still open.
+    func clearDelivered(keeping itemIDs: Set<UUID>) async
     /// Opens Catch's notification settings, for when the system won't ask again.
     func openSystemSettings()
 }
@@ -53,7 +55,11 @@ final class SystemNotificationScheduler: NotificationScheduling {
     }
 
     func replacePending(with reminders: [PlannedReminder]) async {
-        center.removeAllPendingNotificationRequests()
+        // Adding a request replaces the pending one with the same id, so only the
+        // unwanted ones go first: if iOS suspends Catch partway, the rest stay pending.
+        let wanted = Set(reminders.map(\.id))
+        let stale = await center.pendingNotificationRequests().map(\.identifier).filter { !wanted.contains($0) }
+        center.removePendingNotificationRequests(withIdentifiers: stale)
         for reminder in reminders {
             let content = UNMutableNotificationContent()
             content.title = reminder.title
@@ -76,12 +82,23 @@ final class SystemNotificationScheduler: NotificationScheduling {
                 region.notifyOnExit = !place.onArrive
                 trigger = UNLocationNotificationTrigger(region: region, repeats: false)
             } else {
-                let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second],
-                                                            from: reminder.fireDate)
-                trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+                // The moment Catch shows, wherever the phone is then: a clock time
+                // would fire hours off after crossing time zones.
+                trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, reminder.fireDate.timeIntervalSinceNow),
+                                                            repeats: false)
             }
             try? await center.add(UNNotificationRequest(identifier: reminder.id, content: content, trigger: trigger))
         }
+    }
+
+    func clearDelivered(keeping itemIDs: Set<UUID>) async {
+        let stale = await center.deliveredNotifications().filter { notification in
+            let userInfo = notification.request.content.userInfo
+            guard let itemID = (userInfo[NotificationAction.itemIDKey] as? String).flatMap(UUID.init(uuidString:))
+            else { return false }
+            return !itemIDs.contains(itemID)
+        }
+        center.removeDeliveredNotifications(withIdentifiers: stale.map(\.request.identifier))
     }
 
     func openSystemSettings() {

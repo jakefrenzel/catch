@@ -779,14 +779,17 @@ final class AppModel {
     }
 
     private func performReminderSync() async {
+        let items = store.allItems()
         var planned: [PlannedReminder] = []
         if settings.notifications {
             let now = store.currentDate()
-            planned = ReminderPlanner.plan(items: store.allItems(), now: now, nudgeDefault: settings.nudgeDefault)
+            planned = ReminderPlanner.plan(items: items, now: now, nudgeDefault: settings.nudgeDefault)
             planned += ReminderPlanner.wrapUp(openInNow: store.openNowItems.count, settings: settings,
                                               dayFinished: isDayFinished, now: now, calendar: store.calendar)
         }
         await notifications.replacePending(with: planned)
+        // An alert for something done or deleted shouldn't stay on the Lock Screen.
+        await notifications.clearDelivered(keeping: Set(items.filter { !$0.isDone }.map(\.id)))
         // The same changes can change what the widgets show.
         WidgetCenter.shared.reloadAllTimelines()
     }

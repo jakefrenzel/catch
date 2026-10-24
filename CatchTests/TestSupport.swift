@@ -34,6 +34,8 @@ final class FakeNotifications: NotificationScheduling {
     var requestCount = 0
     var openedSystemSettings = false
     var pending: [PlannedReminder] = []
+    /// The items whose shown alerts the last sync kept.
+    var keptDelivered: Set<UUID> = []
 
     func permission() async -> NotificationPermission { currentPermission }
 
@@ -44,6 +46,8 @@ final class FakeNotifications: NotificationScheduling {
     }
 
     func replacePending(with reminders: [PlannedReminder]) async { pending = reminders }
+
+    func clearDelivered(keeping itemIDs: Set<UUID>) async { keptDelivered = itemIDs }
 
     func openSystemSettings() { openedSystemSettings = true }
 }

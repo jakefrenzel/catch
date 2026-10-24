@@ -315,6 +315,22 @@ final class NotificationFlowTests: XCTestCase {
         XCTAssertTrue(fake.pending.isEmpty, "The nudge is gone before the action returns")
     }
 
+    func testShownAlertsAreClearedForDoneAndDeletedItems() async throws {
+        let (model, env, fake) = try makeModel()
+        let open = env.add("Open", to: .later)
+        let done = env.add("Done", to: .later)
+        let deleted = env.add("Deleted", to: .later)
+        let deletedID = deleted.id
+        env.store.setDone(done, true)
+        env.store.delete(deleted)
+
+        await model.syncReminders()
+
+        XCTAssertTrue(fake.keptDelivered.contains(open.id))
+        XCTAssertFalse(fake.keptDelivered.contains(done.id))
+        XCTAssertFalse(fake.keptDelivered.contains(deletedID))
+    }
+
     func testSnoozeFromAlert() async throws {
         let (model, env, _) = try makeModel()
         let item = env.add("A", to: .later)
