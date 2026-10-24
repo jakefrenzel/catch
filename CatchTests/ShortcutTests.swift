@@ -29,6 +29,22 @@ final class ShortcutTests: XCTestCase {
         XCTAssertEqual(saved.destination, "Inbox")
     }
 
+    func testActionButtonKeepsABareTime() throws {
+        let env = try TestEnvironment()
+        let saved = try XCTUnwrap(ShortcutActions.catchSpoken("tomorrow at 5", store: env.store, formatter: formatter))
+        XCTAssertEqual(saved.title, "Tomorrow at 5")
+        XCTAssertTrue(saved.destination.hasPrefix("Later · "))
+        XCTAssertNotNil(env.store.items(in: .later).first?.remindAt)
+    }
+
+    func testActionButtonSavesLikeSiriOtherwise() throws {
+        let env = try TestEnvironment()
+        let saved = try XCTUnwrap(ShortcutActions.catchSpoken("buy milk", store: env.store))
+        XCTAssertEqual(saved.title, "Buy milk")
+        XCTAssertEqual(saved.destination, "Inbox")
+        XCTAssertNil(ShortcutActions.catchSpoken("  ", store: env.store))
+    }
+
     func testEmptyThoughtSavesNothing() throws {
         let env = try TestEnvironment()
         XCTAssertNil(ShortcutActions.catchThought("  ", store: env.store))

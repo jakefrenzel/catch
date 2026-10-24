@@ -166,23 +166,24 @@ struct TalkWidget: Widget {
 struct VoiceActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: VoiceActivityAttributes.self) { context in
-            VoiceActivityView(state: context.state)
+            VoiceActivityView(state: context.state.shown(isStale: context.isStale))
                 .padding(16)
                 .activityBackgroundTint(Color.black.opacity(0.85))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let state = context.state.shown(isStale: context.isStale)
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
-                    VoiceActivityView(state: context.state)
+                    VoiceActivityView(state: state)
                         .padding(.horizontal, 6)
                 }
             } compactLeading: {
-                IslandIcon(phase: context.state.phase, compact: true)
+                IslandIcon(phase: state.phase, compact: true)
             } compactTrailing: {
-                Text(context.state.phase.islandLabel)
+                Text(state.phase.islandLabel)
                     .font(.caption.weight(.semibold))
             } minimal: {
-                IslandIcon(phase: context.state.phase, compact: false)
+                IslandIcon(phase: state.phase, compact: false)
             }
             .widgetURL(URL(string: "catch://today"))
         }
@@ -201,7 +202,7 @@ private struct IslandIcon: View {
             Image(systemName: "mic.fill").foregroundStyle(Theme.red)
         case .saved:
             Image(systemName: compact ? "checkmark.circle.fill" : "checkmark").foregroundStyle(Theme.green)
-        case .nothing:
+        case .nothing, .stopped:
             Image(systemName: "mic.slash").foregroundStyle(.secondary)
         case .failed:
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.orange)
@@ -216,6 +217,7 @@ private extension VoiceActivityAttributes.ContentState.Phase {
         case .saved: return "Saved"
         case .nothing: return "Nothing heard"
         case .failed: return "Not saved"
+        case .stopped: return "Stopped"
         }
     }
 }

@@ -23,7 +23,10 @@ final class VoiceActivityController {
     private let model: AppModel
     private var activity: Activity<VoiceActivityAttributes>?
     private var monitor: Task<Void, Never>?
+    private var isStarting = false
     private var isFinishing = false
+    /// Past this, a "Listening" activity is shown as stopped: Catch was closed mid-session.
+    private var listeningStaleDate = Date.now
 
     init(model: AppModel) {
         self.model = model
@@ -32,19 +35,24 @@ final class VoiceActivityController {
     var isRunning: Bool { activity != nil }
 
     func start() async throws {
+        // A second press while one is starting or saving would leave the new one unwatched.
+        guard !isStarting, !isFinishing, !isRunning, !model.isListening else { throw StartFailure.busy }
+        isStarting = true
+        defer { isStarting = false }
         // Anything left from a session that never finished (the app was killed) goes first.
-        if activity == nil { await endAll() }
-        guard !isRunning, !model.isListening else { throw StartFailure.busy }
+        await endOthers()
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { throw StartFailure.liveActivitiesOff }
         // The background can't show permission prompts; the app asks on first use.
         guard model.voice.permission() == .allowed else { throw StartFailure.needsPermission }
 
         // The Live Activity comes first: background recording is only allowed while one is up.
+        listeningStaleDate = .now.addingTimeInterval(Self.maximum + 15)
         let activity: Activity<VoiceActivityAttributes>
         do {
             activity = try Activity.request(
                 attributes: VoiceActivityAttributes(),
-                content: ActivityContent(state: .listening(model.parseVoice("", includeProjects: false)), staleDate: nil))
+                content: ActivityContent(state: .listening(model.parseVoice("", includeProjects: false)),
+                                         staleDate: listeningStaleDate))
         } catch {
             throw StartFailure.liveActivitiesOff
         }
@@ -62,10 +70,10 @@ final class VoiceActivityController {
 
     /// Stops listening and saves: to Later when a time was heard, otherwise Inbox.
     func finish() async {
-        guard !isFinishing else { return }
+        guard !isFinishing, !isStarting else { return }
         guard let activity else {
             // A Save tap on a leftover activity from before a relaunch.
-            await endAll()
+            await endOthers()
             return
         }
         isFinishing = true
@@ -74,13 +82,13 @@ final class VoiceActivityController {
         monitor = nil
         // An auto-save on silence has no intent keeping the app running; ask for
         // time to save, schedule the reminder and take the banner down.
-        let background = UIApplication.shared.beginBackgroundTask(withName: "Catch save")
+        let background = BackgroundTime(name: "Catch save")
 
         let shown = model.voice.transcript
         let result = model.keepingWhatWasShown(await model.voice.stop(), shown: shown)
         model.isBackgroundListening = false
         let failures = model.store.saveFailures
-        let saved = ShortcutActions.catchThought(result.transcript, store: model.store)
+        let saved = ShortcutActions.catchSpoken(result.transcript, store: model.store)
         let saveFailed = model.store.saveFailures != failures
         let state: VoiceActivityAttributes.ContentState = saved.map {
             .saved(title: $0.title, destination: $0.destination, itemID: $0.itemID)
@@ -98,21 +106,21 @@ final class VoiceActivityController {
         Task {
             try? await Task.sleep(for: .seconds(Self.confirmation))
             await activity.end(content, dismissalPolicy: .immediate)
-            UIApplication.shared.endBackgroundTask(background)
+            background.end()
         }
     }
 
     /// After Undo: take the confirmation down straight away.
     func endNow() async {
-        await endAll()
+        await endOthers()
     }
 
-    private func endAll() async {
-        for activity in Activity<VoiceActivityAttributes>.activities {
-            await activity.end(nil, dismissalPolicy: .immediate)
+    /// Ends every activity but the session listening now, if any: confirmations,
+    /// and ones left saying "Listening" by a run of Catch that was killed.
+    func endOthers() async {
+        for other in Activity<VoiceActivityAttributes>.activities where other.id != activity?.id {
+            await other.end(nil, dismissalPolicy: .immediate)
         }
-        activity = nil
-        model.isBackgroundListening = false
     }
 
     private func watch() async {
@@ -128,7 +136,7 @@ final class VoiceActivityController {
                 lastText = text
                 lastChange = .now
                 await activity?.update(ActivityContent(
-                    state: .listening(model.parseVoice(text, includeProjects: false)), staleDate: nil))
+                    state: .listening(model.parseVoice(text, includeProjects: false)), staleDate: listeningStaleDate))
             }
             let quiet = Date.now.timeIntervalSince(lastChange)
             let done = (!text.isEmpty && quiet >= Self.silence)
@@ -139,5 +147,24 @@ final class VoiceActivityController {
                 return
             }
         }
+    }
+}
+
+/// Time iOS gives Catch to finish in the background. Ends early if iOS says
+/// time's up, since a task still open then gets the app killed.
+@MainActor
+private final class BackgroundTime {
+    private var id = UIBackgroundTaskIdentifier.invalid
+
+    init(name: String) {
+        id = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in
+            MainActor.assumeIsolated { self?.end() }
+        }
+    }
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
     }
 }

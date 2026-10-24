@@ -28,6 +28,20 @@ enum ShortcutActions {
         return Saved(itemID: item.id, title: item.text, destination: destination(of: item, now: now, formatter: formatter))
     }
 
+    /// The Action button's save. It has no sheet to ask what a bare time was for
+    /// ("tomorrow at 5"), so it keeps the words as the title rather than lose them.
+    static func catchSpoken(_ text: String, store: CatchStore, formatter: ReminderFormatter = .init()) -> Saved? {
+        if let saved = catchThought(text, store: store, formatter: formatter) { return saved }
+        let now = store.currentDate()
+        let parse = VoiceParser.parse(text, projects: [], afterWork: store.settings.afterWork,
+                                      now: now, calendar: store.calendar)
+        guard parse.title.isEmpty, let date = parse.date else { return nil }
+        let words = text.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        guard let item = store.capture(words.prefix(1).uppercased() + words.dropFirst(), to: .later, remindAt: date)?.item
+        else { return nil }
+        return Saved(itemID: item.id, title: item.text, destination: destination(of: item, now: now, formatter: formatter))
+    }
+
     /// "Add … to Now". A full Now puts it in Inbox and says so.
     static func addToNow(_ text: String, store: CatchStore) -> Saved? {
         guard let result = store.capture(text, to: .now) else { return nil }

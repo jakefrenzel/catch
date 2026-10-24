@@ -47,5 +47,7 @@ final class AppServices {
         notificationDelegate.model = model
         UNUserNotificationCenter.current().delegate = notificationDelegate
         model.startOnboardingIfNeeded()
+        // A Live Activity left by a run that was killed mid-session would still say "Listening".
+        Task { [voiceActivity] in await voiceActivity.endOthers() }
     }
 }

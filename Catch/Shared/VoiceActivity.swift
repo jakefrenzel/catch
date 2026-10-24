@@ -9,6 +9,8 @@ struct VoiceActivityAttributes: ActivityAttributes {
             case listening, saved, nothing
             /// Heard, but the store couldn't save it.
             case failed
+            /// Still says listening past its stale date: Catch was closed mid-session.
+            case stopped
         }
 
         struct Chunk: Codable, Hashable {
@@ -35,6 +37,11 @@ struct VoiceActivityAttributes: ActivityAttributes {
 
         static let nothingHeard = ContentState(phase: .nothing, chunks: [])
         static let saveFailed = ContentState(phase: .failed, chunks: [])
+
+        /// What to show: never "Listening" once the session should have ended.
+        func shown(isStale: Bool) -> ContentState {
+            isStale && phase == .listening ? ContentState(phase: .stopped, chunks: []) : self
+        }
 
         private static func kindName(_ kind: VoiceParse.Chunk.Kind) -> String {
             switch kind {
@@ -86,7 +93,7 @@ struct VoiceActivityView: View {
                     }
                     .buttonStyle(.plain)
                 }
-            case .nothing:
+            case .nothing, .stopped:
                 Text("Press the Action button and talk.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.7))
@@ -118,6 +125,9 @@ struct VoiceActivityView: View {
             }
         case .nothing:
             Text("Didn't hear anything")
+                .font(.subheadline.weight(.semibold))
+        case .stopped:
+            Text("Stopped listening")
                 .font(.subheadline.weight(.semibold))
         case .failed:
             HStack(spacing: 6) {
