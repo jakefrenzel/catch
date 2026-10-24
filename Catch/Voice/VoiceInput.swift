@@ -117,13 +117,15 @@ final class SpeechVoiceInput: VoiceInput {
             let segments = result?.bestTranscription.segments ?? []
             let confidence = segments.isEmpty ? Float(1) : segments.map(\.confidence).reduce(0, +) / Float(segments.count)
             let isFinal = result?.isFinal ?? false
+            // On-device recognition adds metadata to the last result before a pause.
+            let endsStretch = result?.speechRecognitionMetadata != nil
             // "No speech detected" after a pause isn't a failure of what was said before it.
             let noSpeech = (error as NSError?).map { $0.domain == "kAFAssistantErrorDomain" && $0.code == 1110 } ?? false
             let failed = error != nil && !noSpeech
             Task { @MainActor in
                 guard let self, self.session == current else { return }
                 if let text {
-                    self.heard.add(text)
+                    self.heard.add(text, endsStretch: endsStretch)
                     self.transcript = self.heard.text
                 }
                 if isFinal { self.lastConfidence = confidence }

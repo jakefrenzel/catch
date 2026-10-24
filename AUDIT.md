@@ -4,9 +4,9 @@ Tick each item when its fix is pushed and CI is green.
 
 ## Fix first
 
-- [ ] 1. Widget reads SwiftData objects after their context is freed (`CatchWidgets/CatchWidgets.swift` `load(at:)`, since 7b40436)
-- [ ] 2. App version still `0.1.0`: check App Store Connect, raise `MARKETING_VERSION` before the next upload (`project.yml:10`)
-- [ ] 3. Going to the background during the save wait drops the capture (`AppModel.appMovedToBackground`)
+- [x] 1. Widget reads SwiftData objects after their context is freed (`CatchWidgets/CatchWidgets.swift` `load(at:)`, since 7b40436)
+- [x] 2. App version still `0.1.0`: check App Store Connect, raise `MARKETING_VERSION` before the next upload (`project.yml:10`)
+- [x] 3. Going to the background during the save wait drops the capture (`AppModel.appMovedToBackground`)
 - [ ] 4. A short first phrase is lost when the recognizer starts over after a pause (`TranscriptAccumulator.startedOver`)
 - [ ] 5a. Siri and Action button Later captures never ask for notification permission
 - [ ] 5b. Notifications turned off in iOS Settings are never noticed (no banner, alerts silently stop)
