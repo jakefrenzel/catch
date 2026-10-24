@@ -48,8 +48,10 @@ enum WidgetActions {
         await services.model.syncReminders()
     }
 
+    /// The same as the mic widget's link: an open sheet or Focus closes first,
+    /// and the tutorial's reminders question is answered first.
     static func startTalking() {
-        services.model.startListening(tapToTalk: true)
+        services.model.handle(URL(string: "catch://voice")!)
     }
 
     static func finishVoiceActivity() async {
