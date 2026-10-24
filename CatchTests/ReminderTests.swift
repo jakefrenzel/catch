@@ -233,6 +233,76 @@ final class NotificationFlowTests: XCTestCase {
         XCTAssertEqual(model.toast?.message, "Reminders are on")
     }
 
+    func testComingBackNoticesNotificationsTurnedOffInIOS() async throws {
+        let (model, env, fake) = try makeModel()
+        fake.currentPermission = .denied
+
+        await model.checkNotificationPermission()
+
+        XCTAssertFalse(env.settingsStore.settings.notifications)
+    }
+
+    func testComingBackAsksForAReminderSavedBySiri() async throws {
+        let fake = FakeNotifications()
+        fake.currentPermission = .notDetermined
+        let (model, env, _) = try makeModel(fake)
+        env.store.capture("Call Dana", to: .later, remindAt: env.clock.at(day: 10, hour: 9))
+
+        await model.checkNotificationPermission()
+
+        XCTAssertEqual(fake.requestCount, 1)
+        XCTAssertFalse(fake.pending.isEmpty)
+    }
+
+    func testComingBackWithNoRemindersDoesNotAsk() async throws {
+        let fake = FakeNotifications()
+        fake.currentPermission = .notDetermined
+        let (model, env, _) = try makeModel(fake)
+        env.store.capture("Buy milk", to: .inbox)
+
+        await model.checkNotificationPermission()
+
+        XCTAssertEqual(fake.requestCount, 0)
+    }
+
+    func testAllowingInIOSSettingsAfterTurnOnFinishesTurningOn() async throws {
+        let fake = FakeNotifications()
+        fake.currentPermission = .denied
+        let (model, env, _) = try makeModel(fake)
+        env.settingsStore.settings.notifications = false
+        await model.turnOnNotifications()
+
+        fake.currentPermission = .allowed
+        await model.checkNotificationPermission()
+
+        XCTAssertTrue(env.settingsStore.settings.notifications)
+        XCTAssertEqual(model.toast?.message, "Reminders are on")
+    }
+
+    func testComingBackWithoutTurnOnLeavesRemindersOff() async throws {
+        let (model, env, _) = try makeModel()
+        env.settingsStore.settings.notifications = false
+
+        await model.checkNotificationPermission()
+
+        XCTAssertFalse(env.settingsStore.settings.notifications, "Off in Catch stays off")
+    }
+
+    func testSwitchingOnWhenDeniedOpensIOSSettings() async throws {
+        let fake = FakeNotifications()
+        fake.currentPermission = .denied
+        let (model, env, _) = try makeModel(fake)
+        env.settingsStore.settings.notifications = false
+        let old = env.settingsStore.settings
+        env.settingsStore.settings.notifications = true
+
+        model.settingsChanged(from: old, to: env.settingsStore.settings)
+        for _ in 0..<100 where !fake.openedSystemSettings { await Task.yield() }
+
+        XCTAssertTrue(fake.openedSystemSettings)
+        XCTAssertFalse(env.settingsStore.settings.notifications)
+    }
+
     func testDoneFromAlert() async throws {
         let (model, env, fake) = try makeModel()
         let item = try XCTUnwrap(env.store.capture("A", to: .later, remindAt: env.clock.at(day: 10, hour: 9))).item

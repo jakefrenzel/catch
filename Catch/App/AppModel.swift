@@ -119,6 +119,9 @@ final class AppModel {
     private var syncChain: Task<Void, Never>?
     /// Cancel was asked for while the last capture was still being finished.
     private var discardPendingStop = false
+    /// Turning reminders on sent the user to iOS Settings; coming back with
+    /// notifications allowed there finishes turning them on.
+    private var turningOnInSystemSettings = false
 
     init(store: CatchStore, settingsStore: SettingsStore, notifications: NotificationScheduling,
          voice: VoiceInput? = nil) {
@@ -680,9 +683,50 @@ final class AppModel {
             flash(granted ? "Reminders are on" : "Reminders stay off", undo: false)
         case .denied:
             // iOS won't ask again; send them to Settings.
+            turningOnInSystemSettings = true
             notifications.openSystemSettings()
         }
         await syncReminders()
+    }
+
+    /// The Notifications switch in Settings was turned on.
+    private func notificationsSwitchedOn() async {
+        guard await notifications.permission() != .denied else {
+            // iOS won't ask again: off until it's allowed there.
+            settingsStore.settings.notifications = false
+            turningOnInSystemSettings = true
+            notifications.openSystemSettings()
+            return
+        }
+        await ensureNotificationPermission()
+    }
+
+    /// Back in Catch: catches up with iOS Settings, and asks the first time
+    /// if Siri or the Action button saved a reminder while Catch was closed.
+    func checkNotificationPermission() async {
+        let permission = await notifications.permission()
+        guard settings.notifications else {
+            guard turningOnInSystemSettings else { return }
+            turningOnInSystemSettings = false
+            if permission == .allowed {
+                settingsStore.settings.notifications = true
+                flash("Reminders are on", undo: false)
+                await syncReminders()
+            }
+            return
+        }
+        switch permission {
+        case .allowed:
+            break
+        case .denied:
+            // Turned off in iOS Settings: Today shows the banner.
+            settingsStore.settings.notifications = false
+        case .notDetermined:
+            // The tutorial asks at its own step.
+            if onboarding == nil, store.items(in: .later).contains(where: { !$0.isDone }) {
+                await ensureNotificationPermission()
+            }
+        }
     }
 
     /// Asks for permission the first time it's needed. If the answer is no,
@@ -704,7 +748,7 @@ final class AppModel {
 
     func settingsChanged(from old: CatchSettings, to new: CatchSettings) {
         if new.notifications && !old.notifications {
-            Task { await ensureNotificationPermission() }
+            Task { await notificationsSwitchedOn() }
         } else {
             scheduleReminderSync()
         }

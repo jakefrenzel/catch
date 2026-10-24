@@ -169,6 +169,7 @@ struct RootView: View {
             if phase == .active {
                 model.refreshClock()
                 model.scheduleReminderSync()
+                Task { await model.checkNotificationPermission() }
             } else if phase == .background {
                 model.appMovedToBackground()
             }
