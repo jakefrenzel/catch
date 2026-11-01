@@ -268,10 +268,10 @@ struct VoiceRetrySheet: View {
                 .lineLimit(1...4)
                 .submitLabel(.done)
                 // Return saves rather than adding a line.
-                .onChange(of: text) { _, new in
-                    guard new.contains("\n") else { return }
-                    text = new.replacingOccurrences(of: "\n", with: "")
-                    model.saveSpoken(text)
+                .onChange(of: text) { old, new in
+                    guard let change = LineBreaks.change(from: old, to: new) else { return }
+                    text = change.text
+                    if change.typedReturn { model.saveSpoken(change.text) }
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)

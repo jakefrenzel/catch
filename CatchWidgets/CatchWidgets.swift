@@ -69,24 +69,28 @@ struct CatchProvider: TimelineProvider {
 
         func snapshot(at date: Date) -> WidgetSnapshot {
             WidgetTimeline.snapshot(at: date, items: items, projects: projects, settings: settings,
-                                    skipped: SharedStore.widgetSkipped, calendar: calendar,
+                                    skipped: SharedStore.widgetSkipped(at: date, calendar: calendar),
+                                    calendar: calendar,
                                     formatter: ReminderFormatter(), inboxCount: inboxCount)
         }
     }
 
-    /// Nil when the shared store can't be opened.
+    /// Nil when the shared store can't be opened or read, so the widget says
+    /// "Open Catch" rather than showing a day that looks empty.
     private func load(at now: Date) -> Day? {
         // Read-only: only the app writes (and migrates) the shared store.
-        guard let container = try? ModelContainer(for: Schema(CatchSchema.models),
+        guard let container = try? ModelContainer(for: CatchSchema.schema,
                                                   configurations: ModelConfiguration(allowsSave: false)) else {
             return nil
         }
         let context = ModelContext(container)
         let calendar = Calendar.current
         // Only what's on screen today, so years of done items don't load into the widget's memory.
-        let items = (try? context.fetch(WidgetTimeline.itemsDescriptor(now: now, calendar: calendar))) ?? []
-        let projects = (try? context.fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\Project.sortOrder)]))) ?? []
-        let inboxCount = (try? context.fetchCount(WidgetTimeline.inboxDescriptor())) ?? 0
+        guard let items = try? context.fetch(WidgetTimeline.itemsDescriptor(now: now, calendar: calendar)),
+              let projects = try? context.fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\Project.sortOrder)])),
+              let inboxCount = try? context.fetchCount(WidgetTimeline.inboxDescriptor()) else {
+            return nil
+        }
         return Day(context: context, items: items, projects: projects, inboxCount: inboxCount,
                    settings: SettingsStore(defaults: SharedStore.defaults).settings, calendar: calendar)
     }

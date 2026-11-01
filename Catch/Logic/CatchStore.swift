@@ -236,18 +236,26 @@ final class CatchStore {
     }
 
     /// An ignored Later reminder comes into Now once its time (and nudge, if
-    /// any) has passed, as long as Now has room. Not undoable; returns what moved.
+    /// any) has passed, as long as Now has room, the longest overdue first.
+    /// Not undoable; returns what moved.
     @discardableResult
     func promoteOverdueLaterItems() -> [Item] {
         let current = now()
         let items = allItems()
         var openCount = items.filter(\.isOpenInNow).count
-        var promoted: [Item] = []
-        for item in items where item.list == .later && !item.isDone {
-            guard openCount < settings.maxNow else { break }
-            guard case .date(let date)? = item.reminder else { continue }
+        let overdue: [(item: Item, due: Date)] = items.compactMap { item in
+            guard item.list == .later, !item.isDone,
+                  case .date(let date)? = item.reminder else { return nil }
             let due = date.addingTimeInterval(nudges(item) ? ReminderPlanner.nudgeDelay : 0)
-            guard due <= current else { continue }
+            return due <= current ? (item, due) : nil
+        }
+        // Stable for equal times: `items` is already in capture order.
+        let byDue = overdue.enumerated()
+            .sorted { ($0.element.due, $0.offset) < ($1.element.due, $1.offset) }
+            .map(\.element.item)
+        var promoted: [Item] = []
+        for item in byDue {
+            guard openCount < settings.maxNow else { break }
             applyMove(item, to: .now, remindAt: nil)
             promoted.append(item)
             openCount += 1
@@ -320,7 +328,7 @@ final class CatchStore {
         let project = Project(name: name, sortOrder: nextOrder, createdAt: now())
         context.insert(project)
         let steps = resolved.enumerated().map { index, step in
-            Step(text: step.text, phase: step.phase, sortOrder: index)
+            Step(text: step.text, phase: step.phase, sortOrder: index, note: step.note)
         }
         for step in steps { context.insert(step) }
         project.steps = steps
@@ -358,8 +366,8 @@ final class CatchStore {
             project.steps?.removeAll { $0.id == step.id }
             context.delete(step)
         }
-        save()
-        return step
+        // A failed save rolled the step back; don't report it as added.
+        return save() ? step : nil
     }
 
     // MARK: - Places

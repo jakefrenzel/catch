@@ -518,14 +518,20 @@ final class AppModel {
 
     /// Saves from the Remind sheet. `label` names the choice in the toast.
     func setReminder(_ item: Item, _ reminder: ReminderTime, nudge: Bool, label: String) {
+        // Chosen again, so it should go off again even if it already did.
+        if case .place = reminder { notifications.rearmPlace(for: item.id) }
         store.setReminder(item, reminder, nudge: nudge)
         sheet = nil
         haptic(.light)
         flash("Reminder set: \(label)", undo: true)
         Task {
             await ensureNotificationPermission()
-            if case .place = reminder, !(await location.requestAccess()) {
+            guard case .place = reminder else { return }
+            if !(await location.requestAccess()) {
                 flash("Place reminders need Location. Turn it on in iOS Settings.", undo: false)
+            } else if location.isApproximate {
+                // iOS doesn't deliver place alerts with an approximate location.
+                flash("Place reminders need Precise Location. Turn it on in iOS Settings.", undo: false)
             }
         }
     }

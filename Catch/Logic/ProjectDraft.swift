@@ -12,6 +12,8 @@ struct ProjectDraft {
     struct ResolvedStep: Equatable {
         let text: String
         let phase: String
+        /// The note of the Inbox item it came from.
+        var note: String? = nil
     }
 
     static let placeholderStep = "Decide the first step"
@@ -49,10 +51,12 @@ struct ProjectDraft {
             case .phase(let name):
                 let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
                 phase = trimmed.isEmpty ? "Phase \(index + 1)" : trimmed
-            case .step(let text, _):
+            case .step(let text, let item):
                 let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
-                    result.append(ResolvedStep(text: trimmed, phase: phase))
+                    // An item deleted elsewhere while the sheet was open can't be read.
+                    let note = item.flatMap { $0.modelContext != nil && !$0.isDeleted ? $0.note : nil }
+                    result.append(ResolvedStep(text: trimmed, phase: phase, note: note))
                 }
             }
         }

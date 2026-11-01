@@ -62,7 +62,9 @@ struct TodayView: View {
                 } else if model.onboarding == nil {
                     AllClearCard(doneToday: doneTodayCount,
                                  inboxCount: items.filter { $0.list == .inbox }.count,
-                                 hasSomeday: items.contains { $0.list == .someday })
+                                 hasSomeday: items.contains { $0.list == .someday },
+                                 hasHiddenSteps: !settings.upFirstIncludesSteps
+                                     && projects.contains { $0.nextStep != nil })
                         .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
                 }
 

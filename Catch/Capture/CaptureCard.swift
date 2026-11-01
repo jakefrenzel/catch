@@ -46,12 +46,13 @@ struct CaptureCard: View {
                 .font(.title3.weight(.semibold))
                 .lineLimit(1...5)
                 .focused($isFieldFocused)
-                .onChange(of: text) { _, newValue in
+                .onChange(of: text) { oldValue, newValue in
                     // A vertical text field inserts Return as a newline. Treat it as
-                    // "save and keep going" so the keyboard never drops.
-                    guard newValue.contains("\n") else { return }
-                    text = newValue.replacingOccurrences(of: "\n", with: "")
-                    saveAndContinue()
+                    // "save and keep going" so the keyboard never drops. Pasted line
+                    // breaks become spaces instead.
+                    guard let change = LineBreaks.change(from: oldValue, to: newValue) else { return }
+                    text = change.text
+                    if change.typedReturn { saveAndContinue() }
                 }
                 .accessibilityLabel("New idea")
                 .accessibilityHint("Return saves it and clears for the next one.")

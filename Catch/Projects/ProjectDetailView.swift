@@ -191,12 +191,21 @@ private struct PhaseNode: View {
                 HStack(spacing: 10) {
                     CheckCircle(isDone: step.isDone, color: Theme.blue, size: 22) { onToggle(step) }
                         .accessibilityLabel(step.isDone ? "Mark not done: \(step.text)" : "Mark done: \(step.text)")
-                    Text(step.text)
-                        .font(.callout.weight(isNext ? .semibold : .regular))
-                        .lineLimit(3)
-                        .foregroundStyle(step.isDone ? Theme.ink3 : Color.primary)
-                        .strikethrough(step.isDone, color: Theme.ink3)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(step.text)
+                            .font(.callout.weight(isNext ? .semibold : .regular))
+                            .lineLimit(3)
+                            .foregroundStyle(step.isDone ? Theme.ink3 : Color.primary)
+                            .strikethrough(step.isDone, color: Theme.ink3)
+                        // Kept from the Inbox item it came from.
+                        if let note = step.note {
+                            Text(note)
+                                .font(.footnote)
+                                .foregroundStyle(Theme.ink2)
+                                .lineLimit(3)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     if isNext {
                         NextChip()
                     }

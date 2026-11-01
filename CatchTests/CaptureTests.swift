@@ -88,3 +88,26 @@ final class CaptureMessageTests: XCTestCase {
         XCTAssertEqual(env.store.items(in: .later).first?.remindAt, time)
     }
 }
+
+final class LineBreaksTests: XCTestCase {
+    func testNoLineBreakIsNoChange() {
+        XCTAssertNil(LineBreaks.change(from: "Buy mil", to: "Buy milk"))
+    }
+
+    func testTypedReturnSaves() {
+        XCTAssertEqual(LineBreaks.change(from: "Buy milk", to: "Buy milk\n"),
+                       .init(text: "Buy milk", typedReturn: true))
+    }
+
+    func testPastedLinesKeepTheirWordsApart() {
+        XCTAssertEqual(LineBreaks.change(from: "", to: "Buy milk\nCall Dana"),
+                       .init(text: "Buy milk Call Dana", typedReturn: false))
+        XCTAssertEqual(LineBreaks.change(from: "Note: ", to: "Note: one\r\n\r\n  two \n"),
+                       .init(text: "Note: one two", typedReturn: false))
+    }
+
+    func testPastedSingleLineBreakIsNotAReturn() {
+        XCTAssertEqual(LineBreaks.change(from: "Buy", to: "Buy milk\n"),
+                       .init(text: "Buy milk", typedReturn: false))
+    }
+}

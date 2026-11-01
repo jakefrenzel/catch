@@ -59,8 +59,17 @@ struct AllClearCard: View {
     let doneToday: Int
     let inboxCount: Int
     let hasSomeday: Bool
+    /// Projects have steps left, but Settings keeps them out of Up first.
+    var hasHiddenSteps = false
 
     @Environment(AppModel.self) private var model
+
+    private var summary: String {
+        let steps = hasHiddenSteps ? "Your project steps are below." : "No project steps waiting."
+        return doneToday > 0
+            ? "\(doneToday) done. Nothing left in Now. \(steps)"
+            : "Nothing in Now. \(steps)"
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -72,9 +81,7 @@ struct AllClearCard: View {
                 .accessibilityHidden(true)
             Text("Today is clear")
                 .font(.title2.bold())
-            Text(doneToday > 0
-                 ? "\(doneToday) done. Nothing left in Now and no project steps waiting."
-                 : "Nothing in Now and no project steps waiting.")
+            Text(summary)
                 .font(.subheadline)
                 .foregroundStyle(Theme.ink2)
                 .multilineTextAlignment(.center)

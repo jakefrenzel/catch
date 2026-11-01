@@ -12,15 +12,18 @@ struct EditSheet: View {
 
     @State private var text: String
     @State private var note: String
-    @State private var list: ListKind
+    /// The list picked here, if any. Until one is, it follows the item, so saving
+    /// doesn't undo a move made while this was open (an overdue reminder coming into Now).
+    @State private var chosenList: ListKind?
     @FocusState private var isTitleFocused: Bool
 
     init(item: Item) {
         self.item = item
         _text = State(initialValue: item.text)
         _note = State(initialValue: item.note ?? "")
-        _list = State(initialValue: item.list)
     }
+
+    private var list: ListKind { chosenList ?? item.list }
 
     var body: some View {
         // Undo, Siri or a delete can remove it while this screen is closing.
@@ -59,14 +62,12 @@ struct EditSheet: View {
                     .lineLimit(1...(isTitleFocused ? 8 : 3))
                     .focused($isTitleFocused)
                     .submitLabel(.done)
-                    .onChange(of: text) { _, new in
-                        guard new.contains("\n") else { return }
+                    .onChange(of: text) { old, new in
                         // Return saves rather than adding a line; pasted line breaks become spaces.
-                        let typedReturn = new.filter { $0 == "\n" }.count == 1
-                        let cleaned = new.replacingOccurrences(of: "\n", with: typedReturn ? "" : " ")
-                        text = cleaned
-                        if typedReturn {
-                            model.saveEdit(item, text: cleaned, note: note, list: list)
+                        guard let change = LineBreaks.change(from: old, to: new) else { return }
+                        text = change.text
+                        if change.typedReturn {
+                            model.saveEdit(item, text: change.text, note: note, list: list)
                         }
                     }
                     .accessibilityLabel("Title")
@@ -126,7 +127,7 @@ struct EditSheet: View {
                 Button {
                     guard kind != list else { return }
                     model.haptic(.selection)
-                    list = kind
+                    chosenList = kind
                 } label: {
                     if kind == list {
                         Label(kind.title, systemImage: "checkmark")

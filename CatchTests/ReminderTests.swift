@@ -118,6 +118,22 @@ final class OverdueTests: XCTestCase {
         XCTAssertEqual(item.list, .later)
     }
 
+    func testLongestOverdueTakesTheLastSpot() throws {
+        let env = try TestEnvironment()
+        env.add("A", to: .now)
+        env.add("B", to: .now)
+        let start = env.clock.date
+        let later = try XCTUnwrap(env.store.capture("Due later", to: .later,
+                                                    remindAt: start.addingTimeInterval(60 * 60))).item
+        env.clock.date = start.addingTimeInterval(60)
+        let sooner = try XCTUnwrap(env.store.capture("Due sooner", to: .later,
+                                                     remindAt: start.addingTimeInterval(10 * 60))).item
+
+        env.clock.date = start.addingTimeInterval(3 * 60 * 60)
+        XCTAssertEqual(env.store.promoteOverdueLaterItems(), [sooner])
+        XCTAssertEqual(later.list, .later)
+    }
+
     func testSnoozeIsAnHourFromNow() throws {
         let env = try TestEnvironment()
         let item = env.add("A", to: .later)
@@ -346,5 +362,29 @@ final class NotificationFlowTests: XCTestCase {
         model.tab = .someday
         await model.handleNotificationAction("com.apple.UNNotificationDefaultActionIdentifier", itemID: item.id)
         XCTAssertEqual(model.tab, .today)
+    }
+}
+
+final class PlaceArmingTests: XCTestCase {
+    private func place(_ id: String, latitude: Double = 1, onArrive: Bool = true) -> PlannedReminder {
+        PlannedReminder(id: id, itemID: UUID(), kind: .place, title: "A", body: "", fireDate: .distantFuture,
+                        region: PlaceRegion(latitude: latitude, longitude: 2, radius: 150, onArrive: onArrive))
+    }
+
+    func testAPlaceAlertThatLeftPendingHasFired() {
+        let a = place("a")
+        let armed = ["a": PlaceArming.fingerprint(a.region!)]
+        XCTAssertEqual(PlaceArming.fired(wanted: [a], pendingIDs: [], armed: armed), ["a"])
+        XCTAssertEqual(PlaceArming.fired(wanted: [a], pendingIDs: ["a"], armed: armed), [])
+    }
+
+    func testNeverArmedOrChangedIsArmed() {
+        let a = place("a")
+        XCTAssertEqual(PlaceArming.fired(wanted: [a], pendingIDs: [], armed: [:]), [])
+        let moved = place("a", latitude: 5)
+        let leaving = place("a", onArrive: false)
+        let armed = ["a": PlaceArming.fingerprint(a.region!)]
+        XCTAssertEqual(PlaceArming.fired(wanted: [moved], pendingIDs: [], armed: armed), [])
+        XCTAssertEqual(PlaceArming.fired(wanted: [leaving], pendingIDs: [], armed: armed), [])
     }
 }

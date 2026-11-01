@@ -64,12 +64,21 @@ struct ActionButtonHelpView: View {
             Section {
                 step(1, "Open the Settings app and choose Action Button.")
                 step(2, "Swipe to Shortcut, then tap Choose a Shortcut.")
-                step(3, "Under Catch, pick Catch by voice to listen in the Dynamic Island without opening Catch. Catch saves when you stop talking.")
+                if #available(iOS 18.0, *) {
+                    step(3, "Under Catch, pick Catch by voice to listen in the Dynamic Island without opening Catch. Catch saves when you stop talking.")
+                } else {
+                    step(3, "Under Catch, pick Catch a thought. Siri asks what to catch and saves what you say.")
+                }
             } header: {
                 Text("Catch a thought with one press")
                     .textCase(nil)
             } footer: {
-                Text("Catch a thought asks Siri instead. To open Catch listening, swipe to Controls and pick Catch a Thought.")
+                // Listening in the background and Controls both need iOS 18.
+                if #available(iOS 18.0, *) {
+                    Text("Catch a thought asks Siri instead. To open Catch listening, swipe to Controls and pick Catch a Thought.")
+                } else {
+                    Text("With iOS 18 or later, Catch can listen in the Dynamic Island without Siri.")
+                }
             }
         }
         .listStyle(.insetGrouped)

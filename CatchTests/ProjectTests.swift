@@ -79,6 +79,17 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(env.store.items(in: .inbox).map(\.text), ["Unrelated"])
     }
 
+    func testInboxNoteComesAlongAsTheStepsNote() throws {
+        let env = try TestEnvironment()
+        let used = env.add("Renew passport", to: .inbox)
+        used.note = "Photos are in the drawer"
+        let draft = ProjectDraft(name: "Lisbon", rows: [.step("Book flights"), .step(used.text, fromInbox: used)])
+
+        let project = try XCTUnwrap(env.store.createProject(from: draft))
+
+        XCTAssertEqual(project.orderedSteps.map(\.note), [nil, "Photos are in the drawer"])
+    }
+
     // MARK: Draft
 
     func testDraftResolvesPhases() {

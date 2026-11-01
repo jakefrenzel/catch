@@ -50,6 +50,9 @@ final class FakeNotifications: NotificationScheduling {
     func clearDelivered(keeping itemIDs: Set<UUID>) async { keptDelivered = itemIDs }
 
     func openSystemSettings() { openedSystemSettings = true }
+
+    var rearmed: [UUID] = []
+    func rearmPlace(for itemID: UUID) { rearmed.append(itemID) }
 }
 
 /// A store backed by an in-memory database and throwaway settings.
@@ -62,7 +65,7 @@ struct TestEnvironment {
 
     init() throws {
         container = try ModelContainer(
-            for: Schema(CatchSchema.models),
+            for: CatchSchema.schema,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         settingsStore = SettingsStore(defaults: UserDefaults(suiteName: "test-\(UUID().uuidString)")!)

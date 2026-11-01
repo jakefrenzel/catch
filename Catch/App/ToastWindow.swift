@@ -50,6 +50,20 @@ struct ToastWindowInstaller: UIViewRepresentable {
 /// A window that only takes touches inside the visible toast.
 final class PassThroughWindow: UIWindow {
     var interactiveRect: CGRect = .null
+    /// The toast that set `interactiveRect`. An old toast finishes leaving after
+    /// a new one has appeared, and mustn't clear the new one's area.
+    var interactiveOwner: UUID?
+
+    func setInteractive(_ rect: CGRect, for owner: UUID) {
+        interactiveRect = rect
+        interactiveOwner = owner
+    }
+
+    func clearInteractive(for owner: UUID) {
+        guard interactiveOwner == owner else { return }
+        interactiveRect = .null
+        interactiveOwner = nil
+    }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard interactiveRect.contains(point) else { return nil }
@@ -65,17 +79,22 @@ private struct ToastLayer: View {
 
     var body: some View {
         VStack {
-            if let toast = model.toast {
-                ToastView(toast: toast, onUndo: { model.undo() }, onDismiss: { model.dismissToast() })
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
-                        window.interactiveRect = frame
-                    }
-                    .onDisappear { window.interactiveRect = .null }
-                    .transition(reduceMotion
-                                ? .opacity
-                                : .move(edge: .top).combined(with: .opacity).combined(with: .scale(scale: 0.96)))
+            // Overlaid, so a toast leaving doesn't push down the one replacing it.
+            ZStack(alignment: .top) {
+                if let toast = model.toast {
+                    ToastView(toast: toast, onUndo: { model.undo() }, onDismiss: { model.dismissToast() })
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                            window.setInteractive(frame, for: toast.id)
+                        }
+                        .onDisappear { window.clearInteractive(for: toast.id) }
+                        .transition(reduceMotion
+                                    ? .opacity
+                                    : .move(edge: .top).combined(with: .opacity).combined(with: .scale(scale: 0.96)))
+                        // Each toast is its own view, so its appear and disappear are its own.
+                        .id(toast.id)
+                }
             }
             Spacer()
         }
