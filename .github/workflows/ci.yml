@@ -12,7 +12,11 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: macos-latest
+    # Pinned so a runner image update can't change the compiler or SDK under us.
+    # To move up: change both lines together, after checking the version is on the image.
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4

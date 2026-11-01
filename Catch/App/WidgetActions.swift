@@ -28,10 +28,12 @@ enum WidgetActions {
         guard let uuid = UUID(uuidString: id) else { return }
         services.model.refreshClock()
         let candidates = services.store.upFirstCandidates()
-        var skipped = SharedStore.widgetSkipped
+        let now = services.store.currentDate()
+        let calendar = services.store.calendar
+        var skipped = SharedStore.widgetSkipped(at: now, calendar: calendar)
         skipped.insert(uuid)
         if candidates.allSatisfy({ skipped.contains($0.key) }) { skipped = [] }
-        SharedStore.widgetSkipped = skipped
+        SharedStore.setWidgetSkipped(skipped, at: now, calendar: calendar)
         WidgetCenter.shared.reloadAllTimelines()
     }
 

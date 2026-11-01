@@ -212,3 +212,18 @@ final class VoiceActivityStateTests: XCTestCase {
         XCTAssertTrue(state.chunks.isEmpty)
     }
 }
+
+@MainActor
+final class WidgetSkipTests: XCTestCase {
+    func testSkipsLastUntilTheDayTurnsOver() throws {
+        let suite = "WidgetSkipTests"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let clock = TestClock()
+        let id = UUID()
+
+        SharedStore.setWidgetSkipped([id], in: defaults, at: clock.at(day: 9, hour: 15), calendar: clock.calendar)
+        XCTAssertEqual(SharedStore.widgetSkipped(in: defaults, at: clock.at(day: 10, hour: 2), calendar: clock.calendar), [id])
+        XCTAssertEqual(SharedStore.widgetSkipped(in: defaults, at: clock.at(day: 10, hour: 4), calendar: clock.calendar), [])
+    }
+}

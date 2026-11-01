@@ -16,40 +16,40 @@ Tick each item when its fix is pushed and CI is green.
 
 ## Worth fixing
 
-- [ ] 9. Voice: "remind me to book a table for two" becomes 2 PM
-- [ ] 10. Voice: "after work" / "this weekend" override any other day or time said, and the other words stay in the title
-- [ ] 11. Voice: a day word anywhere sets the date ("send the Friday report" → Friday)
-- [ ] 12. Voice: one-word project names fuzzy-match any word ("more" → project "Move")
-- [ ] 13. Undoing Finish leaves the day marked finished, so the wrap-up alert is dropped
-- [ ] 14. Undo closes any open sheet, losing unrelated edits (`AppModel.undo`)
-- [ ] 15. Edit sheet / Project Detail can redraw a deleted model while dismissing
-- [ ] 16. Action button help shows iOS 18-only steps on iOS 17 (`SettingsPages.swift` `ActionButtonHelpView`)
+- [x] 9. Voice: "remind me to book a table for two" becomes 2 PM
+- [x] 10. Voice: "after work" / "this weekend" override any other day or time said, and the other words stay in the title
+- [x] 11. Voice: a day word anywhere sets the date ("send the Friday report" → Friday)
+- [x] 12. Voice: one-word project names fuzzy-match any word ("more" → project "Move")
+- [x] 13. Undoing Finish leaves the day marked finished, so the wrap-up alert is dropped
+- [x] 14. Undo closes any open sheet, losing unrelated edits (`AppModel.undo`)
+- [x] 15. Edit sheet / Project Detail can redraw a deleted model while dismissing
+- [x] 16. Action button help shows iOS 18-only steps on iOS 17 (`SettingsPages.swift` `ActionButtonHelpView`)
 - [x] 17. Reminder sync removes all pending alerts before re-adding them, with no background time
 - [ ] 18. Freeze the shipped models as `SchemaV1` with a migration plan
 
 ## Smaller
 
-- [ ] 19. Widget Skip list never resets across days (`SharedStore.widgetSkipped`)
-- [ ] 20. Widget shows an empty day when a fetch fails, instead of "Open Catch"
-- [ ] 21. `addStep` reports success when the save failed
-- [ ] 22. Overdue Later items move to Now in capture order, not due order
+- [x] 19. Widget Skip list never resets across days (`SharedStore.widgetSkipped`)
+- [x] 20. Widget shows an empty day when a fetch fails, instead of "Open Catch"
+- [x] 21. `addStep` reports success when the save failed
+- [x] 22. Overdue Later items move to Now in capture order, not due order
 - [ ] 23. An Inbox item's note is lost when it becomes a project step
-- [ ] 24. "This weekend" on Saturday after 10 AM or Sunday means next week
-- [ ] 25. "Tonight at twelve" means noon
-- [ ] 26. Pasting multi-line text joins the words ("Buy milkCall Dana")
+- [x] 24. "This weekend" on Saturday after 10 AM or Sunday means next week
+- [x] 25. "Tonight at twelve" means noon
+- [x] 26. Pasting multi-line text joins the words ("Buy milkCall Dana")
 - [x] 27. Notifications toggle snaps back off with no explanation when permission is denied
 - [ ] 28. Place reminders accepted with Precise Location off
 - [ ] 29. Place reminders re-arm on every sync after firing
 - [x] 30. Delivered alerts stay in Notification Center after the item is done or deleted
 - [ ] 31. New Project draft is discarded by a swipe down without warning
-- [ ] 32. All Clear card says "no project steps waiting" when steps are only hidden from Up first
+- [x] 32. All Clear card says "no project steps waiting" when steps are only hidden from Up first
 - [ ] 33. Edit sheet's list can undo a move made while it was open (overdue promotion)
 - [x] 34. Action button: a time with no title is discarded as "Didn't hear anything"
-- [ ] 35. Voice stop timeout doesn't cancel the recognition task
+- [x] 35. Voice stop timeout doesn't cancel the recognition task
 - [x] 36. `beginBackgroundTask` has no expiration handler (`VoiceActivityController`)
 - [x] 37. Mic can keep recording with no Live Activity after a quick second Action button press (race)
 - [ ] 38. Toast Undo can become untappable when a new toast replaces an old one
-- [ ] 39. CI and TestFlight don't pin the Xcode version
+- [x] 39. CI and TestFlight don't pin the Xcode version
 
 ## Not bugs, for later
 

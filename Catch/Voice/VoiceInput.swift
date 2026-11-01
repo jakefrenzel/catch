@@ -158,6 +158,9 @@ final class SpeechVoiceInput: VoiceInput {
         }
         let result = VoiceResult(transcript: transcript,
                                  isUncertain: failed || lastConfidence < 0.35)
+        // After a timeout the recognizer may still be working on it; it's no longer
+        // wanted. (Cancelling one that already finished does nothing.)
+        task?.cancel()
         finish()
         return result
     }

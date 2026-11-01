@@ -118,6 +118,22 @@ final class OverdueTests: XCTestCase {
         XCTAssertEqual(item.list, .later)
     }
 
+    func testLongestOverdueTakesTheLastSpot() throws {
+        let env = try TestEnvironment()
+        env.add("A", to: .now)
+        env.add("B", to: .now)
+        let start = env.clock.date
+        let later = try XCTUnwrap(env.store.capture("Due later", to: .later,
+                                                    remindAt: start.addingTimeInterval(60 * 60))).item
+        env.clock.date = start.addingTimeInterval(60)
+        let sooner = try XCTUnwrap(env.store.capture("Due sooner", to: .later,
+                                                     remindAt: start.addingTimeInterval(10 * 60))).item
+
+        env.clock.date = start.addingTimeInterval(3 * 60 * 60)
+        XCTAssertEqual(env.store.promoteOverdueLaterItems(), [sooner])
+        XCTAssertEqual(later.list, .later)
+    }
+
     func testSnoozeIsAnHourFromNow() throws {
         let env = try TestEnvironment()
         let item = env.add("A", to: .later)
