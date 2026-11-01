@@ -101,6 +101,30 @@ final class EveningFlowTests: XCTestCase {
         XCTAssertEqual(model.toast?.message, "Day finished. 2 moved to tomorrow")
     }
 
+    func testUndoingFinishReopensTheDay() throws {
+        let (model, env) = try makeModel()
+        env.add("A", to: .now)
+        model.finishDay()
+        XCTAssertTrue(model.isDayFinished)
+
+        model.undo()
+
+        XCTAssertEqual(env.store.openNowItems.map(\.text), ["A"])
+        XCTAssertFalse(model.isDayFinished, "The wrap-up alert can come back tonight")
+    }
+
+    func testUndoingSomethingElseLeavesTheDayFinished() throws {
+        let (model, env) = try makeModel()
+        env.add("A", to: .now)
+        model.finishDay()
+        let item = env.add("B", to: .inbox)
+        model.move(item, to: .someday)
+
+        model.undo()
+
+        XCTAssertTrue(model.isDayFinished)
+    }
+
     func testFinishWithNothingLeft() throws {
         let (model, _) = try makeModel()
         model.finishDay()

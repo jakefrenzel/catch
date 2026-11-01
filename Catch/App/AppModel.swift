@@ -99,6 +99,8 @@ final class AppModel {
     private var toastTask: Task<Void, Never>?
     /// Set while "Created X" can be undone, so Undo can close its detail screen first.
     private var undoableNewProject: Project?
+    /// Set while Finish can be undone: the day's finished mark from before it.
+    private var undoableDayFinish: (undoVersion: Int, previous: Date?)?
 
     let notifications: NotificationScheduling
     let voice: VoiceInput
@@ -187,9 +189,12 @@ final class AppModel {
     func finishDay() {
         now = store.currentDate()
         let moved = store.moveAllToTomorrow()
+        let previous = settingsStore.dayFinishedOn
         settingsStore.dayFinishedOn = now
         haptic(.success)
         flash(moved > 0 ? "Day finished. \(moved) moved to tomorrow" : "Day finished", undo: moved > 0)
+        // Undo brings the items back and reopens the day, so tonight's wrap-up alert returns.
+        if moved > 0 { undoableDayFinish = (store.undoVersion, previous) }
     }
 
     func moveAllToTomorrow() {
@@ -866,6 +871,7 @@ final class AppModel {
         guard !saveJustFailed else { return }
         toastTask?.cancel()
         undoableNewProject = nil
+        undoableDayFinish = nil
         toast = Toast(message: message, canUndo: undo && store.canUndo,
                       undoVersion: undo ? store.undoVersion : nil)
         // VoiceOver hears the toast, and assistive-tech users get time to reach Undo.
@@ -901,6 +907,10 @@ final class AppModel {
             projectPath.removeAll()
         }
         undoableNewProject = nil
+        if let finish = undoableDayFinish, finish.undoVersion == version {
+            settingsStore.dayFinishedOn = finish.previous
+        }
+        undoableDayFinish = nil
         store.undo()
         // Undoing "Saved to Now" deletes the item, which Focus may be showing.
         closeWhatWasDeleted()
