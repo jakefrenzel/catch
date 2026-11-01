@@ -328,7 +328,7 @@ final class CatchStore {
         let project = Project(name: name, sortOrder: nextOrder, createdAt: now())
         context.insert(project)
         let steps = resolved.enumerated().map { index, step in
-            Step(text: step.text, phase: step.phase, sortOrder: index)
+            Step(text: step.text, phase: step.phase, sortOrder: index, note: step.note)
         }
         for step in steps { context.insert(step) }
         project.steps = steps

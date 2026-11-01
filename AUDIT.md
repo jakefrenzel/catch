@@ -25,7 +25,7 @@ Tick each item when its fix is pushed and CI is green.
 - [x] 15. Edit sheet / Project Detail can redraw a deleted model while dismissing
 - [x] 16. Action button help shows iOS 18-only steps on iOS 17 (`SettingsPages.swift` `ActionButtonHelpView`)
 - [x] 17. Reminder sync removes all pending alerts before re-adding them, with no background time
-- [ ] 18. Freeze the shipped models as `SchemaV1` with a migration plan
+- [x] 18. Freeze the shipped models as `SchemaV1` with a migration plan
 
 ## Smaller
 
@@ -33,7 +33,7 @@ Tick each item when its fix is pushed and CI is green.
 - [x] 20. Widget shows an empty day when a fetch fails, instead of "Open Catch"
 - [x] 21. `addStep` reports success when the save failed
 - [x] 22. Overdue Later items move to Now in capture order, not due order
-- [ ] 23. An Inbox item's note is lost when it becomes a project step
+- [x] 23. An Inbox item's note is lost when it becomes a project step
 - [x] 24. "This weekend" on Saturday after 10 AM or Sunday means next week
 - [x] 25. "Tonight at twelve" means noon
 - [x] 26. Pasting multi-line text joins the words ("Buy milkCall Dana")

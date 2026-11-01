@@ -18,7 +18,7 @@ final class AppServices {
 
     private init() {
         do {
-            container = try ModelContainer(for: Schema(CatchSchema.models))
+            container = try ModelContainer(for: CatchSchema.schema, migrationPlan: CatchMigrationPlan.self)
         } catch {
             fatalError("Couldn't open the Catch database: \(error)")
         }

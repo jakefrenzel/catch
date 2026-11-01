@@ -65,7 +65,7 @@ struct TestEnvironment {
 
     init() throws {
         container = try ModelContainer(
-            for: Schema(CatchSchema.models),
+            for: CatchSchema.schema,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         settingsStore = SettingsStore(defaults: UserDefaults(suiteName: "test-\(UUID().uuidString)")!)

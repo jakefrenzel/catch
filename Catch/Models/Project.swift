@@ -29,11 +29,14 @@ final class Step {
     var sortOrder: Int = 0
     var completedAt: Date?
     var project: Project?
+    /// Added in SchemaV2. Carried over from an Inbox item that became this step.
+    var note: String?
 
-    init(text: String, phase: String = Step.defaultPhase, sortOrder: Int = 0) {
+    init(text: String, phase: String = Step.defaultPhase, sortOrder: Int = 0, note: String? = nil) {
         self.text = text
         self.phase = phase
         self.sortOrder = sortOrder
+        self.note = note
     }
 
     static let defaultPhase = "Steps"

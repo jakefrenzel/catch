@@ -79,7 +79,7 @@ struct CatchProvider: TimelineProvider {
     /// "Open Catch" rather than showing a day that looks empty.
     private func load(at now: Date) -> Day? {
         // Read-only: only the app writes (and migrates) the shared store.
-        guard let container = try? ModelContainer(for: Schema(CatchSchema.models),
+        guard let container = try? ModelContainer(for: CatchSchema.schema,
                                                   configurations: ModelConfiguration(allowsSave: false)) else {
             return nil
         }
