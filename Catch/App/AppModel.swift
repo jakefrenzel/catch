@@ -581,6 +581,37 @@ final class AppModel {
         sheet = .newProject
     }
 
+    func rename(_ project: Project, to name: String) {
+        let old = project.name
+        guard store.rename(project, to: name), project.name != old else { return }
+        haptic(.light)
+        flash("Renamed to \(project.name)", undo: true)
+    }
+
+    /// Leaves its screen first, so nothing reads the deleted project.
+    func delete(_ project: Project) {
+        projectPath.removeAll { $0.id == project.id }
+        let name = project.name
+        store.delete(project)
+        closeWhatWasDeleted()
+        haptic(.warning)
+        flash("Deleted \(name)", undo: true)
+    }
+
+    func rename(_ step: Step, to text: String) {
+        let old = step.text
+        guard store.rename(step, to: text), step.text != old else { return }
+        haptic(.light)
+        flash("Renamed to \(step.text)", undo: true)
+    }
+
+    func delete(_ step: Step) {
+        guard store.delete(step) else { return }
+        closeWhatWasDeleted()
+        haptic(.warning)
+        flash("Deleted", undo: true)
+    }
+
     func openSettings() {
         sheet = .settings
     }
@@ -929,6 +960,7 @@ final class AppModel {
     func closeWhatWasDeleted() {
         if let focus, focus.isGone { self.focus = nil }
         if let sheet, sheet.isGone { self.sheet = nil }
+        if projectPath.contains(where: \.isGone) { projectPath.removeAll { $0.isGone } }
     }
 
     func haptic(_ haptic: Haptic) {

@@ -378,7 +378,7 @@ struct TodayView: View {
                             StepRow(step: step, isNext: step.id == project.nextStep?.id) {
                                 model.toggleDone(step)
                             }
-                            .focusMenu(step.isDone ? nil : { model.startChosenFocus(.step(step, project: project)) })
+                            .stepMenu(step, onFocus: step.isDone ? nil : { model.startChosenFocus(.step(step, project: project)) })
                         }
                     }
                 case .doneFold(let count):

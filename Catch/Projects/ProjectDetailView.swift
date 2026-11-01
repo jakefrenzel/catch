@@ -9,6 +9,9 @@ struct ProjectDetailView: View {
     @Environment(AppModel.self) private var model
     @State private var newStep = ""
     @FocusState private var isAddingStep: Bool
+    @State private var isRenaming = false
+    @State private var newName = ""
+    @State private var confirmingDelete = false
 
     var body: some View {
         // Undo, Siri or a delete can remove it while this screen is closing.
@@ -48,6 +51,46 @@ struct ProjectDetailView: View {
         .background(Theme.bg)
         .toolbar(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        newName = project.name
+                        isRenaming = true
+                    } label: {
+                        Label("Rename Project", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) {
+                        confirmingDelete = true
+                    } label: {
+                        Label("Delete Project", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Project options")
+            }
+        }
+        .alert("Rename Project", isPresented: $isRenaming) {
+            TextField("Project name", text: $newName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                guard !project.isGone else { return }
+                model.rename(project, to: newName)
+            }
+        }
+        .confirmationDialog(deleteTitle, isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Delete Project", role: .destructive) {
+                guard !project.isGone else { return }
+                model.delete(project)
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    private var deleteTitle: String {
+        let count = project.steps?.count ?? 0
+        return count == 1 ? "Delete \(project.name) and its step?" : "Delete \(project.name) and its \(count) steps?"
     }
 
     private func header(phases: [Phase], current: Int?) -> some View {
@@ -213,7 +256,7 @@ private struct PhaseNode: View {
                 .padding(.vertical, 11)
                 .padding(.trailing, 12)
                 .overlay(alignment: .bottom) { Theme.sep.frame(height: 1) }
-                .focusMenu(step.isDone ? nil : { onFocus(step) })
+                .stepMenu(step, onFocus: step.isDone ? nil : { onFocus(step) })
             }
 
             HStack(spacing: 10) {

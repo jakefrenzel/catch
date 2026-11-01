@@ -53,4 +53,4 @@ Tick each item when its fix is pushed and CI is green.
 
 ## Not bugs, for later
 
-- Projects and steps can't be renamed or deleted.
+- [x] Projects and steps can be renamed and deleted (long-press a step; … in Project Detail).
