@@ -133,9 +133,81 @@ final class VoiceParserTests: XCTestCase {
     }
 
     func testDigitsAfterFor() throws {
-        let result = parse("Remind me to call Bob for 5")
+        let result = parse("Remind me for 5 to call Bob")
         XCTAssertEqual(result.title, "Call Bob")
         XCTAssertEqual(calendar.component(.hour, from: try XCTUnwrap(result.date)), 17)
+    }
+
+    // MARK: Fixed times (TestClock: Friday, October 9, 2026, noon)
+
+    private let clock = TestClock()
+
+    private func parseAt(_ text: String, day: Int = 9, hour: Int = 12,
+                       projects: [VoiceParser.ProjectName] = []) -> VoiceParse {
+        VoiceParser.parse(text, projects: projects, afterWork: TimeOfDay(hour: 17, minute: 30),
+                          now: clock.at(day: day, hour: hour), calendar: clock.calendar)
+    }
+
+    func testForACountInAReminderIsNotATime() {
+        let result = parseAt("Remind me to book a table for two", day: 9)
+        XCTAssertNil(result.date)
+        XCTAssertEqual(result.title, "Book a table for two")
+        XCTAssertEqual(parseAt("Book dinner for two PM", day: 9).date, clock.at(day: 9, hour: 14))
+    }
+
+    func testAfterWorkOnADay() {
+        let tomorrow = parseAt("Call mom tomorrow after work", day: 9)
+        XCTAssertEqual(tomorrow.date, clock.at(day: 10, hour: 17, minute: 30))
+        XCTAssertEqual(tomorrow.title, "Call mom")
+
+        let monday = parseAt("Call mom on Monday after work", day: 9)
+        XCTAssertEqual(monday.date, clock.at(day: 12, hour: 17, minute: 30))
+        XCTAssertEqual(monday.title, "Call mom")
+    }
+
+    func testATimeSaidWithAfterWorkWins() {
+        let result = parseAt("Call mom after work at seven thirty", day: 9)
+        XCTAssertEqual(result.date, clock.at(day: 9, hour: 19, minute: 30))
+        XCTAssertEqual(result.title, "Call mom")
+    }
+
+    func testThisWeekendWithATimeOrDay() {
+        let atThree = parseAt("Clean the garage this weekend at three", day: 9)
+        XCTAssertEqual(atThree.date, clock.at(day: 10, hour: 15))
+        XCTAssertEqual(atThree.title, "Clean the garage")
+
+        let sunday = parseAt("Wash the car Sunday this weekend", day: 9)
+        XCTAssertEqual(sunday.date, clock.at(day: 11, hour: 10))
+        XCTAssertEqual(sunday.title, "Wash the car")
+    }
+
+    func testThisWeekendSaidOnTheWeekend() {
+        XCTAssertEqual(parseAt("Clean the garage this weekend", day: 9).date, clock.at(day: 10, hour: 10))
+        XCTAssertEqual(parseAt("Clean the garage this weekend", day: 10, hour: 11).date, clock.at(day: 11, hour: 10),
+                       "Saturday's 10 AM has gone; Sunday is still this weekend")
+        XCTAssertEqual(parseAt("Clean the garage this weekend", day: 11, hour: 9).date, clock.at(day: 11, hour: 10))
+        XCTAssertEqual(parseAt("Clean the garage this weekend", day: 11, hour: 11).date, clock.at(day: 17, hour: 10),
+                       "Late on Sunday the weekend is over")
+    }
+
+    func testADayThatNamesAThingIsNotADate() {
+        let report = parseAt("Send the Friday report", day: 9)
+        XCTAssertNil(report.date)
+        XCTAssertEqual(report.title, "Send the Friday report")
+        XCTAssertNil(parseAt("Prep tomorrow's slides", day: 9).date)
+
+        let atFive = parseAt("Send the Friday report at five", day: 9)
+        XCTAssertEqual(atFive.date, clock.at(day: 9, hour: 17), "The time still counts, on today")
+        XCTAssertEqual(atFive.title, "Send the Friday report")
+    }
+
+    func testTwelveTonightIsMidnight() {
+        let tonight = parseAt("Remind me tonight at twelve to lock up", day: 9)
+        XCTAssertEqual(tonight.date, clock.at(day: 10, hour: 0))
+        XCTAssertEqual(tonight.title, "Lock up")
+
+        XCTAssertEqual(parseAt("Lock up at twelve at night", day: 9).date, clock.at(day: 10, hour: 0))
+        XCTAssertEqual(parseAt("Lunch at twelve today", day: 9, hour: 10).date, clock.at(day: 9, hour: 12))
     }
 
     func testCountsAreNotTimes() {

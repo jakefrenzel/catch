@@ -105,56 +105,85 @@ enum VoiceParser {
         }
     }
 
+    /// Phrases NSDataDetector doesn't turn into the times Catch uses.
+    private enum CustomPhrase: String, CaseIterable {
+        case afterWork = "after work"
+        case weekend = "this weekend"
+    }
+
+    /// A time found in what was said.
+    private struct Heard {
+        var ranges: [NSRange]
+        var date: Date
+        /// False when only a day was said ("tomorrow", "next week").
+        var hasClock: Bool
+    }
+
+    private static let dayWords = Set(["today", "tonight", "tomorrow"] + weekdays)
+    /// "The Friday report", "my Monday class": the day names a thing, not when.
+    private static let dayArticles: Set<String> = ["the", "a", "an", "my", "our", "your", "his", "her", "their"]
+    private static let clockPattern = "\\b(noon|midnight|morning|afternoon|evening|night|o'?clock)\\b"
+
     /// Marks the time words and returns the date they mean, if any.
     private static func markTime(_ tokens: inout [Token], in ns: NSString, afterWork: TimeOfDay,
                                  now: Date, calendar: Calendar) -> Date? {
-        let lower = ns.lowercased as NSString
-        var found: (range: NSRange, date: Date)?
+        // Copies to search, with words that aren't times blanked out so nothing reads them.
+        let text = NSMutableString(string: ns)
+        let lower = NSMutableString(string: ns.lowercased)
+        func blank(_ range: NSRange) {
+            let spaces = String(repeating: " ", count: range.length)
+            text.replaceCharacters(in: range, with: spaces)
+            lower.replaceCharacters(in: range, with: spaces)
+        }
 
-        // Phrases NSDataDetector doesn't turn into the times Catch uses.
-        let custom: [(String, () -> Date?)] = [
-            ("after work", { afterWork.next(after: now, calendar: calendar) }),
-            ("this weekend", {
-                calendar.nextDate(after: now, matching: DateComponents(hour: 10, minute: 0, second: 0, weekday: 7),
-                                  matchingPolicy: .nextTime)
-            }),
-        ]
-        for (phrase, makeDate) in custom {
+        // "Send the Friday report", "prep tomorrow's slides".
+        for index in tokens.indices {
+            let word = tokens[index].word
+            let possessive = word.hasSuffix("'s")
+            guard dayWords.contains(possessive ? String(word.dropLast(2)) : word) else { continue }
+            if possessive || (index > 0 && dayArticles.contains(tokens[index - 1].word)) {
+                blank(tokens[index].range)
+            }
+        }
+
+        var custom: (phrase: CustomPhrase, range: NSRange)?
+        for phrase in CustomPhrase.allCases {
             // Whole words only: "after work" isn't in "after workout".
-            let pattern = "\\b" + NSRegularExpression.escapedPattern(for: phrase) + "\\b"
+            let pattern = "\\b" + NSRegularExpression.escapedPattern(for: phrase.rawValue) + "\\b"
             let range = lower.range(of: pattern, options: .regularExpression)
-            if range.location != NSNotFound, let date = makeDate() {
-                found = (range, date)
-                break
+            guard range.location != NSNotFound else { continue }
+            custom = (phrase, range)
+            blank(range)
+            break
+        }
+
+        let explicit = spokenTime(in: lower, now: now, calendar: calendar)
+            ?? detectedTime(in: text, lower: lower, now: now, calendar: calendar)
+        var ranges = explicit?.ranges ?? []
+        var date = explicit?.date
+
+        // "Tomorrow after work", "this weekend at three": the phrase and the rest make one time.
+        if let custom {
+            ranges.append(custom.range)
+            let day = dayWord(in: lower)
+            if let day { ranges.append(day.range) }
+            switch custom.phrase {
+            case .afterWork:
+                // "After work at 6.30": the time said wins.
+                guard explicit?.hasClock != true else { break }
+                let start = day.map { dayStart($0.word, now: now, calendar: calendar)
+                    ?? DayClock.day(of: now, calendar: calendar) }
+                    ?? explicit.map { calendar.startOfDay(for: $0.date) }
+                date = afterWorkDate(afterWork, on: start, now: now, calendar: calendar)
+            case .weekend:
+                let clock = explicit.flatMap { $0.hasClock ? calendar.dateComponents([.hour, .minute], from: $0.date) : nil }
+                date = weekendDate(hour: clock?.hour ?? 10, minute: clock?.minute ?? 0, day: day?.word,
+                                   now: now, calendar: calendar)
             }
         }
 
-        var dayRange: NSRange?
-        if found == nil, let spoken = spokenTime(in: lower, now: now, calendar: calendar) {
-            found = (spoken.range, spoken.date)
-            dayRange = spoken.dayRange
-        }
-
-        if found == nil,
-           let detector = dateDetector,
-           let match = detector.firstMatch(in: ns as String, range: NSRange(location: 0, length: ns.length)),
-           var date = match.date {
-            // "at 9" said after 9 means tomorrow.
-            if date <= now, calendar.isDate(date, inSameDayAs: now),
-               let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
-                date = tomorrow
-            }
-            // Its "tomorrow" is the calendar's. Before 4 AM, still last night, Catch's is a day sooner.
-            if lower.substring(with: match.range).contains("tomorrow"),
-               DayClock.tomorrow(after: now, calendar: calendar) == calendar.startOfDay(for: now),
-               let sooner = calendar.date(byAdding: .day, value: -1, to: date) {
-                date = sooner
-            }
-            found = (match.range, date)
-        }
-
-        guard let found else { return nil }
-        for range in [found.range, dayRange].compactMap({ $0 }) {
+        guard let date else { return nil }
+        for range in ranges {
             var first: Int?
             for index in tokens.indices where NSIntersectionRange(tokens[index].range, range).length > 0 {
                 tokens[index].kind = .time
@@ -165,7 +194,59 @@ enum VoiceParser {
                 tokens[first - 1].kind = .time
             }
         }
-        return found.date
+        return date
+    }
+
+    private static func detectedTime(in text: NSString, lower: NSString, now: Date, calendar: Calendar) -> Heard? {
+        guard let detector = dateDetector,
+              let match = detector.firstMatch(in: text as String, range: NSRange(location: 0, length: text.length)),
+              var date = match.date else { return nil }
+        let said = lower.substring(with: match.range)
+        // "Tonight at 12" is midnight, not noon.
+        if calendar.component(.hour, from: date) == 12, !said.contains("noon"),
+           said.range(of: "p\\.?\\s?m", options: .regularExpression) == nil,
+           lower.range(of: "\\btonight\\b", options: .regularExpression).location != NSNotFound
+            || said.range(of: "\\bnight\\b", options: .regularExpression) != nil,
+           let midnight = calendar.date(byAdding: .hour, value: 12, to: date) {
+            date = midnight
+        }
+        // "at 9" said after 9 means tomorrow.
+        if date <= now, calendar.isDate(date, inSameDayAs: now),
+           let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
+            date = tomorrow
+        }
+        // Its "tomorrow" is the calendar's. Before 4 AM, still last night, Catch's is a day sooner.
+        if said.contains("tomorrow"),
+           DayClock.tomorrow(after: now, calendar: calendar) == calendar.startOfDay(for: now),
+           let sooner = calendar.date(byAdding: .day, value: -1, to: date) {
+            date = sooner
+        }
+        let hasClock = said.rangeOfCharacter(from: .decimalDigits) != nil
+            || said.range(of: clockPattern, options: .regularExpression) != nil
+        return Heard(ranges: [match.range], date: date, hasClock: hasClock)
+    }
+
+    /// After work on the day said, or the next after work once that's gone.
+    private static func afterWorkDate(_ time: TimeOfDay, on start: Date?, now: Date, calendar: Calendar) -> Date {
+        if let start, let date = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: start),
+           date > now {
+            return date
+        }
+        return time.next(after: now, calendar: calendar)
+    }
+
+    /// "This weekend": Saturday, or Sunday once Saturday's time has gone. Said on a Sunday
+    /// after that, the weekend is over, so it's next Saturday.
+    private static func weekendDate(hour: Int, minute: Int, day: String?, now: Date, calendar: Calendar) -> Date? {
+        func next(_ weekday: Int) -> Date? {
+            calendar.nextDate(after: now, matching: DateComponents(hour: hour, minute: minute, second: 0, weekday: weekday),
+                              matchingPolicy: .nextTime)
+        }
+        if day == "saturday" { return next(7) }
+        if day == "sunday" { return next(1) }
+        guard let saturday = next(7) else { return next(1) }
+        guard let sunday = next(1) else { return saturday }
+        return min(saturday, sunday)
     }
 
     // MARK: Spoken times
@@ -190,8 +271,7 @@ enum VoiceParser {
         "friday", "saturday", "sunday", "to", "and", "about", "that", "so", "please", "remind",
     ]
 
-    private static func spokenTime(in lower: NSString, now: Date, calendar: Calendar)
-        -> (range: NSRange, dayRange: NSRange?, date: Date)? {
+    private static func spokenTime(in lower: NSString, now: Date, calendar: Calendar) -> Heard? {
         guard let pattern = spokenTimePattern else { return nil }
         let text = lower as String
         for match in pattern.matches(in: text, range: NSRange(location: 0, length: lower.length)) {
@@ -200,9 +280,9 @@ enum VoiceParser {
             let isDigits = hourText.first?.isNumber == true
             // "at 5" and "at 5:30" are NSDataDetector's.
             if lead == "at", isDigits { continue }
-            // "dinner for two" isn't a time; "set a reminder for two" is.
-            if lead == "for", lower.range(of: "remind").location == NSNotFound
-                || lower.range(of: "remind").location > match.range.location { continue }
+            let suffix = match.range(at: 4).location == NSNotFound ? nil : lower.substring(with: match.range(at: 4))
+            // "Book a table for two" isn't a time; "set a reminder for two" and "for two PM" are.
+            if lead == "for", suffix == nil, !followsReminder(lower, at: match.range.location) { continue }
             let rest = lower.substring(from: NSMaxRange(match.range))
             let next = rest.split(whereSeparator: { $0.isWhitespace }).first
                 .map { $0.trimmingCharacters(in: .punctuationCharacters) }
@@ -215,8 +295,7 @@ enum VoiceParser {
                 minute = Int(minuteText) ?? minuteWords[minuteText] ?? 0
             }
             var meridiem: Bool?   // true = PM
-            if match.range(at: 4).location != NSNotFound {
-                let suffix = lower.substring(with: match.range(at: 4))
+            if let suffix {
                 if suffix.hasPrefix("p") || suffix.contains("afternoon") || suffix.contains("evening") || suffix.contains("night") {
                     meridiem = true
                 } else if suffix.hasPrefix("a") || suffix.contains("morning") {
@@ -224,48 +303,69 @@ enum VoiceParser {
                 }
             }
 
-            let dayMatch = dayPattern?.firstMatch(in: text, range: NSRange(location: 0, length: lower.length))
-            let day = dayMatch.map { lower.substring(with: $0.range) }
-            if day == "tonight", meridiem == nil { meridiem = true }
-            guard let date = spokenDate(hour: hour, minute: minute, pm: meridiem, day: day,
+            let day = dayWord(in: lower)
+            // "Twelve at night", "tonight at twelve": the end of the day, not noon.
+            let midnight = hour == 12 && (suffix?.contains("night") == true || (day?.word == "tonight" && suffix == nil))
+            if day?.word == "tonight", meridiem == nil { meridiem = true }
+            guard let date = spokenDate(hour: hour, minute: minute, pm: meridiem, midnight: midnight, day: day?.word,
                                         now: now, calendar: calendar) else { continue }
-            return (match.range, dayMatch?.range, date)
+            return Heard(ranges: [match.range, day?.range].compactMap { $0 }, date: date, hasClock: true)
         }
         return nil
     }
 
-    /// Without AM or PM, 1–6 means afternoon and 7–11 the next time that hour comes round.
-    private static func spokenDate(hour: Int, minute: Int, pm: Bool?, day: String?,
-                                   now: Date, calendar: Calendar) -> Date? {
-        // By the Catch day: "tomorrow" said at 1 AM, still last night, means later today.
+    /// "Remind me for five", "set a reminder for five": the "for" belongs to the reminder.
+    private static func followsReminder(_ lower: NSString, at location: Int) -> Bool {
+        let before = lower.substring(to: location).trimmingCharacters(in: .whitespaces)
+        return before.hasSuffix("remind me") || before.hasSuffix("reminder")
+    }
+
+    private static func dayWord(in lower: NSString) -> (range: NSRange, word: String)? {
+        guard let match = dayPattern?.firstMatch(in: lower as String, range: NSRange(location: 0, length: lower.length))
+        else { return nil }
+        return (match.range, lower.substring(with: match.range))
+    }
+
+    /// The day a day word names, by the Catch day: "tomorrow" said at 1 AM, still last night,
+    /// means later today. Nil for today and tonight.
+    private static func dayStart(_ word: String?, now: Date, calendar: Calendar) -> Date? {
         let today = DayClock.day(of: now, calendar: calendar)
-        var start = today
-        var dayGiven = false
-        if day == "tomorrow" {
-            start = DayClock.tomorrow(after: now, calendar: calendar)
-            dayGiven = true
-        } else if let day, let weekday = weekdays.firstIndex(of: day) {
-            start = calendar.nextDate(after: today, matching: DateComponents(weekday: weekday + 1),
-                                      matchingPolicy: .nextTime) ?? today
-            dayGiven = true
-        }
+        if word == "tomorrow" { return DayClock.tomorrow(after: now, calendar: calendar) }
+        guard let word, let weekday = weekdays.firstIndex(of: word) else { return nil }
+        return calendar.nextDate(after: today, matching: DateComponents(weekday: weekday + 1),
+                                 matchingPolicy: .nextTime) ?? today
+    }
+
+    /// Without AM or PM, 1–6 means afternoon and 7–11 the next time that hour comes round.
+    private static func spokenDate(hour: Int, minute: Int, pm: Bool?, midnight: Bool, day: String?,
+                                   now: Date, calendar: Calendar) -> Date? {
+        let given = dayStart(day, now: now, calendar: calendar)
+        var start = given ?? DayClock.day(of: now, calendar: calendar)
+        let dayGiven = given != nil
         func at(_ hour24: Int, on day: Date) -> Date? {
             calendar.date(bySettingHour: hour24, minute: minute, second: 0, of: day)
         }
         let hour24: Int
-        switch pm {
-        case true?: hour24 = hour % 12 + 12
-        case false?: hour24 = hour % 12
-        case nil:
-            if hour == 12 || (1...6).contains(hour) {
-                hour24 = hour == 12 ? 12 : hour + 12
-            } else if !dayGiven {
-                // "at 8" at 9 AM is tonight; at 9 PM it's tomorrow morning.
-                if let morning = at(hour, on: start), morning > now { return morning }
-                if let evening = at(hour + 12, on: start), evening > now { return evening }
-                return calendar.date(byAdding: .day, value: 1, to: start).flatMap { at(hour, on: $0) }
-            } else {
-                hour24 = hour
+        if midnight {
+            // Midnight ends the day said, so it's the start of the next one.
+            guard let next = calendar.date(byAdding: .day, value: 1, to: start) else { return nil }
+            start = next
+            hour24 = 0
+        } else {
+            switch pm {
+            case true?: hour24 = hour % 12 + 12
+            case false?: hour24 = hour % 12
+            case nil:
+                if hour == 12 || (1...6).contains(hour) {
+                    hour24 = hour == 12 ? 12 : hour + 12
+                } else if !dayGiven {
+                    // "at 8" at 9 AM is tonight; at 9 PM it's tomorrow morning.
+                    if let morning = at(hour, on: start), morning > now { return morning }
+                    if let evening = at(hour + 12, on: start), evening > now { return evening }
+                    return calendar.date(byAdding: .day, value: 1, to: start).flatMap { at(hour, on: $0) }
+                } else {
+                    hour24 = hour
+                }
             }
         }
         guard let date = at(hour24, on: start) else { return nil }
