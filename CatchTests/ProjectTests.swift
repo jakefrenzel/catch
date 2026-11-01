@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import Catch
 
 @MainActor
@@ -146,5 +147,65 @@ final class ProjectTests: XCTestCase {
         let trip = env.addProject("Trip", steps: [("Book", "Book")])
         XCTAssertNil(env.store.addStep("  ", to: trip))
         XCTAssertEqual(trip.orderedSteps.count, 1)
+    }
+}
+
+@MainActor
+final class ProjectEditingTests: XCTestCase {
+    func testRenameProjectAndUndo() throws {
+        let env = try TestEnvironment()
+        let trip = env.addProject("Trip", steps: [("Book", "Plan")])
+
+        XCTAssertFalse(env.store.rename(trip, to: "   "))
+        XCTAssertEqual(trip.name, "Trip")
+        XCTAssertTrue(env.store.rename(trip, to: "  Lisbon trip "))
+        XCTAssertEqual(trip.name, "Lisbon trip")
+
+        env.store.undo()
+        XCTAssertEqual(trip.name, "Trip")
+    }
+
+    func testDeleteProjectTakesItsStepsAndUndoBringsThemBack() throws {
+        let env = try TestEnvironment()
+        let trip = env.addProject("Trip", steps: [("Book", "Plan"), ("Pack", "Go")])
+        env.store.setDone(trip.orderedSteps[0], true)
+        let before = ProjectSnapshot(trip)
+
+        env.store.delete(trip)
+        XCTAssertTrue(env.store.projects().isEmpty)
+        XCTAssertTrue(try env.store.context.fetch(FetchDescriptor<Step>()).isEmpty)
+
+        env.store.undo()
+        let restored = try XCTUnwrap(env.store.projects().first)
+        XCTAssertEqual(ProjectSnapshot(restored), before)
+    }
+
+    func testRenameStepAndUndo() throws {
+        let env = try TestEnvironment()
+        let trip = env.addProject("Trip", steps: [("Book", "Plan")])
+        let step = try XCTUnwrap(trip.orderedSteps.first)
+
+        XCTAssertTrue(env.store.rename(step, to: "Book flights"))
+        XCTAssertEqual(step.text, "Book flights")
+        env.store.undo()
+        XCTAssertEqual(step.text, "Book")
+    }
+
+    func testDeleteStepKeepsTheLastOneAndUndoPutsItBackInPlace() throws {
+        let env = try TestEnvironment()
+        let trip = env.addProject("Trip", steps: [("Book", "Plan"), ("Pack", "Plan"), ("Go", "Plan")])
+        let middle = trip.orderedSteps[1]
+
+        XCTAssertTrue(env.store.delete(middle))
+        XCTAssertEqual(trip.orderedSteps.map(\.text), ["Book", "Go"])
+
+        env.store.undo()
+        XCTAssertEqual(trip.orderedSteps.map(\.text), ["Book", "Pack", "Go"])
+
+        let solo = env.addProject("Solo", steps: [("Only", "Steps")])
+        let only = try XCTUnwrap(solo.orderedSteps.first)
+        XCTAssertFalse(env.store.canDelete(only))
+        XCTAssertFalse(env.store.delete(only))
+        XCTAssertEqual(solo.orderedSteps.count, 1)
     }
 }

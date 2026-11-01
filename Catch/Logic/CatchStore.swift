@@ -370,6 +370,65 @@ final class CatchStore {
         return save() ? step : nil
     }
 
+    /// Renames a project. Returns false for an empty name, which changes nothing.
+    @discardableResult
+    func rename(_ project: Project, to name: String) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        guard trimmed != project.name else { return true }
+        let previous = project.name
+        undoAction = { project.name = previous }
+        project.name = trimmed
+        return save()
+    }
+
+    /// Deletes a project and all its steps. Undo brings both back.
+    func delete(_ project: Project) {
+        let snapshot = ProjectSnapshot(project)
+        context.delete(project)
+        undoAction = { [context] in snapshot.recreate(in: context) }
+        save()
+    }
+
+    /// Renames a step. Returns false for empty text, which changes nothing.
+    @discardableResult
+    func rename(_ step: Step, to text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        guard trimmed != step.text else { return true }
+        let previous = step.text
+        undoAction = { step.text = previous }
+        step.text = trimmed
+        return save()
+    }
+
+    /// Whether a step can be deleted: a project keeps at least one, so it
+    /// always has a phase to add steps to.
+    func canDelete(_ step: Step) -> Bool {
+        (step.project?.steps?.count ?? 0) > 1
+    }
+
+    /// Deletes a step, unless it's the project's last. Undo puts it back in place.
+    @discardableResult
+    func delete(_ step: Step) -> Bool {
+        guard canDelete(step), let project = step.project else { return false }
+        let snapshot = StepSnapshot(step)
+        project.steps?.removeAll { $0.id == step.id }
+        context.delete(step)
+        undoAction = { [context] in
+            // The project may have been deleted since; then there's nothing to put it back in.
+            guard project.modelContext != nil, !project.isDeleted else { return }
+            let restored = snapshot.recreate()
+            context.insert(restored)
+            var ordered = project.orderedSteps
+            let index = ordered.firstIndex { $0.sortOrder >= snapshot.sortOrder } ?? ordered.endIndex
+            ordered.insert(restored, at: index)
+            for (order, s) in ordered.enumerated() { s.sortOrder = order }
+            project.steps = ordered
+        }
+        return save()
+    }
+
     // MARK: - Places
 
     /// Creates a place (when `place` is nil) or updates one. Radius is kept to 100–300 m.
