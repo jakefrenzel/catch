@@ -74,6 +74,12 @@ final class VoiceParserTests: XCTestCase {
         XCTAssertNil(parse("Buy a tip jar", projects: [trip]).projectName)
     }
 
+    func testOneWordProjectsMatchLooselyOnlyAfterToOrThe() {
+        let move = VoiceParser.ProjectName(id: UUID(), name: "Move")
+        XCTAssertNil(parse("Buy more milk", projects: [move]).projectName)
+        XCTAssertEqual(parse("Pack the books for the moove", projects: [move]).projectName, "Move")
+    }
+
     func testAfterWorkUsesTheSetting() throws {
         let result = parse("Pick up dry cleaning after work.")
         XCTAssertEqual(result.title, "Pick up dry cleaning")

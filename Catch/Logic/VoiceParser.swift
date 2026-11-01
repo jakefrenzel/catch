@@ -51,6 +51,7 @@ enum VoiceParser {
     private static let projectPrepositions: Set<String> = ["to", "for", "in", "into", "on"]
     private static let projectArticles: Set<String> = ["the", "my", "our"]
     private static let timeLeadIns: Set<String> = ["at", "on", "by", "this", "next"]
+    private static let looseBefore = projectPrepositions.union(projectArticles)
     private static let somedayPrepositions: Set<String> = ["to", "in", "into", "for"]
 
     private struct Token {
@@ -285,8 +286,10 @@ enum VoiceParser {
             guard tokens.count >= words.count else { continue }
             for start in 0...(tokens.count - words.count) {
                 let window = tokens[start..<(start + words.count)]
+                // A one-word name only matches loosely after "to the", "for my"...: "more" isn't "Move".
+                let loose = words.count > 1 || (start > 0 && looseBefore.contains(tokens[start - 1].word))
                 guard window.allSatisfy({ $0.kind == .normal }),
-                      zip(window, words).allSatisfy({ isClose($0.word, $1) }) else { continue }
+                      zip(window, words).allSatisfy({ loose ? isClose($0.word, $1) : $0.word == $1 }) else { continue }
 
                 for index in start..<(start + words.count) { tokens[index].kind = .project }
                 var before = start - 1
