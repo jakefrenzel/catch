@@ -139,6 +139,43 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(item.list, .inbox)
     }
 
+    func testUndoKeepsASheetOnAnotherItemOpen() throws {
+        let (model, env) = try makeModel()
+        let moved = env.add("X", to: .inbox)
+        let other = env.add("Y", to: .inbox)
+        model.move(moved, to: .someday)
+        model.openEditor(for: other)
+
+        model.undo()
+
+        XCTAssertEqual(moved.list, .inbox)
+        guard case .edit(let shown)? = model.sheet else { return XCTFail("The other item's editor closed") }
+        XCTAssertEqual(shown, other)
+    }
+
+    func testUndoKeepsSettingsOpen() throws {
+        let (model, env) = try makeModel()
+        let item = env.add("X", to: .inbox)
+        model.move(item, to: .someday)
+        model.sheet = .settings
+
+        model.undo()
+
+        guard case .settings? = model.sheet else { return XCTFail("Settings closed") }
+    }
+
+    func testUndoingACaptureClosesItsEditor() throws {
+        let (model, env) = try makeModel()
+        XCTAssertTrue(model.capture("Call Bob", to: .inbox))
+        let item = try XCTUnwrap(env.store.items(in: .inbox).first)
+        model.openEditor(for: item)
+
+        model.undo()
+
+        XCTAssertTrue(env.store.allItems().isEmpty)
+        XCTAssertNil(model.sheet)
+    }
+
     func testUndoingACaptureClosesFocusOnIt() throws {
         let (model, env) = try makeModel()
         XCTAssertTrue(model.capture("Call Bob", to: .now))

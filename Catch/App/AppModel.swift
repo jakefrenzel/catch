@@ -900,8 +900,6 @@ final class AppModel {
         toast = nil
         // Only reverse what the toast described; a newer change may have replaced it.
         guard let version, version == store.undoVersion else { return }
-        // Undo can remove what an open sheet is working on.
-        sheet = nil
         // Undoing "Created X" deletes X; leave its screen before the model goes away.
         if let project = undoableNewProject, projectPath.contains(project) {
             projectPath.removeAll()
@@ -911,8 +909,12 @@ final class AppModel {
             settingsStore.dayFinishedOn = finish.previous
         }
         undoableDayFinish = nil
+        // A sheet on an item the undo changes would save over it; any other sheet stays.
+        let shownItem = sheet?.item
+        let before = shownItem.flatMap { $0.isGone ? nil : ItemSnapshot($0) }
         store.undo()
-        // Undoing "Saved to Now" deletes the item, which Focus may be showing.
+        if let shownItem, !shownItem.isGone, ItemSnapshot(shownItem) != before { sheet = nil }
+        // Undoing "Saved to Now" deletes the item, which Focus or a sheet may be showing.
         closeWhatWasDeleted()
     }
 
@@ -948,6 +950,14 @@ private extension UpFirstCandidate {
 }
 
 private extension AppModel.Sheet {
+    /// The item the sheet is about, if it's about one.
+    var item: Item? {
+        switch self {
+        case .edit(let item), .remind(let item), .swap(let item): return item
+        case .newProject, .settings, .micDenied, .voiceRetry, .onboardingPermission: return nil
+        }
+    }
+
     var isGone: Bool {
         switch self {
         case .edit(let item), .remind(let item), .swap(let item): return item.isGone

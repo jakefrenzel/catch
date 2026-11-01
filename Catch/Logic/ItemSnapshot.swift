@@ -1,7 +1,7 @@
 import Foundation
 
 /// A copy of everything an action can change on an item, used to undo it.
-struct ItemSnapshot {
+struct ItemSnapshot: Equatable {
     let id: UUID
     let text: String
     let note: String?
