@@ -23,13 +23,27 @@ struct NewProjectSheet: View {
     @State private var name = ""
     @State private var rows: [Row] = []
     @State private var newStep = ""
+    @State private var confirmingDiscard = false
     @FocusState private var focus: Field?
+
+    /// Anything typed or added, so closing would lose work.
+    private var hasDraft: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !rows.isEmpty
+            || !newStep.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    SheetCloseButton { dismiss() }
+                    SheetCloseButton {
+                        if hasDraft { confirmingDiscard = true } else { dismiss() }
+                    }
+                    .confirmationDialog("Discard this project?", isPresented: $confirmingDiscard,
+                                        titleVisibility: .visible) {
+                        Button("Discard", role: .destructive) { dismiss() }
+                        Button("Keep Editing", role: .cancel) {}
+                    }
                     Spacer()
                     Text("New Project")
                         .font(.headline)
@@ -91,6 +105,8 @@ struct NewProjectSheet: View {
         .presentationCornerRadius(38)
         .presentationBackground(Theme.bg)
         .presentationDragIndicator(.visible)
+        // A swipe down can't ask first, so once there's a draft it only closes with ✕.
+        .interactiveDismissDisabled(hasDraft)
         .onAppear { focus = .name }
     }
 

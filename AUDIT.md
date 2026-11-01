@@ -38,17 +38,17 @@ Tick each item when its fix is pushed and CI is green.
 - [x] 25. "Tonight at twelve" means noon
 - [x] 26. Pasting multi-line text joins the words ("Buy milkCall Dana")
 - [x] 27. Notifications toggle snaps back off with no explanation when permission is denied
-- [ ] 28. Place reminders accepted with Precise Location off
-- [ ] 29. Place reminders re-arm on every sync after firing
+- [x] 28. Place reminders accepted with Precise Location off
+- [x] 29. Place reminders re-arm on every sync after firing
 - [x] 30. Delivered alerts stay in Notification Center after the item is done or deleted
-- [ ] 31. New Project draft is discarded by a swipe down without warning
+- [x] 31. New Project draft is discarded by a swipe down without warning
 - [x] 32. All Clear card says "no project steps waiting" when steps are only hidden from Up first
-- [ ] 33. Edit sheet's list can undo a move made while it was open (overdue promotion)
+- [x] 33. Edit sheet's list can undo a move made while it was open (overdue promotion)
 - [x] 34. Action button: a time with no title is discarded as "Didn't hear anything"
 - [x] 35. Voice stop timeout doesn't cancel the recognition task
 - [x] 36. `beginBackgroundTask` has no expiration handler (`VoiceActivityController`)
 - [x] 37. Mic can keep recording with no Live Activity after a quick second Action button press (race)
-- [ ] 38. Toast Undo can become untappable when a new toast replaces an old one
+- [x] 38. Toast Undo can become untappable when a new toast replaces an old one
 - [x] 39. CI and TestFlight don't pin the Xcode version
 
 ## Not bugs, for later

@@ -79,3 +79,24 @@ enum ReminderPlanner {
         return Array(timed) + placed
     }
 }
+
+/// A place alert fires once and then leaves iOS's pending list. Without a record
+/// of what was handed over, every sync would set it up again and it would go off
+/// each time the place is reached. This remembers what was armed, by id and region.
+enum PlaceArming {
+    /// What identifies an armed place alert: moving the place or switching
+    /// Arrive / Leave arms it again.
+    static func fingerprint(_ region: PlaceRegion) -> String {
+        "\(region.latitude),\(region.longitude),\(region.radius),\(region.onArrive ? "arrive" : "leave")"
+    }
+
+    /// The place alerts that were armed with the same region and are no longer
+    /// pending, so they already fired and shouldn't be added again.
+    static func fired(wanted: [PlannedReminder], pendingIDs: Set<String>, armed: [String: String]) -> Set<String> {
+        Set(wanted.compactMap { reminder in
+            guard let region = reminder.region, !pendingIDs.contains(reminder.id),
+                  armed[reminder.id] == fingerprint(region) else { return nil }
+            return reminder.id
+        })
+    }
+}

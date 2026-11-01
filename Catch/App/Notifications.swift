@@ -19,6 +19,8 @@ protocol NotificationScheduling: AnyObject {
     func clearDelivered(keeping itemIDs: Set<UUID>) async
     /// Opens Catch's notification settings, for when the system won't ask again.
     func openSystemSettings()
+    /// The item's place alert was set again, so it's armed again even if it already fired.
+    func rearmPlace(for itemID: UUID)
 }
 
 enum NotificationAction {
@@ -31,6 +33,22 @@ enum NotificationAction {
 @MainActor
 final class SystemNotificationScheduler: NotificationScheduling {
     private let center = UNUserNotificationCenter.current()
+    private let defaults: UserDefaults
+    /// Place alerts handed to iOS: id → `PlaceArming.fingerprint`.
+    private static let armedPlacesKey = "armedPlaceReminders"
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    private var armedPlaces: [String: String] {
+        get { defaults.dictionary(forKey: Self.armedPlacesKey) as? [String: String] ?? [:] }
+        set { defaults.set(newValue, forKey: Self.armedPlacesKey) }
+    }
+
+    func rearmPlace(for itemID: UUID) {
+        armedPlaces = armedPlaces.filter { !$0.key.contains(itemID.uuidString) }
+    }
 
     /// The Done and In 1 Hour buttons on reminder alerts.
     func registerCategories() {
@@ -58,9 +76,15 @@ final class SystemNotificationScheduler: NotificationScheduling {
         // Adding a request replaces the pending one with the same id, so only the
         // unwanted ones go first: if iOS suspends Catch partway, the rest stay pending.
         let wanted = Set(reminders.map(\.id))
-        let stale = await center.pendingNotificationRequests().map(\.identifier).filter { !wanted.contains($0) }
+        let pending = await center.pendingNotificationRequests().map(\.identifier)
+        let stale = pending.filter { !wanted.contains($0) }
         center.removePendingNotificationRequests(withIdentifiers: stale)
-        for reminder in reminders {
+        let previouslyArmed = armedPlaces
+        let fired = PlaceArming.fired(wanted: reminders, pendingIDs: Set(pending), armed: previouslyArmed)
+        // Already fired place alerts stay recorded; ones no longer wanted are forgotten.
+        var armed = previouslyArmed.filter { fired.contains($0.key) }
+        defer { armedPlaces = armed }
+        for reminder in reminders where !fired.contains(reminder.id) {
             let content = UNMutableNotificationContent()
             content.title = reminder.title
             content.body = reminder.body
@@ -87,7 +111,12 @@ final class SystemNotificationScheduler: NotificationScheduling {
                 trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, reminder.fireDate.timeIntervalSinceNow),
                                                             repeats: false)
             }
-            try? await center.add(UNNotificationRequest(identifier: reminder.id, content: content, trigger: trigger))
+            do {
+                try await center.add(UNNotificationRequest(identifier: reminder.id, content: content, trigger: trigger))
+                if let region = reminder.region { armed[reminder.id] = PlaceArming.fingerprint(region) }
+            } catch {
+                // Not armed, so the next sync tries it again.
+            }
         }
     }
 

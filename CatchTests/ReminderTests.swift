@@ -364,3 +364,27 @@ final class NotificationFlowTests: XCTestCase {
         XCTAssertEqual(model.tab, .today)
     }
 }
+
+final class PlaceArmingTests: XCTestCase {
+    private func place(_ id: String, latitude: Double = 1, onArrive: Bool = true) -> PlannedReminder {
+        PlannedReminder(id: id, itemID: UUID(), kind: .place, title: "A", body: "", fireDate: .distantFuture,
+                        region: PlaceRegion(latitude: latitude, longitude: 2, radius: 150, onArrive: onArrive))
+    }
+
+    func testAPlaceAlertThatLeftPendingHasFired() {
+        let a = place("a")
+        let armed = ["a": PlaceArming.fingerprint(a.region!)]
+        XCTAssertEqual(PlaceArming.fired(wanted: [a], pendingIDs: [], armed: armed), ["a"])
+        XCTAssertEqual(PlaceArming.fired(wanted: [a], pendingIDs: ["a"], armed: armed), [])
+    }
+
+    func testNeverArmedOrChangedIsArmed() {
+        let a = place("a")
+        XCTAssertEqual(PlaceArming.fired(wanted: [a], pendingIDs: [], armed: [:]), [])
+        let moved = place("a", latitude: 5)
+        let leaving = place("a", onArrive: false)
+        let armed = ["a": PlaceArming.fingerprint(a.region!)]
+        XCTAssertEqual(PlaceArming.fired(wanted: [moved], pendingIDs: [], armed: armed), [])
+        XCTAssertEqual(PlaceArming.fired(wanted: [leaving], pendingIDs: [], armed: armed), [])
+    }
+}

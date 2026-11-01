@@ -50,6 +50,9 @@ final class FakeNotifications: NotificationScheduling {
     func clearDelivered(keeping itemIDs: Set<UUID>) async { keptDelivered = itemIDs }
 
     func openSystemSettings() { openedSystemSettings = true }
+
+    var rearmed: [UUID] = []
+    func rearmPlace(for itemID: UUID) { rearmed.append(itemID) }
 }
 
 /// A store backed by an in-memory database and throwaway settings.
