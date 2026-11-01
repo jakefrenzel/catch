@@ -61,6 +61,15 @@ struct RemindSheet: View {
     }
 
     var body: some View {
+        // Undo, Siri or a delete can remove it while this screen is closing.
+        if item.isGone {
+            Color.clear
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder private var content: some View {
         let now = Date.now
         let options = RemindOptions.options(now: now, calendar: .current,
                                             afterWork: model.settings.afterWork, places: places,

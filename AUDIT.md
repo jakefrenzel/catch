@@ -12,7 +12,7 @@ Tick each item when its fix is pushed and CI is green.
 - [x] 5b. Notifications turned off in iOS Settings are never noticed (no banner, alerts silently stop)
 - [x] 6. Time alerts fire at floating wall-clock time after a time zone change (`Notifications.swift:79`)
 - [x] 7. "Listening" Live Activity stays up if the app is killed mid-session (no stale date, no cleanup at launch)
-- [ ] 8. Control Center button starts the mic under an open sheet, Focus or onboarding (`StartTalkingIntent`)
+- [x] 8. Control Center button starts the mic under an open sheet, Focus or onboarding (`StartTalkingIntent`)
 
 ## Worth fixing
 

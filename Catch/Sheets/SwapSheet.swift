@@ -11,6 +11,15 @@ struct SwapSheet: View {
     @State private var selectedID: UUID?
 
     var body: some View {
+        // Undo, Siri or a delete can remove it while this screen is closing.
+        if incoming.isGone {
+            Color.clear
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder private var content: some View {
         let open = items.filter(\.isOpenInNow)
         let maxNow = model.settings.maxNow
 

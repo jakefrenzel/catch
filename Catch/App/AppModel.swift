@@ -923,7 +923,7 @@ extension UpFirstCandidate: Identifiable {
     var id: UUID { key }
 }
 
-private extension PersistentModel {
+extension PersistentModel {
     /// Deleted, saved or not. Safe to ask of a model that's gone.
     var isGone: Bool { modelContext == nil || isDeleted }
 }

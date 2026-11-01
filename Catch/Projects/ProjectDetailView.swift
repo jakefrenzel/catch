@@ -11,6 +11,15 @@ struct ProjectDetailView: View {
     @FocusState private var isAddingStep: Bool
 
     var body: some View {
+        // Undo, Siri or a delete can remove it while this screen is closing.
+        if project.isGone {
+            Color.clear
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder private var content: some View {
         let phases = project.phases
         let current = project.currentPhaseIndex
 

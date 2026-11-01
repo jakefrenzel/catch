@@ -221,7 +221,8 @@ struct NewProjectSheet: View {
 
     /// Up to four Inbox items not already added.
     private var availableInbox: [Item] {
-        let used = Set(rows.compactMap { $0.fromInbox?.id })
+        // An added item deleted while this is open (Undo, Siri) stays a plain step; don't read it.
+        let used = Set(rows.compactMap { $0.fromInbox }.filter { !$0.isGone }.map(\.id))
         return Array(inbox.filter { !used.contains($0.id) }.prefix(4))
     }
 
