@@ -69,6 +69,9 @@ final class AppModel {
     /// A mic or capture link that came in during step 3, run once the question is answered.
     private var linkAfterOnboarding: URL?
     var isCaptureOpen = false
+    /// True for the moment KeyboardWarmup raises its hidden keyboard after launch,
+    /// so nothing treats that keyboard as a real one.
+    var isWarmingKeyboard = false
     var sheet: Sheet?
     /// Today's navigation stack: empty, or the open Project Detail.
     var projectPath: [Project] = []
