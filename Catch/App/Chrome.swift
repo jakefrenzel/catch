@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Today / Inbox / Someday, floating at the bottom left of every screen.
 ///
-/// Works like the system's iOS 26 controls: press anywhere on the bar and the
-/// selection lifts into a glass lens that follows your finger, then settles on
-/// the tab you let go over. Before iOS 26 the tinted pill follows the finger instead.
+/// Press anywhere on the bar and the selection pill follows your finger, then
+/// settles on the tab you let go over. (The system controls' magnifying glass
+/// lens isn't available to custom views, so this doesn't try to imitate it.)
 struct FloatingTabBar: View {
     @Binding var selection: AppModel.Tab
     let inboxCount: Int
@@ -29,7 +29,8 @@ struct FloatingTabBar: View {
             tab(.someday, title: "Someday", icon: "archivebox", highlighted: highlighted)
         }
         .background(alignment: .leading) {
-            SelectionPill(isLifted: fingerX != nil && !reduceMotion)
+            Capsule()
+                .fill(Theme.blueTint)
                 .frame(width: segmentWidth)
                 .frame(maxHeight: .infinity)
                 .offset(x: pillOffset)
@@ -95,31 +96,6 @@ struct FloatingTabBar: View {
         .accessibilityLabel(badge > 0 ? "\(title), \(badge) to sort" : title)
         .accessibilityAddTraits(selection == tab ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { selection = tab }
-    }
-}
-
-/// The highlight behind the selected tab. Pressed on iOS 26 it becomes a clear
-/// glass lens, a little larger, like the thumb of the system segmented control.
-private struct SelectionPill: View {
-    let isLifted: Bool
-
-    var body: some View {
-        #if compiler(>=6.2)
-        if #available(iOS 26, *) {
-            Capsule()
-                .fill(Theme.blueTint.opacity(isLifted ? 0 : 1))
-                .glassEffect(isLifted ? .clear.interactive() : .identity, in: Capsule())
-                .scaleEffect(isLifted ? 1.18 : 1)
-        } else {
-            tinted
-        }
-        #else
-        tinted
-        #endif
-    }
-
-    private var tinted: some View {
-        Capsule().fill(Theme.blueTint)
     }
 }
 
