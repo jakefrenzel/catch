@@ -89,17 +89,21 @@ struct RootView: View {
         .overlay(alignment: .bottom) {
             if model.isListening {
                 ZStack(alignment: .bottom) {
-                    Color.black.opacity(0.25)
+                    // Darker while coaching, as in step 1, so the screen behind
+                    // doesn't show through the coach bubble.
+                    Color.black.opacity(model.onboarding == .talk ? 0.55 : 0.25)
                         .ignoresSafeArea()
                         .transition(.opacity)
-                    VoiceSheet(startedAt: model.listeningStartedAt)
-                        .transition(reduceMotion ? .opacity : .move(edge: .bottom))
-                    if model.onboarding == .talk {
-                        OnboardingTalkCoach()
-                            .frame(maxHeight: .infinity, alignment: .top)
-                            .padding(.top, 96)
-                            .padding(.horizontal, 20)
+                    VStack(spacing: 12) {
+                        if model.onboarding == .talk {
+                            // Sits just above the sheet rather than at a fixed height,
+                            // so it never runs into the sheet's top edge.
+                            OnboardingTalkCoach()
+                                .padding(.horizontal, 20)
+                        }
+                        VoiceSheet(startedAt: model.listeningStartedAt)
                     }
+                    .transition(reduceMotion ? .opacity : .move(edge: .bottom))
                 }
                 .ignoresSafeArea(edges: .bottom)
                 // VoiceOver stays in the sheet and starts there, not in the app behind it.
