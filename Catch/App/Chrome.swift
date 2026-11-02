@@ -13,9 +13,7 @@ struct FloatingTabBar: View {
         }
         .padding(5)
         .frame(minHeight: 62)
-        .background(.regularMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.08), lineWidth: 1))
-        .floatingShadow()
+        .barBackground()
     }
 
     private func tab(_ tab: AppModel.Tab, title: String, icon: String, badge: Int = 0) -> some View {
@@ -48,6 +46,28 @@ struct FloatingTabBar: View {
         .buttonStyle(.plain)
         .accessibilityLabel(badge > 0 ? "\(title), \(badge) to sort" : title)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+}
+
+private extension View {
+    /// Liquid Glass on iOS 26, like the system tab bar; a blurred capsule before that.
+    @ViewBuilder
+    func barBackground() -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26, *) {
+            glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            materialBarBackground()
+        }
+        #else
+        materialBarBackground()
+        #endif
+    }
+
+    func materialBarBackground() -> some View {
+        background(.regularMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.08), lineWidth: 1))
+            .floatingShadow()
     }
 }
 
