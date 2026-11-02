@@ -140,6 +140,8 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
+        // Loads the keyboard soon after launch without moving anything.
+        .modifier(KeyboardWarmup())
         .background(ToastWindowInstaller(model: model))
         .onChange(of: upFirst?.key, initial: true) { _, key in model.currentUpFirst = key }
         .sheet(item: $model.sheet) { sheet in
