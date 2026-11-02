@@ -158,7 +158,9 @@ struct RootView: View {
                       onNotNow: { model.skipFocus(in: candidates) },
                       onClose: { model.focus = nil })
         }
-        .preferredColorScheme(colorScheme)
+        // Set on the window rather than with preferredColorScheme, which doesn't
+        // reach a sheet that's already open (Settings, where it's changed).
+        .background(WindowAppearance(style: interfaceStyle))
         .task {
             while !Task.isCancelled {
                 model.refreshClock()
@@ -244,11 +246,52 @@ struct RootView: View {
         #endif
     }
 
-    private var colorScheme: ColorScheme? {
+    private var interfaceStyle: UIUserInterfaceStyle {
         switch model.settings.appearance {
-        case .system: return nil
+        case .system: return .unspecified
         case .light: return .light
         case .dark: return .dark
+        }
+    }
+}
+
+/// Applies the Appearance setting to the whole window, so the app and every
+/// sheet and cover over it switch together, straight away.
+private struct WindowAppearance: UIViewRepresentable {
+    let style: UIUserInterfaceStyle
+
+    func makeUIView(context: Context) -> AppearanceView {
+        let view = AppearanceView()
+        view.style = style
+        return view
+    }
+
+    func updateUIView(_ uiView: AppearanceView, context: Context) {
+        uiView.style = style
+    }
+
+    final class AppearanceView: UIView {
+        var style: UIUserInterfaceStyle = .unspecified {
+            didSet { apply() }
+        }
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            isUserInteractionEnabled = false
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) is not used")
+        }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            apply()
+        }
+
+        private func apply() {
+            guard let window, window.overrideUserInterfaceStyle != style else { return }
+            window.overrideUserInterfaceStyle = style
         }
     }
 }
