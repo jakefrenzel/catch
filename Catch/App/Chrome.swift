@@ -5,12 +5,18 @@ struct FloatingTabBar: View {
     @Binding var selection: AppModel.Tab
     let inboxCount: Int
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Lets the selected tab's pill slide to the new tab instead of jumping.
+    @Namespace private var selectionPill
+
     var body: some View {
         HStack(spacing: 0) {
             tab(.today, title: "Today", icon: "sun.max")
             tab(.inbox, title: "Inbox", icon: "tray", badge: inboxCount)
             tab(.someday, title: "Someday", icon: "archivebox")
         }
+        // Only the bar animates; the screen behind it still switches instantly.
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.78), value: selection)
         .padding(5)
         .frame(minHeight: 62)
         .barBackground()
@@ -40,7 +46,13 @@ struct FloatingTabBar: View {
             }
             .foregroundStyle(isSelected ? Theme.blue : .primary)
             .frame(maxWidth: .infinity, minHeight: 52)
-            .background(isSelected ? Theme.blueTint : .clear, in: Capsule())
+            .background {
+                if isSelected {
+                    Capsule()
+                        .fill(Theme.blueTint)
+                        .matchedGeometryEffect(id: "selection", in: selectionPill)
+                }
+            }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
