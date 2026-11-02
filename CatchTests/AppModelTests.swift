@@ -284,6 +284,16 @@ final class AppModelTests: XCTestCase {
         XCTAssertLessThan(model.listBottomMargin, withBar, "Turned off in Settings")
     }
 
+    func testTurningOffUpFirstHidesThePinnedBar() throws {
+        let (model, env) = try makeModel()
+        model.tab = .inbox
+        model.currentUpFirst = UUID()
+        let withBar = model.listBottomMargin
+        env.settingsStore.settings.showsUpFirst = false
+        XCTAssertFalse(model.showsPinnedUpFirst)
+        XCTAssertLessThan(model.listBottomMargin, withBar)
+    }
+
     func testPinnedBarSettingTurnsItOff() throws {
         let (model, env) = try makeModel()
         model.tab = .inbox

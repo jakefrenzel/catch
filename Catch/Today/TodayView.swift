@@ -42,23 +42,26 @@ struct TodayView: View {
                     EveningCard(card: eveningCard) { model.finishDay() }
                         .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
                 } else if let upFirst = model.upFirst.current(in: candidates) {
-                    UpFirstCard(candidate: upFirst,
-                                onStart: { model.startFocus(on: upFirst) },
-                                onSkip: { model.skipUpFirst(in: candidates) })
-                        .onGeometryChange(for: Bool.self) { proxy in
-                            proxy.frame(in: .global).maxY < 100
-                        } action: { scrolledAway in
-                            model.upFirstCardScrolledAway = scrolledAway
-                        }
-                        // A fast scroll can recycle the row before its last geometry
-                        // update, so treat leaving the screen as scrolled away too.
-                        .onDisappear {
-                            // Ignore tab switches, Focus covering the screen and Project Detail.
-                            if model.tab == .today && model.focus == nil && model.projectPath.isEmpty {
-                                model.upFirstCardScrolledAway = true
+                    // Turned off in Settings: nothing here, but not "Today is clear" either.
+                    if settings.showsUpFirst {
+                        UpFirstCard(candidate: upFirst,
+                                    onStart: { model.startFocus(on: upFirst) },
+                                    onSkip: { model.skipUpFirst(in: candidates) })
+                            .onGeometryChange(for: Bool.self) { proxy in
+                                proxy.frame(in: .global).maxY < 100
+                            } action: { scrolledAway in
+                                model.upFirstCardScrolledAway = scrolledAway
                             }
-                        }
-                        .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
+                            // A fast scroll can recycle the row before its last geometry
+                            // update, so treat leaving the screen as scrolled away too.
+                            .onDisappear {
+                                // Ignore tab switches, Focus covering the screen and Project Detail.
+                                if model.tab == .today && model.focus == nil && model.projectPath.isEmpty {
+                                    model.upFirstCardScrolledAway = true
+                                }
+                            }
+                            .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
+                    }
                 } else if model.onboarding == nil {
                     AllClearCard(doneToday: doneTodayCount,
                                  inboxCount: items.filter { $0.list == .inbox }.count,
