@@ -71,12 +71,18 @@ can install it right away; external testers need Apple's beta review first.
 
 ## CI
 
-`.github/workflows/ci.yml` builds, runs the tests and saves simulator
-screenshots of every screen (the **Screenshots** artifact on each run). It runs
-on every push to `main`, on pull requests, and on demand:
+`.github/workflows/ci.yml` builds and runs the tests. It runs on every push
+to `main`, on pull requests, and on demand:
 
 ```sh
 gh workflow run ci.yml --ref <branch>
+```
+
+`.github/workflows/screenshots.yml` saves simulator screenshots of every screen
+(the **Screenshots** artifact). It only runs on demand, so CI stays quick:
+
+```sh
+gh workflow run screenshots.yml --ref <branch>
 ```
 
 Debug-only launch arguments open specific screens for those screenshots, for
