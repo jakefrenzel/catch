@@ -1,0 +1,118 @@
+name: Screenshots
+
+# Launches the app with demo data and captures every screen, in light, dark
+# and large text, since nobody on the team can run the simulator locally yet.
+# It used to run on every CI build; it's here so CI stays quick. Run it by
+# hand on any branch, then download the "Screenshots" artifact:
+#
+#   gh workflow run screenshots.yml --ref <branch>
+#
+# Or use Actions > Screenshots > Run workflow on GitHub.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    # Pinned so a runner image update can't change the compiler or SDK under us.
+    # To move up: change both lines together, after checking the version is on the image.
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Pick a simulator
+        id: sim
+        run: echo "udid=$(python3 scripts/pick_simulator.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Catch.xcodeproj \
+            -scheme Catch \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Take screenshots
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          APP=DerivedData/Build/Products/Debug-iphonesimulator/Catch.app
+          mkdir -p screenshots
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryLevel 100 --cellularBars 4
+          xcrun simctl uninstall "$UDID" com.buildmonkeys.catch || true
+          xcrun simctl install "$UDID" "$APP"
+          # shot <name> <light|dark> [launch arguments...]
+          shot() {
+            local name=$1 mode=$2; shift 2
+            xcrun simctl ui "$UDID" appearance "$mode"
+            xcrun simctl terminate "$UDID" com.buildmonkeys.catch 2>/dev/null || true
+            xcrun simctl launch "$UDID" com.buildmonkeys.catch -seedSampleData "$@"
+            sleep 6
+            xcrun simctl io "$UDID" screenshot "screenshots/$name.png"
+          }
+          shot today-light light
+          shot today-dark dark
+          shot today-done-fold light -foldDoneEarly
+          shot today-projects light -scrollToProjects
+          shot capture-light light -openCapture -sampleToast
+          shot capture-dark dark -openCapture
+          shot inbox-light light -showInbox
+          shot inbox-dark dark -showInbox
+          shot someday-light light -showSomeday
+          shot remind-light light -openRemind
+          shot remind-picker-dark dark -openRemind -remindPicking
+          shot swap-light light -openSwap
+          shot edit-light light -openEdit
+          shot edit-long-dark dark -openEdit -longTitle
+          shot project-light light -openProject
+          shot project-dark dark -openProject
+          shot new-project-light light -openNewProject
+          shot settings-light light -openSettings
+          shot settings-dark dark -openSettings
+          shot evening-light light -evening
+          shot evening-dark dark -evening
+          shot voice-light light -voiceDemo -startVoice
+          shot voice-dark dark -voiceDemo -startVoice
+          shot mic-denied-light light -openMicDenied
+          shot voice-retry-light light -openVoiceRetry
+          shot onboarding-welcome light -onboardingWelcome
+          shot onboarding-hold light -onboardingHold
+          shot onboarding-talk dark -onboardingHold -voiceDemo -startVoice
+          shot onboarding-permission light -onboardingPermission
+          shot places-light light -openPlaces
+          shot place-editor-light light -openPlaces -openPlaceEditor
+          shot widgets-light light -widgetGallery
+          shot widgets-dark dark -widgetGallery
+          shot widgets-medium-light light -widgetGallery -medium
+          shot live-activity light -widgetGallery -activity
+          # Dynamic Type: the design previews text up to about 130%.
+          xcrun simctl ui "$UDID" content_size extra-extra-extra-large
+          shot large-text-today light
+          shot large-text-inbox light -showInbox
+          shot large-text-capture light -openCapture
+          shot large-text-remind light -openRemind
+          xcrun simctl ui "$UDID" content_size large
+          shot voice-language light -openVoiceLanguage
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: Screenshots
+          path: screenshots
