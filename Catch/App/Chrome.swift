@@ -1,63 +1,125 @@
 import SwiftUI
 
 /// Today / Inbox / Someday, floating at the bottom left of every screen.
+///
+/// Works like the system's iOS 26 controls: press anywhere on the bar and the
+/// selection lifts into a glass lens that follows your finger, then settles on
+/// the tab you let go over. Before iOS 26 the tinted pill follows the finger instead.
 struct FloatingTabBar: View {
     @Binding var selection: AppModel.Tab
     let inboxCount: Int
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Lets the selected tab's pill slide to the new tab instead of jumping.
-    @Namespace private var selectionPill
+    /// Off during onboarding, when RootView disables the bar.
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var width: CGFloat = 0
+    /// Where the finger is along the bar while it's down. Resets by itself
+    /// if the touch is cancelled (a call, an alert).
+    @GestureState private var fingerX: CGFloat?
+
+    private static let tabs: [AppModel.Tab] = [.today, .inbox, .someday]
 
     var body: some View {
+        // While pressed, the tab under the finger is the one that lights up.
+        let highlighted = fingerX.map(tab(at:)) ?? selection
+
         HStack(spacing: 0) {
-            tab(.today, title: "Today", icon: "sun.max")
-            tab(.inbox, title: "Inbox", icon: "tray", badge: inboxCount)
-            tab(.someday, title: "Someday", icon: "archivebox")
+            tab(.today, title: "Today", icon: "sun.max", highlighted: highlighted)
+            tab(.inbox, title: "Inbox", icon: "tray", badge: inboxCount, highlighted: highlighted)
+            tab(.someday, title: "Someday", icon: "archivebox", highlighted: highlighted)
         }
+        .background(alignment: .leading) {
+            SelectionPill(isLifted: fingerX != nil && !reduceMotion)
+                .frame(width: segmentWidth)
+                .frame(maxHeight: .infinity)
+                .offset(x: pillOffset)
+                .allowsHitTesting(false)
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .contentShape(Capsule())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .updating($fingerX) { value, fingerX, _ in fingerX = value.location.x }
+                .onEnded { selection = tab(at: $0.location.x) },
+            including: isEnabled ? .all : .subviews
+        )
         // Only the bar animates; the screen behind it still switches instantly.
         .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.78), value: selection)
+        .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.82), value: fingerX)
         .padding(5)
         .frame(minHeight: 62)
         .barBackground()
     }
 
-    private func tab(_ tab: AppModel.Tab, title: String, icon: String, badge: Int = 0) -> some View {
-        let isSelected = selection == tab
-        return Button {
-            selection = tab
-        } label: {
-            VStack(spacing: 2) {
-                Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .overlay(alignment: .topTrailing) {
-                        if badge > 0 {
-                            Text("\(badge)")
-                                .font(.caption2.weight(.bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 5)
-                                .frame(minWidth: 18, minHeight: 18)
-                                .background(Theme.red, in: Capsule())
-                                .offset(x: 12, y: -6)
-                        }
-                    }
-                Text(title)
-                    .font(.caption2.weight(.medium))
-            }
-            .foregroundStyle(isSelected ? Theme.blue : .primary)
-            .frame(maxWidth: .infinity, minHeight: 52)
-            .background {
-                if isSelected {
-                    Capsule()
-                        .fill(Theme.blueTint)
-                        .matchedGeometryEffect(id: "selection", in: selectionPill)
-                }
-            }
-            .contentShape(Capsule())
+    private var segmentWidth: CGFloat {
+        width / CGFloat(Self.tabs.count)
+    }
+
+    /// Under the finger while it's down, otherwise over the selected tab.
+    private var pillOffset: CGFloat {
+        if let fingerX {
+            return min(max(fingerX - segmentWidth / 2, 0), max(width - segmentWidth, 0))
         }
-        .buttonStyle(.plain)
+        return CGFloat(Self.tabs.firstIndex(of: selection) ?? 0) * segmentWidth
+    }
+
+    private func tab(at x: CGFloat) -> AppModel.Tab {
+        guard segmentWidth > 0 else { return selection }
+        let index = Int(x / segmentWidth)
+        return Self.tabs[min(max(index, 0), Self.tabs.count - 1)]
+    }
+
+    private func tab(_ tab: AppModel.Tab, title: String, icon: String, badge: Int = 0,
+                     highlighted: AppModel.Tab) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: icon)
+                .font(.system(size: 22))
+                .overlay(alignment: .topTrailing) {
+                    if badge > 0 {
+                        Text("\(badge)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .frame(minWidth: 18, minHeight: 18)
+                            .background(Theme.red, in: Capsule())
+                            .offset(x: 12, y: -6)
+                    }
+                }
+            Text(title)
+                .font(.caption2.weight(.medium))
+        }
+        .foregroundStyle(highlighted == tab ? Theme.blue : .primary)
+        .frame(maxWidth: .infinity, minHeight: 52)
+        // The bar's drag gesture handles touch; VoiceOver and Voice Control use these.
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(badge > 0 ? "\(title), \(badge) to sort" : title)
-        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .accessibilityAddTraits(selection == tab ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction { selection = tab }
+    }
+}
+
+/// The highlight behind the selected tab. Pressed on iOS 26 it becomes a clear
+/// glass lens, a little larger, like the thumb of the system segmented control.
+private struct SelectionPill: View {
+    let isLifted: Bool
+
+    var body: some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26, *) {
+            Capsule()
+                .fill(Theme.blueTint.opacity(isLifted ? 0 : 1))
+                .glassEffect(isLifted ? .clear.interactive() : .identity, in: Capsule())
+                .scaleEffect(isLifted ? 1.18 : 1)
+        } else {
+            tinted
+        }
+        #else
+        tinted
+        #endif
+    }
+
+    private var tinted: some View {
+        Capsule().fill(Theme.blueTint)
     }
 }
 
@@ -67,7 +129,7 @@ private extension View {
     func barBackground() -> some View {
         #if compiler(>=6.2)
         if #available(iOS 26, *) {
-            glassEffect(.regular.interactive(), in: Capsule())
+            glassEffect(.regular, in: Capsule())
         } else {
             materialBarBackground()
         }
