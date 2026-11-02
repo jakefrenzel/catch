@@ -11,8 +11,14 @@ struct RootView: View {
     /// A keyboard is up or on its way, from when it starts rising until it has
     /// fully gone. The tab bar and + hide meanwhile.
     @State private var isKeyboardUp = false
-    /// The last real keyboard's height, so the capture card knows how far to drop.
-    @State private var keyboardHeight: CGFloat = 340
+    /// How long the last real keyboard took to move, so the closing card sinks in step.
+    @State private var keyboardDuration: Double = 0.25
+    /// While closing: the card sinks its own height behind the keyboard's top edge
+    /// as the keyboard, which it's docked to, carries it down.
+    @State private var isCardSinking = false
+    @State private var cardHeight: CGFloat = 220
+    /// A new card each time it opens, so reopening mid-close starts fresh.
+    @State private var cardSession = 0
     @Query(sort: \Item.capturedAt) private var items: [Item]
     @Query(sort: \Project.sortOrder) private var projects: [Project]
 
@@ -139,21 +145,22 @@ struct RootView: View {
             }
         }
         .overlay(alignment: .bottom) {
-            if model.isCaptureOpen {
+            if model.isCaptureOpen || model.isCaptureClosing {
                 CaptureCard()
-                    .transition(reduceMotion ? .opacity : .asymmetric(
-                        insertion: .move(edge: .bottom),
-                        // .move is measured while the keyboard is still up, so the card
-                        // only dropped its own height and sat mid-screen as the keyboard
-                        // went. Drop the keyboard's height plus the card's instead, so it
-                        // slides down with the keyboard and off the bottom.
-                        removal: .offset(y: keyboardHeight + 320)))
+                    .id(cardSession)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
+                    // Closing, the card stays docked on the keyboard, so it moves down
+                    // exactly as the keyboard does, and sinks behind the keyboard's
+                    // edge on the way so it's out of sight when the keyboard has gone.
+                    // (Its own slide never quite matched the keyboard's curve.)
+                    .offset(y: isCardSinking ? cardHeight + 40 : 0)
+                    .allowsHitTesting(model.isCaptureOpen)
+                    // It's already off screen when it's removed after closing.
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .bottom),
+                                                                      removal: .identity))
             }
         }
-        // Opening eases out like the design's sheets. Closing matches the keyboard's
-        // own drop: an ease-out here front-loads the motion, so the card was behind
-        // the keyboard within a few frames and looked like it just vanished.
-        .animation(reduceMotion ? nil : (model.isCaptureOpen ? Animation.catchEaseOut(0.3) : Animation.easeInOut(duration: 0.3)),
+        .animation(reduceMotion ? nil : (model.isCaptureOpen ? Animation.catchEaseOut(0.3) : Animation.easeOut(duration: 0.25)),
                    value: model.isCaptureOpen)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: model.onboarding)
         .overlay {
@@ -167,18 +174,33 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
             guard !model.isWarmingKeyboard else { return }
             isKeyboardUp = true
-            if let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect, frame.height > 0 {
-                keyboardHeight = frame.height
+            if let duration = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double, duration > 0 {
+                keyboardDuration = duration
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
             isKeyboardUp = false
+            finishClosingCard()
         }
         // However the card closes (the backdrop, a link, Undo), drop the keyboard
-        // with it. Otherwise it waits for the card's exit animation to finish.
+        // with it, and let the card ride down on it.
         .onChange(of: model.isCaptureOpen) { _, isOpen in
-            if !isOpen {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            if isOpen {
+                // Reopened mid-close: swap in a fresh card rather than reuse the sinking one.
+                finishClosingCard()
+                return
+            }
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            guard model.isCaptureClosing, isKeyboardUp, !reduceMotion else {
+                finishClosingCard()
+                return
+            }
+            withAnimation(.easeInOut(duration: keyboardDuration)) { isCardSinking = true }
+            // In case no keyboard-hidden notification comes (a hardware keyboard).
+            let session = cardSession
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(keyboardDuration + 0.4))
+                if cardSession == session { finishClosingCard() }
             }
         }
         .background(ToastWindowInstaller(model: model))
@@ -295,6 +317,18 @@ struct RootView: View {
         case .system: return .unspecified
         case .light: return .light
         case .dark: return .dark
+        }
+    }
+
+    /// Takes the closed card off screen (it's already out of sight) without animating.
+    private func finishClosingCard() {
+        guard model.isCaptureClosing || isCardSinking else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            model.isCaptureClosing = false
+            isCardSinking = false
+            cardSession += 1
         }
     }
 }
