@@ -5,17 +5,21 @@ struct FloatingTabBar: View {
     @Binding var selection: AppModel.Tab
     let inboxCount: Int
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Lets the selected tab's pill slide to the new tab instead of jumping.
+    @Namespace private var selectionPill
+
     var body: some View {
         HStack(spacing: 0) {
             tab(.today, title: "Today", icon: "sun.max")
             tab(.inbox, title: "Inbox", icon: "tray", badge: inboxCount)
             tab(.someday, title: "Someday", icon: "archivebox")
         }
+        // Only the bar animates; the screen behind it still switches instantly.
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.78), value: selection)
         .padding(5)
         .frame(minHeight: 62)
-        .background(.regularMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.08), lineWidth: 1))
-        .floatingShadow()
+        .barBackground()
     }
 
     private func tab(_ tab: AppModel.Tab, title: String, icon: String, badge: Int = 0) -> some View {
@@ -42,12 +46,40 @@ struct FloatingTabBar: View {
             }
             .foregroundStyle(isSelected ? Theme.blue : .primary)
             .frame(maxWidth: .infinity, minHeight: 52)
-            .background(isSelected ? Theme.blueTint : .clear, in: Capsule())
+            .background {
+                if isSelected {
+                    Capsule()
+                        .fill(Theme.blueTint)
+                        .matchedGeometryEffect(id: "selection", in: selectionPill)
+                }
+            }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(badge > 0 ? "\(title), \(badge) to sort" : title)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+}
+
+private extension View {
+    /// Liquid Glass on iOS 26, like the system tab bar; a blurred capsule before that.
+    @ViewBuilder
+    func barBackground() -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26, *) {
+            glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            materialBarBackground()
+        }
+        #else
+        materialBarBackground()
+        #endif
+    }
+
+    func materialBarBackground() -> some View {
+        background(.regularMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.08), lineWidth: 1))
+            .floatingShadow()
     }
 }
 

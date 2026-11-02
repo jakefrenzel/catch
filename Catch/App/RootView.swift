@@ -89,17 +89,21 @@ struct RootView: View {
         .overlay(alignment: .bottom) {
             if model.isListening {
                 ZStack(alignment: .bottom) {
-                    Color.black.opacity(0.25)
+                    // Darker while coaching, as in step 1, so the screen behind
+                    // doesn't show through the coach bubble.
+                    Color.black.opacity(model.onboarding == .talk ? 0.55 : 0.25)
                         .ignoresSafeArea()
                         .transition(.opacity)
-                    VoiceSheet(startedAt: model.listeningStartedAt)
-                        .transition(reduceMotion ? .opacity : .move(edge: .bottom))
-                    if model.onboarding == .talk {
-                        OnboardingTalkCoach()
-                            .frame(maxHeight: .infinity, alignment: .top)
-                            .padding(.top, 96)
-                            .padding(.horizontal, 20)
+                    VStack(spacing: 12) {
+                        if model.onboarding == .talk {
+                            // Sits just above the sheet rather than at a fixed height,
+                            // so it never runs into the sheet's top edge.
+                            OnboardingTalkCoach()
+                                .padding(.horizontal, 20)
+                        }
+                        VoiceSheet(startedAt: model.listeningStartedAt)
                     }
+                    .transition(reduceMotion ? .opacity : .move(edge: .bottom))
                 }
                 .ignoresSafeArea(edges: .bottom)
                 // VoiceOver stays in the sheet and starts there, not in the app behind it.
@@ -158,7 +162,9 @@ struct RootView: View {
                       onNotNow: { model.skipFocus(in: candidates) },
                       onClose: { model.focus = nil })
         }
-        .preferredColorScheme(colorScheme)
+        // Set on the window rather than with preferredColorScheme, which doesn't
+        // reach a sheet that's already open (Settings, where it's changed).
+        .background(WindowAppearance(style: interfaceStyle))
         .task {
             while !Task.isCancelled {
                 model.refreshClock()
@@ -244,11 +250,52 @@ struct RootView: View {
         #endif
     }
 
-    private var colorScheme: ColorScheme? {
+    private var interfaceStyle: UIUserInterfaceStyle {
         switch model.settings.appearance {
-        case .system: return nil
+        case .system: return .unspecified
         case .light: return .light
         case .dark: return .dark
+        }
+    }
+}
+
+/// Applies the Appearance setting to the whole window, so the app and every
+/// sheet and cover over it switch together, straight away.
+private struct WindowAppearance: UIViewRepresentable {
+    let style: UIUserInterfaceStyle
+
+    func makeUIView(context: Context) -> AppearanceView {
+        let view = AppearanceView()
+        view.style = style
+        return view
+    }
+
+    func updateUIView(_ uiView: AppearanceView, context: Context) {
+        uiView.style = style
+    }
+
+    final class AppearanceView: UIView {
+        var style: UIUserInterfaceStyle = .unspecified {
+            didSet { apply() }
+        }
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            isUserInteractionEnabled = false
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) is not used")
+        }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            apply()
+        }
+
+        private func apply() {
+            guard let window, window.overrideUserInterfaceStyle != style else { return }
+            window.overrideUserInterfaceStyle = style
         }
     }
 }

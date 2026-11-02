@@ -94,7 +94,8 @@ struct StepPill: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(.white.opacity(0.2), in: Capsule())
+            // Solid, so what's behind the dimmed screen doesn't show through the text.
+            .background(Color(red: 58 / 255, green: 58 / 255, blue: 60 / 255), in: Capsule())
     }
 }
 
