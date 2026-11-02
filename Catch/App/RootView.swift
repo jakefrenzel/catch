@@ -139,7 +139,12 @@ struct RootView: View {
         .overlay(alignment: .bottom) {
             if model.isCaptureOpen {
                 CaptureCard()
-                    .transition(reduceMotion ? .opacity : .move(edge: .bottom))
+                    .transition(reduceMotion ? .opacity : .asymmetric(
+                        insertion: .move(edge: .bottom),
+                        // .move is measured while the keyboard is still up, so the card
+                        // only dropped its own height and sat mid-screen as the keyboard
+                        // went. Go well past the bottom instead, behind the keyboard.
+                        removal: .offset(y: 900).combined(with: .opacity)))
             }
         }
         .animation(reduceMotion ? nil : .catchEaseOut(0.3), value: model.isCaptureOpen)
