@@ -6,7 +6,7 @@ name: TestFlight
 #   gh workflow run testflight.yml --ref main
 #
 # Needs three repo secrets from an App Store Connect API key (Admin role, so
-# Xcode can create the signing certificates and profiles itself):
+# Xcode can create the distribution profiles and use cloud signing itself):
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the whole .p8 file)
 
 on:
@@ -55,10 +55,14 @@ jobs:
           security default-keychain -s "$KEYCHAIN"
 
       # Every upload needs a new build number; a re-run gets its own too.
+      #
+      # The archive is ad-hoc signed, with no certificate: signing it the normal
+      # way made Xcode create a new Apple Development certificate on every run
+      # (the runner is wiped, and with it the key), until the account hit
+      # Apple's limit. Ad-hoc signing still embeds the entitlements (the App
+      # Group the widgets share), and the upload step below re-signs the app
+      # with the cloud-managed distribution certificate, which is reused.
       - name: Archive
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           set -o pipefail
           xcodebuild archive \
@@ -67,11 +71,26 @@ jobs:
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/Catch.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGNING_REQUIRED=NO \
+            PROVISIONING_PROFILE_SPECIFIER= \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}.${{ github.run_attempt }}"
+
+      # Stop before uploading if the App Group didn't make it into the app or
+      # the widgets: without it they'd install fine but not share data.
+      - name: Check entitlements
+        run: |
+          APP="$RUNNER_TEMP/Catch.xcarchive/Products/Applications/Catch.app"
+          for bundle in "$APP" "$APP/PlugIns/CatchWidgets.appex"; do
+            echo "== $bundle"
+            codesign -d --entitlements - --xml "$bundle" | plutil -p - || true
+            if ! codesign -d --entitlements - --xml "$bundle" | grep -q "group.com.buildmonkeys.catch"; then
+              echo "::error::$(basename "$bundle") is missing the App Group entitlement"
+              exit 1
+            fi
+          done
 
       - name: Upload to App Store Connect
         env:
