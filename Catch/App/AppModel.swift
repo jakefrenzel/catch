@@ -68,7 +68,14 @@ final class AppModel {
     var onboarding: OnboardingStep?
     /// A mic or capture link that came in during step 3, run once the question is answered.
     private var linkAfterOnboarding: URL?
-    var isCaptureOpen = false
+    var isCaptureOpen = false {
+        // Set in the same change, so RootView keeps the card on screen to ride
+        // down with the keyboard instead of dropping it for a frame.
+        didSet { isCaptureClosing = oldValue && !isCaptureOpen }
+    }
+    /// The capture card has been closed but is still on screen, going down with
+    /// the keyboard. RootView clears it once the keyboard has gone.
+    var isCaptureClosing = false
     /// True for the moment KeyboardWarmup raises its hidden keyboard after launch,
     /// so nothing treats that keyboard as a real one.
     var isWarmingKeyboard = false
