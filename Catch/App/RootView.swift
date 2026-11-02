@@ -11,6 +11,8 @@ struct RootView: View {
     /// A keyboard is up or on its way, from when it starts rising until it has
     /// fully gone. The tab bar and + hide meanwhile.
     @State private var isKeyboardUp = false
+    /// The last real keyboard's height, so the capture card knows how far to drop.
+    @State private var keyboardHeight: CGFloat = 340
     @Query(sort: \Item.capturedAt) private var items: [Item]
     @Query(sort: \Project.sortOrder) private var projects: [Project]
 
@@ -143,11 +145,16 @@ struct RootView: View {
                         insertion: .move(edge: .bottom),
                         // .move is measured while the keyboard is still up, so the card
                         // only dropped its own height and sat mid-screen as the keyboard
-                        // went. Go well past the bottom instead, behind the keyboard.
-                        removal: .offset(y: 900).combined(with: .opacity)))
+                        // went. Drop the keyboard's height plus the card's instead, so it
+                        // slides down with the keyboard and off the bottom.
+                        removal: .offset(y: keyboardHeight + 320)))
             }
         }
-        .animation(reduceMotion ? nil : .catchEaseOut(0.3), value: model.isCaptureOpen)
+        // Opening eases out like the design's sheets. Closing matches the keyboard's
+        // own drop: an ease-out here front-loads the motion, so the card was behind
+        // the keyboard within a few frames and looked like it just vanished.
+        .animation(reduceMotion ? nil : (model.isCaptureOpen ? Animation.catchEaseOut(0.3) : Animation.easeInOut(duration: 0.3)),
+                   value: model.isCaptureOpen)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: model.onboarding)
         .overlay {
             if model.onboarding == .welcome {
@@ -157,8 +164,12 @@ struct RootView: View {
         }
         // Loads the keyboard soon after launch without moving anything.
         .modifier(KeyboardWarmup(isWarming: $model.isWarmingKeyboard))
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            if !model.isWarmingKeyboard { isKeyboardUp = true }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
+            guard !model.isWarmingKeyboard else { return }
+            isKeyboardUp = true
+            if let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect, frame.height > 0 {
+                keyboardHeight = frame.height
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
             isKeyboardUp = false
