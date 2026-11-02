@@ -10,7 +10,8 @@ import UIKit
 /// moment of the warm-up the whole screen ignores the keyboard, and nothing moves.
 /// Add it once to the root view, outside anything that should follow the keyboard.
 struct KeyboardWarmup: ViewModifier {
-    @State private var isWarming = false
+    /// Shared (AppModel.isWarmingKeyboard) so other views can ignore this keyboard too.
+    @Binding var isWarming: Bool
 
     func body(content: Content) -> some View {
         content

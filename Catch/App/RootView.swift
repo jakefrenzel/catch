@@ -8,6 +8,9 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    /// A keyboard is up or on its way, from when it starts rising until it has
+    /// fully gone. The tab bar and + hide meanwhile.
+    @State private var isKeyboardUp = false
     @Query(sort: \Item.capturedAt) private var items: [Item]
     @Query(sort: \Project.sortOrder) private var projects: [Project]
 
@@ -84,6 +87,13 @@ struct RootView: View {
             .ignoresSafeArea(.container, edges: .bottom)
             // Stay at the bottom behind the keyboard instead of riding up over text fields.
             .ignoresSafeArea(.keyboard)
+            // Even so, it rode up on the keyboard, and showed above it for a moment
+            // as the capture card closed. Nothing here is useful while typing, so
+            // it steps aside until the keyboard has fully gone.
+            .opacity(isKeyboardUp ? 0 : 1)
+            .allowsHitTesting(!isKeyboardUp)
+            .accessibilityHidden(isKeyboardUp)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isKeyboardUp)
             .animation(reduceMotion ? nil : .catchEaseOut(0.28), value: model.showsPinnedUpFirst && upFirst != nil)
         }
         .overlay(alignment: .bottom) {
@@ -141,7 +151,20 @@ struct RootView: View {
             }
         }
         // Loads the keyboard soon after launch without moving anything.
-        .modifier(KeyboardWarmup())
+        .modifier(KeyboardWarmup(isWarming: $model.isWarmingKeyboard))
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            if !model.isWarmingKeyboard { isKeyboardUp = true }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            isKeyboardUp = false
+        }
+        // However the card closes (the backdrop, a link, Undo), drop the keyboard
+        // with it. Otherwise it waits for the card's exit animation to finish.
+        .onChange(of: model.isCaptureOpen) { _, isOpen in
+            if !isOpen {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
+        }
         .background(ToastWindowInstaller(model: model))
         .onChange(of: upFirst?.key, initial: true) { _, key in model.currentUpFirst = key }
         .sheet(item: $model.sheet) { sheet in
