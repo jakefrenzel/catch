@@ -46,6 +46,9 @@ struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.card.ignoresSafeArea())
+        // Nothing here takes typing, so don't move for a keyboard. The launch
+        // keyboard warm-up briefly raises one, which jolted the screen up and back.
+        .ignoresSafeArea(.keyboard)
     }
 }
 
