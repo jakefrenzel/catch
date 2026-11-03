@@ -165,7 +165,7 @@ final class AppModel {
 
     /// Pinned Up first bar: shown when the card isn't on screen, hidden under sheets.
     var showsPinnedUpFirst: Bool {
-        settings.pinnedUpFirst && !pinnedUpFirstHidden
+        settings.showsUpFirst && settings.pinnedUpFirst && !pinnedUpFirstHidden
             && focus == nil && !isCaptureOpen && sheet == nil && !isEvening && !isListening && onboarding == nil
             && (tab != .today || upFirstCardScrolledAway || !projectPath.isEmpty)
     }
@@ -174,7 +174,7 @@ final class AppModel {
     /// unless it's turned off, swiped away, has nothing to show or the evening
     /// wrap-up has replaced it.
     var listBottomMargin: CGFloat {
-        settings.pinnedUpFirst && currentUpFirst != nil && !pinnedUpFirstHidden && !isEvening ? 180 : 120
+        settings.showsUpFirst && settings.pinnedUpFirst && currentUpFirst != nil && !pinnedUpFirstHidden && !isEvening ? 180 : 120
     }
 
     // MARK: - Day

@@ -105,16 +105,21 @@ struct SettingsSheet: View {
                                 .monospacedDigit()
                         }
                     }
+                    Toggle(isOn: $settingsStore.settings.showsUpFirst) {
+                        SettingLabel("Show Up first", icon: "star.fill", tint: Theme.blue)
+                    }
                     Toggle(isOn: $settingsStore.settings.upFirstIncludesSteps) {
                         SettingLabel("Up first includes project steps", icon: "arrow.right", tint: Theme.blue)
                     }
+                    .disabled(!settingsStore.settings.showsUpFirst)
                     Toggle(isOn: $settingsStore.settings.pinnedUpFirst) {
                         SettingLabel("Pin Up first above the tabs", icon: "pin.fill", tint: Theme.blue)
                     }
+                    .disabled(!settingsStore.settings.showsUpFirst)
                 } header: {
                     Text("Today")
                 } footer: {
-                    Text("The pinned bar shows when the Up first card is off screen. Swipe it down to hide it until something else is up first.")
+                    Text("Up first is the card at the top of Today with the one thing to do next. The pinned bar shows when that card is off screen. Swipe it down to hide it until something else is up first.")
                 }
 
                 Section("Display") {
