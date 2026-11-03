@@ -71,7 +71,8 @@ final class AppModel {
     var isCaptureOpen = false {
         // Set in the same change, so RootView keeps the card on screen to ride
         // down with the keyboard instead of dropping it for a frame.
-        didSet { isCaptureClosing = oldValue && !isCaptureOpen }
+        // Left set on a reopen mid-close, so RootView knows to swap in a fresh card.
+        didSet { if oldValue && !isCaptureOpen { isCaptureClosing = true } }
     }
     /// The capture card has been closed but is still on screen, going down with
     /// the keyboard. RootView clears it once the keyboard has gone.

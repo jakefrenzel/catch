@@ -11,12 +11,8 @@ struct RootView: View {
     /// A keyboard is up or on its way, from when it starts rising until it has
     /// fully gone. The tab bar and + hide meanwhile.
     @State private var isKeyboardUp = false
-    /// How long the last real keyboard took to move, so the closing card sinks in step.
-    @State private var keyboardDuration: Double = 0.25
-    /// While closing: the card sinks its own height behind the keyboard's top edge
-    /// as the keyboard, which it's docked to, carries it down.
-    @State private var isCardSinking = false
-    @State private var cardHeight: CGFloat = 220
+    /// The capture card is hosted in UIKit (KeyboardDock), which needs these passed in.
+    @Environment(\.modelContext) private var modelContext
     /// A new card each time it opens, so reopening mid-close starts fresh.
     @State private var cardSession = 0
     @Query(sort: \Item.capturedAt) private var items: [Item]
@@ -144,20 +140,18 @@ struct RootView: View {
                 .transition(.opacity)
             }
         }
-        .overlay(alignment: .bottom) {
+        .overlay {
             if model.isCaptureOpen || model.isCaptureClosing {
-                CaptureCard()
+                // Pinned to the keyboard in UIKit, so it rises and drops exactly with
+                // it. SwiftUI's own keyboard tracking trailed the keyboard a little.
+                // Closed, it stays until the keyboard has gone, then leaves unseen.
+                KeyboardDock(content: CaptureCard()
+                    .environment(model)
+                    .modelContext(modelContext))
                     .id(cardSession)
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
-                    // Closing, the card stays docked on the keyboard, so it moves down
-                    // exactly as the keyboard does, and sinks behind the keyboard's
-                    // edge on the way so it's out of sight when the keyboard has gone.
-                    // (Its own slide never quite matched the keyboard's curve.)
-                    .offset(y: isCardSinking ? cardHeight + 40 : 0)
+                    .ignoresSafeArea()
                     .allowsHitTesting(model.isCaptureOpen)
-                    // It's already off screen when it's removed after closing.
-                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .bottom),
-                                                                      removal: .identity))
+                    .transition(.identity)
             }
         }
         .animation(reduceMotion ? nil : (model.isCaptureOpen ? Animation.catchEaseOut(0.3) : Animation.easeOut(duration: 0.25)),
@@ -171,12 +165,9 @@ struct RootView: View {
         }
         // Loads the keyboard soon after launch without moving anything.
         .modifier(KeyboardWarmup(isWarming: $model.isWarmingKeyboard))
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             guard !model.isWarmingKeyboard else { return }
             isKeyboardUp = true
-            if let duration = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double, duration > 0 {
-                keyboardDuration = duration
-            }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
             isKeyboardUp = false
@@ -191,15 +182,14 @@ struct RootView: View {
                 return
             }
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-            guard model.isCaptureClosing, isKeyboardUp, !reduceMotion else {
+            guard model.isCaptureClosing, isKeyboardUp else {
                 finishClosingCard()
                 return
             }
-            withAnimation(.easeInOut(duration: keyboardDuration)) { isCardSinking = true }
             // In case no keyboard-hidden notification comes (a hardware keyboard).
             let session = cardSession
             Task { @MainActor in
-                try? await Task.sleep(for: .seconds(keyboardDuration + 0.4))
+                try? await Task.sleep(for: .seconds(1))
                 if cardSession == session { finishClosingCard() }
             }
         }
@@ -322,12 +312,11 @@ struct RootView: View {
 
     /// Takes the closed card off screen (it's already out of sight) without animating.
     private func finishClosingCard() {
-        guard model.isCaptureClosing || isCardSinking else { return }
+        guard model.isCaptureClosing else { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             model.isCaptureClosing = false
-            isCardSinking = false
             cardSession += 1
         }
     }
