@@ -104,7 +104,7 @@ A white sheet with a red "Listening" label, a timer and a live transcript (28/60
 - **Empty**: "Inbox is empty" card with a "Back to Today" button.
 
 ### 5. Someday
-A large title with the subtitle "No dates. Look through it once a month." Each row has a "Move to Now" pill (30 tall, 12% blue tint). Empty state 10e: a grey archive icon in a 60 pt circle, "Nothing here yet", and an explanatory line.
+A large title with the subtitle "No dates. Look through it once a month." Each row has a "Move to Now" pill (30 tall, 12% blue tint). Empty state 10e: a grey archive icon in a 60 pt circle, "No Someday Ideas", and the line "Ideas with no date appear here. Move one from Inbox, or say “someday” when you speak."
 
 ### 6. Project Detail (6b)
 - **Navigation**: back button "‹ Today".
