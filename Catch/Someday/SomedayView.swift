@@ -83,7 +83,7 @@ private struct EmptySomedayCard: View {
                 .frame(width: 60, height: 60)
                 .background(Theme.fill, in: Circle())
                 .accessibilityHidden(true)
-            Text("No Someday Ideas")
+            Text("Nothing in Someday")
                 .font(.title3.bold())
             Text("Ideas with no date appear here. Move one from Inbox, or say “someday” when you speak.")
                 .font(.subheadline)
