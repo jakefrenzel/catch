@@ -296,7 +296,7 @@ struct Settings { notifications, nudgeDefault, afterWork: Time, wrapUpTime: Time
 | bar | rgba(255,255,255,.84) | rgba(30,30,32,.86) | tab bar, pinned bar (+20 pt blur) |
 | blue | #007AFF | #0A84FF | accent, Now |
 | orange | #FF9500 | #FF9F0A | Later fills and icons |
-| orangeText | #C93400 | #FF9F0A | orange text (meets contrast) |
+| orangeText | #FF9500 | #FF9F0A | orange text: the system orange, which iOS darkens to #C93400 / #FFB340 with Increase Contrast |
 | red | #FF3B30 | #FF453A | destructive, Inbox badge |
 | green | #34C759 | #30D158 | done swipe, success |
 | purple | #5856D6 | #5E5CE6 | projects in voice, haptic labels |
@@ -322,7 +322,7 @@ struct Settings { notifications, nudgeDefault, afterWork: Time, wrapUpTime: Time
 - **Spacing**: screen inset 16, section header inset 36, row padding 11 vertical, gaps between sections 20–22.
 
 ## Accessibility
-- Small orange text uses `orangeText`. Orange buttons with labels use a tint fill with `orangeText` labels, never white on orange.
+- Small orange text uses `orangeText`, the system orange, as Apple's apps do; Increase Contrast darkens it. Orange buttons with labels use a tint fill with `orangeText` labels, never white on orange.
 - VoiceOver:
   - Check circle: "Mark done: ‹title›".
   - Row: "‹title›, ‹time›. Double-tap to edit." Swipe actions must be exposed as `accessibilityActions`.
