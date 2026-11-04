@@ -42,7 +42,7 @@ struct TodayView: View {
                     EveningCard(card: eveningCard) { model.finishDay() }
                         .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
                 } else if let upFirst = model.upFirst.current(in: candidates) {
-                    // Turned off in Settings: nothing here, but not "Today is clear" either.
+                    // Turned off in Settings: nothing here, but not "All Done for Today" either.
                     if settings.showsUpFirst {
                         UpFirstCard(candidate: upFirst,
                                     onStart: { model.startFocus(on: upFirst) },
@@ -164,7 +164,7 @@ struct TodayView: View {
         let showsAllToTomorrow = isEvening && openCount > 0
         return Section {
             if nowItems.isEmpty {
-                EmptyRow(text: isEvening ? "Nothing left in Now." : "Nothing in Now. Sort your Inbox to add some.")
+                EmptyRow(text: isEvening ? "All Done." : "No Items. Sort Inbox to add some.")
             }
             // One ForEach, so a checked-off row slides down rather than vanishing and reappearing.
             ForEach(checklistRows(nowItems, showsDone: showsDoneInNow)) { row in
@@ -330,7 +330,7 @@ struct TodayView: View {
                 RemindersOffBanner { Task { await model.turnOnNotifications() } }
             }
             if laterItems.isEmpty {
-                EmptyRow(text: "No reminders set.")
+                EmptyRow(text: "No Reminders")
             }
             ForEach(checklistRows(laterItems, showsDone: showsDoneInLater)) { row in
                 switch row {

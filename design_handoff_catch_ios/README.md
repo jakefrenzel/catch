@@ -51,7 +51,7 @@ All measurements are in points on a 402 × 874 device (iPhone 16 Pro). Content s
   - Left: a 36 pt circle (blue 12% tint) with an arrow icon.
   - Middle: "Up first" (13/600 blue, nowrap), a Skip text button (13, tertiary), the task title (17/600) and the reason (12, secondary), e.g. "In Now since Tuesday · about 10 min".
   - Right: a "Start" pill (36 tall, radius 18, blue, white 15/600). It opens Focus.
-- **All clear card** (no suggestion): a green check in a 60 pt tinted circle, "Today is clear" (22/700), "N done. Nothing left in Now and no project steps waiting." Then "Sort Inbox (N)" and "Pull from Someday" pills.
+- **All clear card** (no suggestion): a green check in a 60 pt tinted circle, "All Done for Today" (22/700), "N done. Nothing left in Now and no project steps waiting." Then "Sort Inbox (N)" and "Pull from Someday" pills.
 - **Section headers**: title 20/700 (Now in blue, Later in orange text, Projects in ink) and no counts: the rows are right there. Now alone shows "Full" on the right (13, secondary, nowrap) when it's at `maxNow`, since that's why sorting into it is refused. Padding 20 36 8.
 - **Now and Later order**: open items first, then done ones (oldest first), like a Notes checklist. A row checked off stays put for 0.7 s, then slides down. From 3 done, they fold into one "N done" row (grey check, chevron) that shows or hides them on tap.
 - **List cards**: margin 0 16, radius 20, padding-left 16, overflow hidden.
@@ -101,10 +101,10 @@ A white sheet with a red "Listening" label, a timer and a live transcript (28/60
   - Later: white with an orange clock icon. Opens the Remind sheet.
   - Now: blue with a white sun icon. Opens the Swap sheet if Now is full.
 - **Up next**: a list of up to 4 queued items.
-- **Empty**: "Inbox is empty" card with a "Back to Today" button.
+- **Empty**: "No Ideas to Sort" card ("New ideas appear here. Hold + to talk, or tap + to type.") with a "Back to Today" button.
 
 ### 5. Someday
-A large title with the subtitle "No dates. Look through it once a month." Each row has a "Move to Now" pill (30 tall, 12% blue tint). Empty state 10e: a grey archive icon in a 60 pt circle, "Nothing here yet", and an explanatory line.
+A large title with the subtitle "Ideas with no date. Review them once a month." Each row has a "Move to Now" pill (30 tall, 12% blue tint). Empty state 10e: a grey archive icon in a 60 pt circle, "No Ideas Yet", and the line "Ideas with no date appear here. Move one from Inbox, or say “someday” when you speak."
 
 ### 6. Project Detail (6b)
 - **Navigation**: back button "‹ Today".

@@ -163,7 +163,7 @@ private struct TopSpot: View {
         switch snapshot.mode {
         case .upFirst(_, _, let title, _), .laterDue(_, let title, _, _): return title
         case .evening(let left, _, _): return left == 0 ? "Nothing left for today" : "\(left) left for today"
-        case .clear: return "Today is clear"
+        case .clear: return "All Done for Today"
         case .unavailable: return "Open Catch"
         }
     }
@@ -237,7 +237,7 @@ struct LockScreenUpFirst: View {
         switch snapshot.mode {
         case .upFirst(_, _, let title, _), .laterDue(_, let title, _, _): return title
         case .evening(let left, _, _): return left == 0 ? "Nothing left for today" : "\(left) left for today"
-        case .clear: return "Today is clear"
+        case .clear: return "All Done for Today"
         case .unavailable: return "Open Catch"
         }
     }
