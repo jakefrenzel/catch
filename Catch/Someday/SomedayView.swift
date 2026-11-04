@@ -10,7 +10,7 @@ struct SomedayView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(title: "Someday", subtitle: "No dates. Look through it once a month.")
+                ScreenHeader(title: "Someday", subtitle: "Ideas with no date. Review them once a month.")
 
                 if someday.isEmpty {
                     EmptySomedayCard()
@@ -83,7 +83,7 @@ private struct EmptySomedayCard: View {
                 .frame(width: 60, height: 60)
                 .background(Theme.fill, in: Circle())
                 .accessibilityHidden(true)
-            Text("Nothing in Someday")
+            Text("No Ideas Yet")
                 .font(.title3.bold())
             Text("Ideas with no date appear here. Move one from Inbox, or say “someday” when you speak.")
                 .font(.subheadline)

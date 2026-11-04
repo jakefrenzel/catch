@@ -79,7 +79,7 @@ struct AllClearCard: View {
                 .frame(width: 60, height: 60)
                 .background(Theme.greenTint, in: Circle())
                 .accessibilityHidden(true)
-            Text("Today is clear")
+            Text("All Done for Today")
                 .font(.title2.bold())
             Text(summary)
                 .font(.subheadline)

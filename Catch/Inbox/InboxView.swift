@@ -177,9 +177,9 @@ private struct EmptyInboxCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Inbox is empty")
+            Text("No Ideas to Sort")
                 .font(.title3.bold())
-            Text("Everything you caught has a place. Hold + to talk, or tap it to type.")
+            Text("New ideas appear here. Hold + to talk, or tap + to type.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.ink2)
             Button(action: onBackToToday) {
