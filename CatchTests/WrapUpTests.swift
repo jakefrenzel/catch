@@ -189,3 +189,87 @@ final class EveningFlowTests: XCTestCase {
         XCTAssertEqual(SettingsStore(defaults: defaults).dayFinishedOn, day)
     }
 }
+
+@MainActor
+final class WrapUpSummaryTests: XCTestCase {
+    private func summary(_ env: TestEnvironment) -> WrapUp.Summary {
+        WrapUp.summary(items: env.store.allItems(), projects: env.store.projects(),
+                       now: env.clock.at(day: 9, hour: 21), calendar: env.clock.calendar)
+    }
+
+    func testListsWhatGotDoneTodayInOrder() throws {
+        let env = try TestEnvironment()
+        let call = env.add("Call Dana", to: .now)
+        let cleaning = env.add("Pick up dry cleaning", to: .later)
+        env.add("Still open", to: .now)
+        let reno = env.addProject("Kitchen reno", steps: [("Measure", "Plan"), ("Order tiles", "Plan"), ("Tile", "Build")])
+
+        env.store.setDone(call, true)
+        env.store.setDone(reno.orderedSteps[0], true)
+        env.store.setDone(cleaning, true)
+
+        let result = summary(env)
+        XCTAssertEqual(result.done.map(\.title), ["Call Dana", "Measure", "Pick up dry cleaning"])
+        XCTAssertEqual(result.title, "3 done today")
+        XCTAssertEqual(result.stepsLine, "Including a step on Kitchen reno")
+        XCTAssertEqual(result.closer?.name, "Kitchen reno")
+        XCTAssertEqual(result.closer?.label, "2 steps to go")
+    }
+
+    func testLeavesOutOtherDaysAndOtherLists() throws {
+        let env = try TestEnvironment()
+        let yesterday = env.add("Done yesterday", to: .now)
+        yesterday.completedAt = env.clock.at(day: 8, hour: 18)
+        let someday = env.add("Learn pasta", to: .someday)
+        someday.completedAt = env.clock.at(day: 9, hour: 13)
+        let reno = env.addProject("Reno", steps: [("Measure", "Plan"), ("Order", "Plan")])
+        reno.orderedSteps[0].completedAt = env.clock.at(day: 8, hour: 18)
+
+        let result = summary(env)
+        XCTAssertTrue(result.isEmpty)
+        XCTAssertNil(result.closer)
+    }
+
+    func testCountsAfterMidnightAsTonight() throws {
+        let env = try TestEnvironment()
+        let late = env.add("Late one", to: .now)
+        late.completedAt = env.clock.at(day: 10, hour: 1)
+
+        let result = WrapUp.summary(items: env.store.allItems(), projects: [],
+                                    now: env.clock.at(day: 10, hour: 2), calendar: env.clock.calendar)
+        XCTAssertEqual(result.count, 1)
+    }
+
+    func testCloserPicksTheProjectNearestDone() throws {
+        let env = try TestEnvironment()
+        let far = env.addProject("Garden", steps: [("A", "S"), ("B", "S"), ("C", "S"), ("D", "S")])
+        let near = env.addProject("Taxes", steps: [("Forms", "S"), ("File", "S")])
+        env.store.setDone(far.orderedSteps[0], true)
+        env.store.setDone(near.orderedSteps[0], true)
+        env.store.setDone(near.orderedSteps[1], true)
+
+        let result = summary(env)
+        XCTAssertEqual(result.closer?.name, "Taxes")
+        XCTAssertEqual(result.closer?.label, "Finished")
+        XCTAssertEqual(result.stepsLine, "Including steps on 2 projects")
+    }
+
+    func testStepsLineWording() throws {
+        let env = try TestEnvironment()
+        let reno = env.addProject("Reno", steps: [("A", "S"), ("B", "S"), ("C", "S")])
+        env.store.setDone(reno.orderedSteps[0], true)
+        env.store.setDone(reno.orderedSteps[1], true)
+
+        let result = summary(env)
+        XCTAssertEqual(result.stepsLine, "Including 2 steps on Reno")
+        XCTAssertEqual(result.closer?.label, "1 step to go")
+        XCTAssertEqual(result.finishedLine(movedToTomorrow: 2), "2 done today. 2 moved to tomorrow.")
+        XCTAssertEqual(result.finishedLine(movedToTomorrow: 0), "2 done today.")
+    }
+
+    func testNoStepsNoStepsLine() throws {
+        let env = try TestEnvironment()
+        env.store.setDone(env.add("A", to: .now), true)
+        XCTAssertNil(summary(env).stepsLine)
+    }
+}

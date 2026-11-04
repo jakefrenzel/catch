@@ -151,8 +151,13 @@ From the wrap-up time (default 9:00 PM):
 - The Up first card is replaced by an evening card: a moon in an orange tint, "2 left for today" / "Move them on, then finish the day", and a Finish pill (orange tint with orange text).
 - Now rows each get a Tomorrow | Someday segmented button.
 - The Now header shows "All to Tomorrow" (15/600 blue).
-- Below Now: a "N done today" row and an Inbox card reading "N new ideas · Can wait until tomorrow".
-- **Finish** moves the leftovers to tomorrow. The card then reads "Day finished · Good night. Up first is ready in the morning."
+- **Done today card**, above the evening card, only when something was done today (a day with nothing done says nothing about it: no "0 done", no streak):
+  - A green check in a 36 pt tinted circle, "4 done today" (17/600) and, when project steps were done, "Including a step on Kitchen reno" (13, secondary).
+  - What got done, oldest first, indented to the title: a 20 pt filled check (blue for Now and steps, orange for Later), the title at 15, and the Later time or the project as a blue chip. From 6, the rest fold behind "N More". Long-press a row for Not Done.
+  - The project a step was done in that's closest to finished: progress ring, name (15/600) and "2 steps to go" (13/600 blue; "Finished" in green). Tapping it opens the project.
+  - Done items leave Now and Later in the evening, so the lists hold only what's left.
+- Below Now: an Inbox card reading "N new ideas · Can wait until tomorrow".
+- **Finish** moves the leftovers to tomorrow. The done card then reads "Day finished" with a moon and "4 done today. 2 moved to tomorrow.", and "Good night. Up first is ready in the morning." shows under it. With nothing done, the evening card reads "Day finished · Good night. Up first is ready in the morning." as before.
 - Items moved to tomorrow come back the next day with the reason "Carried over from last night".
 
 ### 12. First launch (8a)

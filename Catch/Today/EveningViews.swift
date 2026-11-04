@@ -74,20 +74,175 @@ struct EveningRowActions: View {
     }
 }
 
-/// "3 done today", under Now in the evening.
-struct DoneTodayRow: View {
-    let count: Int
+/// The top of the evening wrap-up: what got done today, then the project it moved closest to done.
+/// Shown only when something was done; a day with nothing done says nothing about it.
+struct DoneTodayCard: View {
+    let summary: WrapUp.Summary
+    /// After Finish it says the day is over, and Finish's own card steps aside.
+    let isFinished: Bool
+    let movedToTomorrow: Int
+    let onNotDone: (WrapUp.Done) -> Void
+    let onOpenProject: (UUID) -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsAll = false
+    /// A long day folds after this many.
+    private let foldAfter = 5
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+                .padding(.bottom, 8)
+
+            let shown = showsAll ? summary.done : Array(summary.done.prefix(foldAfter))
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(shown.enumerated()), id: \.element.id) { index, entry in
+                    DoneEntryRow(entry: entry)
+                        .contextMenu {
+                            Button { onNotDone(entry) } label: {
+                                Label("Not Done", systemImage: "arrow.uturn.backward")
+                            }
+                        }
+                        .overlay(alignment: .bottom) {
+                            if index < shown.count - 1 || summary.count > foldAfter {
+                                Theme.sep.frame(height: 1)
+                            }
+                        }
+                }
+                if summary.count > foldAfter {
+                    Button {
+                        withAnimation(reduceMotion ? nil : .catchEaseOut(0.3)) { showsAll.toggle() }
+                    } label: {
+                        Text(showsAll ? "Show Less" : "\(summary.count - foldAfter) More")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.blue)
+                            .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            .padding(.leading, 48)
+
+            if let closer = summary.closer {
+                Button { onOpenProject(closer.projectID) } label: {
+                    HStack(spacing: 12) {
+                        ProgressRing(progress: closer.progress)
+                            .frame(width: 36)
+                        Text(closer.name)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.primary)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(closer.label)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(closer.left == 0 ? Theme.green : Theme.blue)
+                            .lineLimit(1)
+                    }
+                    .padding(.vertical, 11)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(closer.name), \(closer.label)")
+                .accessibilityHint("Opens the project.")
+                .overlay(alignment: .top) { Theme.sep.frame(height: 1).padding(.horizontal, -16) }
+                .padding(.top, 6)
+            }
+        }
+        .padding(EdgeInsets(top: 14, leading: 16, bottom: summary.closer == nil ? 8 : 0, trailing: 16))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .cardShadow()
+    }
+
+    private var header: some View {
         HStack(spacing: 12) {
+            Group {
+                if isFinished {
+                    Image(systemName: "moon.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.orangeText)
+                        .background(Circle().fill(Theme.orangeTint).frame(width: 36, height: 36))
+                } else {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Theme.green)
+                        .background(Circle().fill(Theme.greenTint).frame(width: 36, height: 36))
+                }
+            }
+            .frame(width: 36, height: 36)
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(isFinished ? "Day finished" : summary.title)
+                    .font(.headline)
+                if let line = isFinished ? summary.finishedLine(movedToTomorrow: movedToTomorrow) : summary.stepsLine {
+                    Text(line)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.ink2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+        }
+    }
+}
+
+/// One thing done today: a small filled check in its list's color, the title, and its time or project.
+private struct DoneEntryRow: View {
+    let entry: WrapUp.Done
+
+    var body: some View {
+        HStack(spacing: 10) {
             Image(systemName: "checkmark")
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.white)
-                .frame(width: 24, height: 24)
-                .background(Theme.blue, in: Circle())
+                .frame(width: 20, height: 20)
+                .background(color, in: Circle())
                 .accessibilityHidden(true)
-            Text("\(count) done today")
-                .foregroundStyle(Theme.ink2)
+            Text(entry.title)
+                .font(.subheadline)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            detail
+        }
+        .padding(.vertical, 7)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var color: Color {
+        if case .later = entry.kind { return Theme.orange }
+        return Theme.blue
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        switch entry.kind {
+        case .now:
+            EmptyView()
+        case .later:
+            if let reminder = entry.item?.reminder {
+                Text(ReminderFormatter().label(for: reminder, now: entry.completedAt))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.ink2)
+                    .lineLimit(1)
+            }
+        case .step(let project):
+            Text(project)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.blue)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Theme.blueTint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+    }
+
+    private var accessibilityText: String {
+        switch entry.kind {
+        case .now, .later: return "\(entry.title), done"
+        case .step(let project): return "\(entry.title), step in \(project), done"
         }
     }
 }

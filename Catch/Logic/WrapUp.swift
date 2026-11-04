@@ -86,3 +86,114 @@ enum WrapUp {
         return DayClock.isSameDay(completedAt, now, calendar: calendar)
     }
 }
+
+// MARK: - What got done
+
+extension WrapUp {
+    /// One thing checked off today, for the wrap-up's done card.
+    struct Done: Identifiable {
+        enum Kind {
+            case now
+            case later
+            /// A project step, with its project's name.
+            case step(project: String)
+        }
+
+        let id: UUID
+        let title: String
+        let kind: Kind
+        let completedAt: Date
+        /// The Later item, so its reminder time can show.
+        let item: Item?
+        let step: Step?
+    }
+
+    /// The project a step was checked off in today that's closest to done.
+    struct Closer: Equatable {
+        let projectID: UUID
+        let name: String
+        let progress: Double
+        let left: Int
+
+        /// "2 steps to go", or "Finished" once the last one is done.
+        var label: String {
+            switch left {
+            case 0: return "Finished"
+            case 1: return "1 step to go"
+            default: return "\(left) steps to go"
+            }
+        }
+    }
+
+    struct Summary {
+        /// Oldest first, the order they were done in.
+        let done: [Done]
+        let closer: Closer?
+
+        var count: Int { done.count }
+        var isEmpty: Bool { done.isEmpty }
+
+        /// "4 done today"
+        var title: String { "\(count) done today" }
+
+        /// Calls out project steps, the progress that's easiest to miss: "Including a step on Kitchen reno".
+        var stepsLine: String? {
+            var projects: [String] = []
+            var steps = 0
+            for entry in done {
+                guard case .step(let project) = entry.kind else { continue }
+                steps += 1
+                if !projects.contains(project) { projects.append(project) }
+            }
+            switch (steps, projects.count) {
+            case (0, _): return nil
+            case (1, _): return "Including a step on \(projects[0])"
+            case (_, 1): return "Including \(steps) steps on \(projects[0])"
+            default: return "Including steps on \(projects.count) projects"
+            }
+        }
+
+        /// After Finish: "4 done today. 2 moved to tomorrow."
+        func finishedLine(movedToTomorrow: Int) -> String {
+            movedToTomorrow > 0 ? "\(title). \(movedToTomorrow) moved to tomorrow." : "\(title)."
+        }
+    }
+
+    /// Everything in Now, Later and projects checked off during the Catch day `now` falls in.
+    /// Never says what wasn't done: an empty summary shows nothing.
+    static func summary(items: [Item], projects: [Project], now: Date, calendar: Calendar) -> Summary {
+        func today(_ date: Date?) -> Bool {
+            guard let date else { return false }
+            return DayClock.isSameDay(date, now, calendar: calendar)
+        }
+
+        var done: [Done] = items.compactMap { item in
+            guard today(item.completedAt), let completedAt = item.completedAt else { return nil }
+            switch item.list {
+            case .now:
+                return Done(id: item.id, title: item.text, kind: .now, completedAt: completedAt, item: item, step: nil)
+            case .later:
+                return Done(id: item.id, title: item.text, kind: .later, completedAt: completedAt, item: item, step: nil)
+            case .inbox, .someday:
+                return nil
+            }
+        }
+
+        var closer: Closer?
+        for project in projects {
+            let stepsToday = project.orderedSteps.filter { today($0.completedAt) }
+            guard !stepsToday.isEmpty else { continue }
+            for step in stepsToday {
+                done.append(Done(id: step.id, title: step.text, kind: .step(project: project.name),
+                                 completedAt: step.completedAt ?? now, item: nil, step: step))
+            }
+            let left = project.orderedSteps.count - project.doneCount
+            if closer == nil || left < closer!.left {
+                closer = Closer(projectID: project.id, name: project.name, progress: project.progress, left: left)
+            }
+        }
+
+        done.sort { $0.completedAt < $1.completedAt }
+        return Summary(done: done, closer: closer)
+    }
+}
