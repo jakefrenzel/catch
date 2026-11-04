@@ -27,7 +27,7 @@ struct TodayView: View {
         let visible = items.filter { WrapUp.isVisibleToday($0, now: model.now, calendar: .current) }
         // In the evening, done items step aside so only what's left shows.
         let nowItems = visible.filter { $0.list == .now && !$0.movedToTomorrow && !(isEvening && $0.isDone) }
-        let laterItems = visible.filter { $0.list == .later }
+        let laterItems = visible.filter { $0.list == .later && !(isEvening && $0.isDone) }
         let candidates = UpFirst.candidates(items: items, projects: projects,
                                             includeSteps: settings.upFirstIncludesSteps)
         let doneProjectIDs = Set(projects.filter(\.isDone).map(\.id))
@@ -39,8 +39,7 @@ struct TodayView: View {
                     .plainListRow(EdgeInsets(top: 8, leading: 4, bottom: 12, trailing: 0))
 
                 if isEvening {
-                    EveningCard(card: eveningCard) { model.finishDay() }
-                        .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
+                    eveningCards
                 } else if let upFirst = model.upFirst.current(in: candidates) {
                     // Turned off in Settings: nothing here, but not "All Done for Today" either.
                     if settings.showsUpFirst {
@@ -297,16 +296,51 @@ struct TodayView: View {
                     isFinished: model.isDayFinished)
     }
 
-    /// Under Now in the evening: what got done, and what's waiting in Inbox.
+    /// The top of the evening: what got done first, then what's left and Finish.
+    /// After Finish, the done card says the day is over and takes Finish's place.
     @ViewBuilder
-    private var eveningExtras: some View {
-        let done = doneTodayCount
-        let inboxCount = items.filter { $0.list == .inbox }.count
-        if done > 0 {
-            Section {
-                DoneTodayRow(count: done)
+    private var eveningCards: some View {
+        let summary = WrapUp.summary(items: items, projects: projects,
+                                     now: model.store.currentDate(), calendar: model.store.calendar)
+        if summary.isEmpty {
+            EveningCard(card: eveningCard) { model.finishDay() }
+                .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
+        } else {
+            DoneTodayCard(summary: summary,
+                          isFinished: model.isDayFinished,
+                          movedToTomorrow: items.filter(\.movedToTomorrow).count,
+                          onNotDone: markNotDone,
+                          onOpenProject: { id in
+                              if let project = projects.first(where: { $0.id == id }) { model.openProject(project) }
+                          })
+                .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: model.isDayFinished ? 3 : 12, trailing: 0))
+            if model.isDayFinished {
+                Text("Good night. Up first is ready in the morning.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.ink2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .plainListRow(EdgeInsets(top: 4, leading: 16, bottom: 3, trailing: 16))
+            } else {
+                EveningCard(card: eveningCard) { model.finishDay() }
+                    .plainListRow(EdgeInsets(top: 0, leading: 0, bottom: 3, trailing: 0))
             }
         }
+    }
+
+    /// From the done card's menu: back to open, in its list or project.
+    private func markNotDone(_ entry: WrapUp.Done) {
+        if let item = entry.item {
+            toggleDone(item)
+        } else if let step = entry.step {
+            model.toggleDone(step)
+        }
+    }
+
+    /// Under Now in the evening: what's waiting in Inbox.
+    @ViewBuilder
+    private var eveningExtras: some View {
+        let inboxCount = items.filter { $0.list == .inbox }.count
         if inboxCount > 0 {
             Section {
                 EveningInboxRow(count: inboxCount) { model.tab = .inbox }
