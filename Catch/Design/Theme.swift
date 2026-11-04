@@ -18,8 +18,9 @@ enum Theme {
 
     static let blue = Color(.systemBlue)
     static let orange = Color(.systemOrange)
-    /// Orange for text; meets contrast on light backgrounds.
-    static let orangeText = Color(light: rgba(201, 52, 0, 1), dark: rgba(255, 159, 10, 1))
+    /// Orange for text. The system orange, as in Apple's own apps: iOS switches it to a darker
+    /// #C93400 when Increase Contrast is on, so people who need the contrast get it.
+    static let orangeText = Color(.systemOrange)
     static let red = Color(.systemRed)
     static let green = Color(.systemGreen)
     static let purple = Color(.systemIndigo)
