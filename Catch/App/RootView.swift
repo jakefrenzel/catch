@@ -8,8 +8,8 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
-    /// A keyboard is up or on its way, from when it starts rising until it has
-    /// fully gone. The tab bar and + hide meanwhile.
+    /// A keyboard is up or on its way, from when it starts rising until it
+    /// starts going down. The tab bar and + hide meanwhile.
     @State private var isKeyboardUp = false
     /// The capture card is hosted in UIKit (KeyboardDock), which needs these passed in.
     @Environment(\.modelContext) private var modelContext
@@ -86,14 +86,16 @@ struct RootView: View {
                 }
                 .padding(.horizontal, 20)
             }
+            // Full screen, so ignoring the keyboard below keeps it at the bottom.
+            // Sized to just the bar, it rode up and down on the keyboard anyway.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             // 30 pt from the bottom edge, as in the handoff, on every iPhone.
             .padding(.bottom, 30)
             .ignoresSafeArea(.container, edges: .bottom)
             // Stay at the bottom behind the keyboard instead of riding up over text fields.
             .ignoresSafeArea(.keyboard)
-            // Even so, it rode up on the keyboard, and showed above it for a moment
-            // as the capture card closed. Nothing here is useful while typing, so
-            // it steps aside until the keyboard has fully gone.
+            // Nothing here is useful while typing, so it steps aside while the
+            // keyboard is up, and fades back in as the keyboard starts going down.
             .opacity(isKeyboardUp ? 0 : 1)
             .allowsHitTesting(!isKeyboardUp)
             .accessibilityHidden(isKeyboardUp)
@@ -168,6 +170,10 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             guard !model.isWarmingKeyboard else { return }
             isKeyboardUp = true
+        }
+        // Not waiting for keyboardDidHide, which comes only once it has fully gone.
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardUp = false
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
             isKeyboardUp = false
